@@ -1,10 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X, Rocket } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const isScrolled = scrollPosition > 50;
 
   const scrollToSection = (sectionId: string) => {
     setIsOpen(false);
@@ -31,68 +44,104 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-white shadow-md fixed w-full z-50">
-      <div className="container mx-auto px-6">
-        <div className="flex justify-between items-center h-20">
+    <nav className="fixed w-full z-50">
+      <div className={cn(
+        "absolute inset-0 transition-all duration-300",
+        isScrolled ? "bg-white/80 backdrop-blur-md shadow-sm" : "bg-transparent"
+      )} />
+      <div className="container mx-auto px-4 sm:px-6 relative">
+        <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
-          <button onClick={() => scrollToSection('hero')} className="flex items-center gap-2">
-            <Rocket className="w-8 h-8 text-orange-500" />
-            <span className="text-2xl font-bold text-orange-500" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+          <Button 
+            variant="ghost" 
+            onClick={() => scrollToSection('hero')} 
+            className={cn(
+              "flex items-center gap-1 sm:gap-2 p-0 hover:bg-transparent transition-all duration-300",
+              isScrolled
+                ? "text-brand-blue opacity-100"
+                : "text-white opacity-80 hover:opacity-100"
+            )}
+          >
+            <Rocket className={cn(
+              "w-6 h-6 sm:w-8 sm:h-8 transition-transform duration-300",
+              isScrolled ? "rotate-0" : "-rotate-45"
+            )} />
+            <span className={cn(
+              "text-xl sm:text-2xl font-bold transition-all duration-300",
+              isScrolled ? "opacity-100" : "opacity-0 translate-x-4",
+            )} style={{ fontFamily: 'Comic Sans MS, cursive' }}>
               ScioLabs
             </span>
-          </button>
+          </Button>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-3 lg:gap-6">
             {navLinks.map(link => (
-              <button
+              <Button
                 key={link.id}
+                variant="ghost"
                 onClick={() => scrollToSection(link.id)}
-                className="text-gray-700 hover:text-orange-500 text-lg transition-colors"
+                className={cn(
+                  "transition-colors font-medium text-white/90 hover:text-white hover:bg-white/10",
+                  isScrolled && "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
+                )}
               >
                 {link.label}
-              </button>
+              </Button>
             ))}
-            <a 
-              href="https://demo.sciolabs.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-orange-500 text-white px-6 py-2 rounded-full hover:bg-orange-600 text-lg transition-colors"
+            <Button 
+              asChild
+              className={cn(
+                "rounded-full font-semibold px-6",
+                isScrolled
+                  ? "bg-brand-blue text-white hover:bg-brand-blue-dark"
+                  : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
+              )}
             >
-              Try Demo
-            </a>
+              <a href="https://demo.sciolabs.in" target="_blank" rel="noopener noreferrer">
+                Try Demo
+              </a>
+            </Button>
           </div>
 
           {/* Mobile Menu Button */}
-          <button 
-            className="md:hidden"
+          <Button 
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "md:hidden",
+              isScrolled ? "text-gray-800" : "text-white"
+            )}
             onClick={() => setIsOpen(!isOpen)}
           >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+            {isOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
+          </Button>
         </div>
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden py-4">
-            <div className="flex flex-col gap-4">
-              {navLinks.map(link => (
-                <button
-                  key={link.id}
-                  onClick={() => scrollToSection(link.id)}
-                  className="text-gray-700 hover:text-orange-500 py-2 text-lg text-left"
+          <div className="absolute left-0 right-0 top-16 sm:top-20 bg-black/90 backdrop-blur-md border-t border-white/10">
+            <div className="container mx-auto py-4 px-4 sm:px-6">
+              <div className="flex flex-col gap-2">
+                {navLinks.map(link => (
+                  <Button
+                    key={link.id}
+                    variant="ghost"
+                    onClick={() => scrollToSection(link.id)}
+                    className="justify-start text-base sm:text-lg text-white/80 hover:text-white hover:bg-white/10 h-12"
+                  >
+                    {link.label}
+                  </Button>
+                ))}
+                <Button 
+                  asChild
+                  className="w-full rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm h-12 mt-2"
                 >
-                  {link.label}
-                </button>
-              ))}
-              <a 
-                href="https://demo.sciolabs.in"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-orange-500 text-white px-6 py-2 rounded-full hover:bg-orange-600 w-full text-lg transition-colors text-center"
-              >
-                Try Demo
-              </a>
+                  <a href="https://demo.sciolabs.in" target="_blank" rel="noopener noreferrer">
+                    Try Demo
+                  </a>
+                </Button>
+              </div>
             </div>
           </div>
         )}

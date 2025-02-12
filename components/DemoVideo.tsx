@@ -15,19 +15,20 @@ export function DemoVideo() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <section className="py-20 bg-white">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-orange-900" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+    <section className="py-12 sm:py-20 bg-gradient-to-b from-transparent via-black/5 to-transparent">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent px-4" 
+              style={{ fontFamily: 'Comic Sans MS, cursive' }}>
             See ScioLabs in Action ✨
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
             Watch how our platform makes learning interactive and engaging for students
           </p>
         </div>
 
         {/* Video Preview */}
-        <div className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
+        <div className="relative max-w-4xl mx-auto rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-white/20">
           <div className="aspect-video bg-orange-100 relative group cursor-pointer"
                onClick={() => setIsOpen(true)}>
             {/* Thumbnail Image */}
@@ -46,36 +47,34 @@ export function DemoVideo() {
             <div className="absolute inset-0 flex items-center justify-center">
               <Button 
                 variant="ghost"
-                size="lg"
-                className="w-20 h-20 rounded-full bg-white/90 hover:bg-white group"
+                size="icon"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/90 hover:bg-white group"
               >
-                <PlayCircle className="w-12 h-12 text-orange-500 group-hover:scale-110 transition-transform" />
+                <PlayCircle className="w-8 h-8 sm:w-12 sm:h-12 text-brand-blue group-hover:scale-110 transition-transform" />
               </Button>
             </div>
           </div>
 
-          {/* Features List */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-            <div className="flex justify-center gap-8 text-white">
+          {/* Features List - Mobile Responsive */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 sm:p-6">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
               {["Interactive Quizzes", "Real-time Progress", "Gamified Learning"].map((feature, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-orange-400 rounded-full" />
-                  <span>{feature}</span>
+                <div key={index} className="inline-flex items-center backdrop-blur-sm bg-white/5 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-brand-blue rounded-full" />
+                  <span className="ml-2 text-sm sm:text-base text-white/90">{feature}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Video Modal */}
+        {/* Video Modal - Full Screen on Mobile */}
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent className="max-w-4xl p-0 bg-black overflow-hidden">
+          <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-4xl p-0 bg-black overflow-hidden">
             <DialogHeader>
-              <DialogTitle className="sr-only">
-                ScioLabs Platform Demo Video
-              </DialogTitle>
+              <DialogTitle className="sr-only">ScioLabs Platform Demo Video</DialogTitle>
             </DialogHeader>
-            <div className="aspect-video">
+            <div className="aspect-video w-full">
               <iframe
                 width="100%"
                 height="100%"

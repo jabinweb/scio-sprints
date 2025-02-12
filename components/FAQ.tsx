@@ -30,19 +30,19 @@ const faqs = [
 
 export function FAQ() {
   return (
-    <section className="py-20 bg-white">
-      <div className="container mx-auto px-6">
-        <h2 className="text-4xl font-bold text-center mb-12 text-orange-900" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+    <section className="py-12 sm:py-20 bg-background">
+      <div className="container mx-auto px-4 sm:px-6">
+        <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8 sm:mb-12 text-foreground">
           Frequently Asked Questions 💭
         </h2>
         <div className="max-w-3xl mx-auto">
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full space-y-4">
             {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-lg font-semibold text-gray-800">
+              <AccordionItem key={index} value={`item-${index}`} className="border-border">
+                <AccordionTrigger className="text-lg font-semibold text-foreground">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-gray-600">
+                <AccordionContent className="text-muted-foreground">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
