@@ -15,7 +15,7 @@ const Footer = () => {
                 ScioLabs
               </span>
             </div>
-            <p className="text-lg mb-4 text-muted-foreground">
+            <p className="text-lg mb-4 text-gray-100">
               Revolutionizing student revision with interactive gamified learning.
             </p>
           </div>
@@ -52,8 +52,8 @@ const Footer = () => {
 
         </div>
 
-        <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} ScioLabs. All rights reserved.</p>
+        <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center text-sm text-gray-300">
+          <p className='text-gray-100'>&copy; {new Date().getFullYear()} ScioLabs. All rights reserved.</p>
         </div>
       </div>
     </footer>

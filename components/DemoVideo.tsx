@@ -18,9 +18,8 @@ export function DemoVideo() {
     <section className="py-12 sm:py-20 bg-gradient-to-b from-transparent via-black/5 to-transparent">
       <div className="container mx-auto px-4 sm:px-6">
         <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent px-4" 
-              style={{ fontFamily: 'Comic Sans MS, cursive' }}>
-            See ScioLabs in Action ✨
+          <h2 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4 px-4">
+            <span className=' bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent '>See ScioLabs in Action</span> ✨
           </h2>
           <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
             Watch how our platform makes learning interactive and engaging for students
@@ -57,7 +56,7 @@ export function DemoVideo() {
 
           {/* Features List - Mobile Responsive */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 sm:p-6">
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
+            <div className="flex-wrap justify-center gap-2 sm:gap-4 hidden md:flex">
               {["Interactive Quizzes", "Real-time Progress", "Gamified Learning"].map((feature, index) => (
                 <div key={index} className="inline-flex items-center backdrop-blur-sm bg-white/5 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
                   <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-brand-blue rounded-full" />

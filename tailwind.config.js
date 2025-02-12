@@ -35,6 +35,22 @@ module.exports = {
         },
         // ...rest of the existing colors...
       },
+      fontFamily: {
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-heading)', 'var(--font-sans)', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        // Professional type scale
+        'display-1': ['4rem', { lineHeight: '1.1', fontWeight: '700', letterSpacing: '-0.02em' }],
+        'display-2': ['3.5rem', { lineHeight: '1.1', fontWeight: '700', letterSpacing: '-0.02em' }],
+        'heading-1': ['2.5rem', { lineHeight: '1.2', fontWeight: '700', letterSpacing: '-0.01em' }],
+        'heading-2': ['2rem', { lineHeight: '1.2', fontWeight: '600', letterSpacing: '-0.01em' }],
+        'heading-3': ['1.5rem', { lineHeight: '1.2', fontWeight: '600' }],
+        'heading-4': ['1.25rem', { lineHeight: '1.2', fontWeight: '600' }],
+        'body-lg': ['1.125rem', { lineHeight: '1.6' }],
+        'body': ['1rem', { lineHeight: '1.6' }],
+        'body-sm': ['0.875rem', { lineHeight: '1.6' }],
+      },
       // ...rest of the existing config...
     },
   },

@@ -53,9 +53,8 @@ export default function Home() {
 
         <div className="container mx-auto px-6 relative">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent mb-4" 
-                style={{ fontFamily: 'Comic Sans MS, cursive' }}>
-              Multi-Platform Learning 🎮
+            <h2 className="text-4xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent ">Multi-Platform Learning</span> 🎮
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Learn and play across your favorite educational platforms
@@ -76,9 +75,9 @@ export default function Home() {
                   <div className="text-3xl mb-2 transform group-hover:scale-125 transition-transform duration-300">
                     {platform.emoji}
                   </div>
-                  <p className="font-bold text-lg bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent group-hover:text-lg transition-all">
+                  {/* <p className="font-bold text-lg bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent group-hover:text-lg transition-all">
                     {platform.name}
-                  </p>
+                  </p> */}
                 </div>
 
                 {/* Decorative dot pattern */}

@@ -41,15 +41,16 @@ export function Hero() {
             </div>
 
             {/* Hero Title */}
-            <h1 className="text-3xl sm :text-5xl lg:text-6xl font-bold tracking-tight px-4">
-              <span className="block text-white mb-2 sm:mb-4">Make Learning Fun with</span>
-              <span className="bg-gradient-to-r from-brand-blue via-white to-brand-green bg-clip-text text-transparent inline-flex gap-2 items-center">
-                ScioSprints!<span className="text-2xl sm:text-4xl">🚀</span>
-              </span>
+            <h1 className="display mb-6 text-gray-200 !leading-[6rem]">
+              Make Learning Fun with{' '}
+              <span className="bg-gradient-to-r from-brand-blue via-white to-brand-green bg-clip-text text-transparent">
+                ScioSprints!
+              </span>{' '}
+              <span className="inline-block animate-bounce">🚀</span>
             </h1>
             
             {/* Description */}
-            <p className="text-base sm:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed px-4">
+            <p className="lead max-w-2xl mx-auto mb-8 text-gray-300">
               Transform your revision journey into an exciting adventure with our gamified learning platform. 
               Join thousands of students who learn while having fun!
             </p>
