@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Menu, X, Rocket } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SignupForm } from './SignupForm';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [isSignupOpen, setIsSignupOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,6 +38,11 @@ const Navbar = () => {
     }
   };
 
+  const handleDemoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsSignupOpen(true);
+  };
+
   const navLinks = [
     { label: 'Features', id: 'features' },
     { label: 'Demo', id: 'demo' },
@@ -49,7 +56,7 @@ const Navbar = () => {
         "absolute inset-0 transition-all duration-300",
         isScrolled ? "bg-white/80 backdrop-blur-md shadow-sm" : "bg-transparent"
       )} />
-      <div className="container mx-auto px-4 sm:px-6 relative">
+      <div className="container mx-auto px-6 relative">
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <Button 
@@ -90,17 +97,15 @@ const Navbar = () => {
               </Button>
             ))}
             <Button 
-              asChild
               className={cn(
                 "rounded-full font-semibold px-6",
                 isScrolled
                   ? "bg-brand-blue text-white hover:bg-brand-blue-dark"
                   : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
               )}
+              onClick={handleDemoClick}
             >
-              <a href="https://demo.sciolabs.in" target="_blank" rel="noopener noreferrer">
-                Try Demo
-              </a>
+              Try Demo
             </Button>
           </div>
 
@@ -134,18 +139,25 @@ const Navbar = () => {
                   </Button>
                 ))}
                 <Button 
-                  asChild
                   className="w-full rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm h-12 mt-2"
+                  onClick={(e) => {
+                    setIsOpen(false);
+                    handleDemoClick(e);
+                  }}
                 >
-                  <a href="https://demo.sciolabs.in" target="_blank" rel="noopener noreferrer">
-                    Try Demo
-                  </a>
+                  Try Demo
                 </Button>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Signup Form Dialog */}
+      <SignupForm 
+        open={isSignupOpen} 
+        onOpenChange={setIsSignupOpen}
+      />
     </nav>
   );
 };

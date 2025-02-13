@@ -1,9 +1,8 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
+'use client';
+
+import { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Card } from "@/components/ui/card";
 
 const faqs = [
   {
@@ -26,30 +25,55 @@ const faqs = [
     question: "What platforms does ScioLabs support?",
     answer: "ScioLabs works seamlessly across multiple platforms including web browsers, tablets, and mobile devices, with integration support for various learning tools."
   }
-]
+];
 
 export function FAQ() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
   return (
     <section className="py-12 sm:py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
-        <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8 sm:mb-12 text-foreground">
-          Frequently Asked Questions 💭
+        <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8 sm:mb-12">
+          <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent">
+            Frequently Asked Questions
+          </span> 💭
         </h2>
-        <div className="max-w-3xl mx-auto">
-          <Accordion type="single" collapsible className="w-full space-y-4">
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="border-border">
-                <AccordionTrigger className="text-lg font-semibold text-foreground">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+        
+        <div className="grid md:grid-cols-2 gap-4 max-w-5xl mx-auto">
+          {faqs.map((faq, index) => (
+            <Card 
+              key={index}
+              className={`p-6 cursor-pointer transition-all duration-200 hover:shadow-md
+                ${openIndex === index ? 'ring-2 ring-brand-blue/20 shadow-lg' : 'hover:bg-accent/50'}
+              `}
+              onClick={() => setOpenIndex(openIndex === index ? null : index)}
+            >
+              <div className="flex justify-between items-start gap-4">
+                <div>
+                  <h3 className="font-heading text-lg font-semibold mb-2 text-foreground">
+                    {faq.question}
+                  </h3>
+                  <div className={`
+                    overflow-hidden transition-all duration-200
+                    ${openIndex === index ? 'max-h-48 opacity-100 mt-2' : 'max-h-0 opacity-0'}
+                  `}>
+                    <p className="text-foreground/70">
+                      {faq.answer}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-brand-blue">
+                  {openIndex === index ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
       </div>
     </section>
-  )
+  );
 }
