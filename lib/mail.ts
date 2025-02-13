@@ -30,7 +30,7 @@ export async function sendDemoEmail(data: {
   school: string;
   role: string;
 }) {
-  const demoUrl = `${process.env.NEXT_PUBLIC_DEMO_URL}/access?email=${encodeURIComponent(data.email)}`;
+  const demoUrl = `${process.env.NEXT_PUBLIC_DEMO_URL}`;
 
   const htmlContent = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
