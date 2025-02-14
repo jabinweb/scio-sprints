@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter, Montserrat } from 'next/font/google';
 import './globals.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { WhatsAppChat } from '@/components/WhatsAppChat';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ConnectionStatus } from '@/components/ui/ConnectionStatus';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -33,12 +32,12 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={`${inter.variable} ${montserrat.variable} font-sans antialiased`}>
-        <Navbar />
         <main className="min-h-screen">
-          {children}
+          <AuthProvider>
+            {children}
+            <ConnectionStatus />
+          </AuthProvider>
         </main>
-        <Footer />
-        <WhatsAppChat />
       </body>
     </html>
   );
