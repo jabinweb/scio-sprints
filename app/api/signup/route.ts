@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sendDemoEmail } from '@/lib/mail';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { UserRole, RequestStatus } from '@/types/enums';
+import { adminDb } from '@/lib/firebase-admin';
+import { RequestStatus } from '@/types/enums';
 
 export async function POST(req: Request) {
   try {
@@ -16,14 +15,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Save to Firebase with proper data structure
+    // Save to Firebase using Admin SDK
     try {
-      const docRef = await addDoc(collection(db, 'demoRequests'), {
+      const docRef = await adminDb.collection('demoRequests').add({
         name: data.name.trim(),
         email: data.email.toLowerCase().trim(),
         school: data.school.trim(),
-        role: data.role as UserRole,
-        createdAt: serverTimestamp(),
+        role: data.role,
+        createdAt: new Date(),
         status: RequestStatus.PENDING
       });
       console.log('Demo request saved with ID:', docRef.id);
@@ -32,7 +31,6 @@ export async function POST(req: Request) {
       throw error;
     }
 
-    // Send email
     await sendDemoEmail(data);
     
     return NextResponse.json({ 

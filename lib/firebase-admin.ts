@@ -2,25 +2,22 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const serviceAccount = {
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-};
+// Initialize Firebase Admin
+const apps = getApps();
 
-if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-  throw new Error('Firebase admin credentials are missing');
+if (!process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
+  throw new Error('Firebase Admin credentials are not configured');
 }
 
-const apps = getApps();
-const firebaseAdmin = apps.length === 0 
-  ? initializeApp({
-      credential: cert(serviceAccount),
-      projectId: serviceAccount.projectId,
-    })
-  : apps[0];
+const firebaseAdminConfig = {
+  credential: cert({
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  }),
+};
 
-const adminAuth = getAuth(firebaseAdmin);
-const adminDb = getFirestore(firebaseAdmin);
+const app = apps.length === 0 ? initializeApp(firebaseAdminConfig) : apps[0];
 
-export { adminAuth, adminDb };
+export const adminDb = getFirestore(app);
+export const adminAuth = getAuth(app);
