@@ -25,32 +25,32 @@ export default function Home() {
     { 
       name: "Baamboozle", 
       logo: "/logos/baamboozle.svg",
-      url: "https://www.baamboozle.com"
+      url: "#"
     },
     { 
       name: "Gimkit", 
       logo: "/logos/gimkit.svg",
-      url: "https://www.gimkit.com"
+      url: "#"
     },
     { 
       name: "Wordwall", 
       logo: "/logos/wordwall.png",
-      url: "https://wordwall.net"
+      url: "#"
     },
     { 
       name: "Blooket", 
       logo: "/logos/blooket.png",
-      url: "https://www.blooket.com"
+      url: "#"
     },
     { 
       name: "Educaplay", 
       logo: "/logos/educaplay.svg",
-      url: "https://www.educaplay.com"
+      url: "#"
     },
     { 
       name: "Formative", 
       logo: "/logos/formative.svg",
-      url: "https://www.formative.com"
+      url: "#"
     }
   ];
 
