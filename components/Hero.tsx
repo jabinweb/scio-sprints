@@ -41,7 +41,7 @@ export function Hero() {
             </div>
 
             {/* Hero Title */}
-            <h1 className="display mb-6 text-gray-200 !leading-[6rem]">
+            <h1 className="display mb-6 text-gray-200 md:!leading-[6rem] leading-[4rem] sm:leading-[4rem] font-bold">
               Make Learning Fun with{' '}
               <span className="bg-gradient-to-r from-brand-blue via-white to-brand-green bg-clip-text text-transparent">
                 ScioSprints!
