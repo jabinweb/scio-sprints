@@ -8,9 +8,6 @@ import { CallToAction } from '@/components/CallToAction';
 import { FAQ } from '@/components/FAQ';
 import { DemoVideo } from '@/components/DemoVideo';
 import Image from 'next/image';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { WhatsAppChat } from '@/components/WhatsAppChat';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('features');
@@ -56,7 +53,6 @@ export default function Home() {
 
   return (
     <>
-      <Navbar />
       <div className="bg-background">
         <Hero />
         
@@ -131,8 +127,6 @@ export default function Home() {
           <FAQ />
         </section>
       </div>
-      <Footer />
-      <WhatsAppChat />
     </>
   );
 }

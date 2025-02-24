@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Rocket } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { SignupForm } from './SignupForm';
+import { Logo } from './Logo';
+import { useRouter } from 'next/navigation';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,10 +39,7 @@ const Navbar = () => {
     }
   };
 
-  const handleDemoClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsSignupOpen(true);
-  };
+ 
 
   const navLinks = [
     { label: 'Features', id: 'features' },
@@ -59,27 +57,10 @@ const Navbar = () => {
       <div className="container mx-auto px-6 relative">
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
-          <Button 
-            variant="ghost" 
-            onClick={() => scrollToSection('hero')} 
-            className={cn(
-              "flex items-center gap-1 sm:gap-2 p-0 hover:bg-transparent transition-all duration-300",
-              isScrolled
-                ? "text-brand-blue opacity-100"
-                : "text-white opacity-80 hover:opacity-100"
-            )}
-          >
-            <Rocket className={cn(
-              "w-6 h-6 sm:w-8 sm:h-8 transition-transform duration-300",
-              isScrolled ? "rotate-0" : "-rotate-45"
-            )} />
-            <span className={cn(
-              "text-xl sm:text-2xl font-bold transition-all duration-300",
-              isScrolled ? "opacity-100" : "opacity-0 translate-x-4",
-            )} style={{ fontFamily: 'Comic Sans MS, cursive' }}>
-              ScioLabs
-            </span>
-          </Button>
+          <Logo 
+            isScrolled={isScrolled} 
+            onClick={() => router.push('/')}
+          />
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-3 lg:gap-6">
@@ -103,7 +84,7 @@ const Navbar = () => {
                   ? "bg-brand-blue text-white hover:bg-brand-blue-dark"
                   : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
               )}
-              onClick={handleDemoClick}
+              onClick={() => scrollToSection('cta')}
             >
               Try Demo
             </Button>
@@ -140,10 +121,7 @@ const Navbar = () => {
                 ))}
                 <Button 
                   className="w-full rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm h-12 mt-2"
-                  onClick={(e) => {
-                    setIsOpen(false);
-                    handleDemoClick(e);
-                  }}
+                  onClick={() => scrollToSection('cta')}
                 >
                   Try Demo
                 </Button>
@@ -153,11 +131,7 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* Signup Form Dialog */}
-      <SignupForm 
-        open={isSignupOpen} 
-        onOpenChange={setIsSignupOpen}
-      />
+      
     </nav>
   );
 };
