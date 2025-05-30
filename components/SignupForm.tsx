@@ -129,13 +129,15 @@ export function SignupForm({ open, onOpenChange }: { open: boolean; onOpenChange
           
           <Button 
             type="submit" 
-            className="w-full bg-brand-blue hover:bg-brand-blue-dark"
+            className="w-full bg-brand-blue hover:bg-brand-blue-dark text-sm"
             disabled={loading}
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : success ? (
-              'Thank you for showing your interest! We will get back to you shortly. ✨'
+              <span className="text-center leading-tight">
+                Thank you for your interest! We will get back to you shortly. ✨
+              </span>
             ) : (
               'We Will Get Back'
             )}
