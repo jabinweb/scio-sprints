@@ -9,6 +9,8 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<User>;
+  sendMagicLink: (email: string) => Promise<void>;
+  userRole: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +26,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const logout = async () => {
     try {
@@ -47,9 +50,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const sendMagicLink = async (email: string) => {
+    try {
+      // Placeholder implementation - you can implement magic link functionality here
+      console.log('Magic link would be sent to:', email);
+      // For now, just throw an error to indicate it's not implemented
+      throw new Error('Magic link authentication not implemented yet');
+    } catch (error) {
+      console.error('Magic link error:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      if (user) {
+        // Check if user is admin
+        const isAdmin = user.email === 'admin@sciolabs.com' || user.email === 'jabincreators@gmail.com';
+        setUserRole(isAdmin ? 'admin' : 'user');
+      } else {
+        setUserRole(null);
+      }
+      
       setLoading(false);
     });
 
@@ -61,6 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     logout,
     signInWithGoogle,
+    sendMagicLink,
+    userRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
