@@ -15,7 +15,7 @@ const classes = [
 ];
 
 export function DashboardContent() {
-  const { user, logOut } = useAuth();
+  const { user, logout } = useAuth();
   const [selectedClass, setSelectedClass] = useState(classes[0]);
 
   // const menuItems = [
@@ -49,7 +49,7 @@ export function DashboardContent() {
           </div>
           <Button 
             variant="outline"
-            onClick={() => logOut()}
+            onClick={() => logout()}
             className="gap-2"
           >
             <LogOut className="w-4 h-4" />

@@ -1,36 +1,12 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginDialog } from '@/components/auth/login-dialog';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 
 export default function Demo() {
   const { user, loading } = useAuth();
-
-  useEffect(() => {
-    // Only load Razorpay script if user is authenticated
-    if (!user) return;
-
-    // Load Razorpay script
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/payment-button.js';
-    script.setAttribute('data-payment_button_id', 'pl_Pzb2IDgEW1PeZ1');
-    script.async = true;
-    
-    // Find the payment button container and append the script
-    const form = document.getElementById('razorpay-form');
-    if (form) {
-      form.appendChild(script);
-    }
-
-    // Cleanup
-    return () => {
-      if (form && script && form.contains(script)) {
-        form.removeChild(script);
-      }
-    };
-  }, [user]);
 
   // Show loading screen while checking authentication
   if (loading) {
@@ -53,7 +29,6 @@ export default function Demo() {
           <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
             Get unlimited access to our premium features and start creating engaging learning experiences today.
           </p>
-          <form id="razorpay-form" className="flex justify-center"></form>
         </div>
 
         {/* Demo iframe */}

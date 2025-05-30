@@ -1,17 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Logo } from './Logo';
 import { useRouter } from 'next/navigation';
 import { LoginDialog } from './auth/login-dialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const router = useRouter();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,7 +42,14 @@ const Navbar = () => {
     }
   };
 
- 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const navLinks = [
     { label: 'Features', id: 'features' },
@@ -78,7 +87,36 @@ const Navbar = () => {
                 {link.label}
               </Button>
             ))}
-            <LoginDialog />
+            
+            {user ? (
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => router.push('/dashboard')}
+                  className={cn(
+                    "transition-colors font-medium text-white/90 hover:text-white hover:bg-white/10",
+                    isScrolled && "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
+                  )}
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  Dashboard
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleLogout}
+                  className={cn(
+                    "transition-colors font-medium text-white/90 hover:text-white hover:bg-white/10",
+                    isScrolled && "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
+                  )}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <LoginDialog />
+            )}
+            
             <Button 
               className={cn(
                 "rounded-full font-semibold px-6",
@@ -121,6 +159,32 @@ const Navbar = () => {
                     {link.label}
                   </Button>
                 ))}
+                
+                {user ? (
+                  <>
+                    <Button 
+                      variant="ghost"
+                      onClick={() => router.push('/dashboard')}
+                      className="justify-start text-base sm:text-lg text-white/80 hover:text-white hover:bg-white/10 h-12"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </Button>
+                    <Button 
+                      variant="ghost"
+                      onClick={handleLogout}
+                      className="justify-start text-base sm:text-lg text-white/80 hover:text-white hover:bg-white/10 h-12"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <div className="px-3 py-2">
+                    <LoginDialog />
+                  </div>
+                )}
+                
                 <Button 
                   className="w-full rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm h-12 mt-2"
                   onClick={() => scrollToSection('cta')}

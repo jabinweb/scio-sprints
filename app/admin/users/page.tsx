@@ -53,15 +53,15 @@ export default function UsersPage() {
 
     const fetchData = async () => {
       try {
-        const [signupsResponse, usersResponse] = await Promise.all([
-          fetch('/api/admin/signups'),
+        const [responsesResponse, usersResponse] = await Promise.all([
+          fetch('/api/admin/responses'),
           fetch('/api/admin/users')
         ]);
         
-        const signupsData = await signupsResponse.json();
+        const responsesData = await responsesResponse.json();
         const usersData = await usersResponse.json();
 
-        setSignups(signupsData);
+        setSignups(responsesData);
         setRegisteredUsers(usersData);
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -74,10 +74,10 @@ export default function UsersPage() {
   }, [isAdmin]);
 
   const deleteSignup = async (signupId: string) => {
-    if (!confirm('Are you sure you want to delete this signup?')) return;
+    if (!confirm('Are you sure you want to delete this form response?')) return;
     
     try {
-      const response = await fetch(`/api/admin/signups?id=${signupId}`, {
+      const response = await fetch(`/api/admin/responses?id=${signupId}`, {
         method: 'DELETE',
       });
       
@@ -85,7 +85,7 @@ export default function UsersPage() {
         setSignups(signups.filter(signup => signup.id !== signupId));
       }
     } catch (error) {
-      console.error('Error deleting signup:', error);
+      console.error('Error deleting form response:', error);
     }
   };
 
@@ -108,15 +108,15 @@ export default function UsersPage() {
   const refreshData = async () => {
     setLoading(true);
     try {
-      const [signupsResponse, usersResponse] = await Promise.all([
-        fetch('/api/admin/signups'),
+      const [responsesResponse, usersResponse] = await Promise.all([
+        fetch('/api/admin/responses'),
         fetch('/api/admin/users')
       ]);
       
-      const signupsData = await signupsResponse.json();
+      const responsesData = await responsesResponse.json();
       const usersData = await usersResponse.json();
       
-      setSignups(signupsData);
+      setSignups(responsesData);
       setRegisteredUsers(usersData);
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -173,7 +173,7 @@ export default function UsersPage() {
         <Tabs defaultValue="registered" className="space-y-4">
           <TabsList>
             <TabsTrigger value="registered">Registered Users ({registeredUsers.length})</TabsTrigger>
-            <TabsTrigger value="signups">Demo Signups ({signups.length})</TabsTrigger>
+            <TabsTrigger value="signups">Form Responses ({signups.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="registered">
@@ -235,7 +235,7 @@ export default function UsersPage() {
           <TabsContent value="signups">
             <Card>
               <CardHeader>
-                <CardTitle>Demo Signups</CardTitle>
+                <CardTitle>Form Responses</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">

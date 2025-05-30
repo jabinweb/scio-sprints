@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Home, Users, CreditCard, Settings } from 'lucide-react';
+import { ChevronLeft, Home, Users, Settings, CreditCard, FileText } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +11,7 @@ const sidebarItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Home, href: '/admin' },
   { id: 'users', label: 'User Management', icon: Users, href: '/admin/users' },
   { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, href: '/admin/subscriptions' },
+  { id: 'responses', label: 'Form Responses', icon: FileText, href: '/admin/responses' },
   { id: 'settings', label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];
 

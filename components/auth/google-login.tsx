@@ -18,9 +18,25 @@ export function GoogleLogin({ onSuccess }: GoogleLoginProps) {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      await signInWithGoogle();
+      const user = await signInWithGoogle();
+      
+      // Check if user has subscription
+      const response = await fetch('/api/user/subscription-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.uid }),
+      });
+      
+      const { hasActiveSubscription } = await response.json();
+      
       onSuccess?.();
-      router.push('/dashboard');
+      
+      // Redirect based on subscription status
+      if (hasActiveSubscription) {
+        router.push('/dashboard');
+      } else {
+        router.push('/demo');
+      }
     } catch (error) {
       console.error('Google Sign-in Error:', error);
     } finally {

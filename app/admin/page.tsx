@@ -53,17 +53,17 @@ export default function AdminPage() {
 
     const fetchData = async () => {
       try {
-        const [signupsResponse, subscriptionsResponse, usersResponse] = await Promise.all([
-          fetch('/api/admin/signups'),
+        const [responsesResponse, subscriptionsResponse, usersResponse] = await Promise.all([
+          fetch('/api/admin/responses'),
           fetch('/api/admin/subscriptions'),
           fetch('/api/admin/users')
         ]);
         
-        const signupsData = await signupsResponse.json();
+        const responsesData = await responsesResponse.json();
         const subscriptionsData = await subscriptionsResponse.json();
         const usersData = await usersResponse.json();
 
-        setSignups(signupsData);
+        setSignups(responsesData);
         setSubscriptions(subscriptionsData);
         setRegisteredUsers(usersData);
       } catch (error) {
@@ -79,17 +79,17 @@ export default function AdminPage() {
   const refreshData = async () => {
     setLoading(true);
     try {
-      const [signupsResponse, subscriptionsResponse, usersResponse] = await Promise.all([
-        fetch('/api/admin/signups'),
+      const [responsesResponse, subscriptionsResponse, usersResponse] = await Promise.all([
+        fetch('/api/admin/responses'),
         fetch('/api/admin/subscriptions'),
         fetch('/api/admin/users')
       ]);
       
-      const signupsData = await signupsResponse.json();
+      const responsesData = await responsesResponse.json();
       const subscriptionsData = await subscriptionsResponse.json();
       const usersData = await usersResponse.json();
       
-      setSignups(signupsData);
+      setSignups(responsesData);
       setSubscriptions(subscriptionsData);
       setRegisteredUsers(usersData);
     } catch (error) {
@@ -158,7 +158,7 @@ export default function AdminPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Demo Signups</CardTitle>
+              <CardTitle className="text-sm font-medium">Form Responses</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
