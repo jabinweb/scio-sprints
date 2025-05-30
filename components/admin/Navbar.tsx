@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export function Navbar() {
-  const { user, logOut } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <nav className="bg-white border-b">
@@ -26,7 +26,7 @@ export function Navbar() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => logOut()}
+                onClick={() => logout()}
               >
                 Logout
               </Button>
