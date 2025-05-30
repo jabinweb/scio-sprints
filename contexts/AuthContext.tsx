@@ -10,6 +10,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<User>;
   sendMagicLink: (email: string) => Promise<void>;
+  handleMagicLinkSignIn: () => Promise<void>;
   userRole: string | null;
 }
 
@@ -62,6 +63,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const handleMagicLinkSignIn = async () => {
+    try {
+      // Placeholder implementation for magic link verification
+      console.log('Magic link sign-in would be handled here');
+      // For now, just throw an error to indicate it's not implemented
+      throw new Error('Magic link verification not implemented yet');
+    } catch (error) {
+      console.error('Magic link verification error:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
@@ -86,6 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     signInWithGoogle,
     sendMagicLink,
+    handleMagicLinkSignIn,
     userRole,
   };
 
