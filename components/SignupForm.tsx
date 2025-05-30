@@ -129,13 +129,13 @@ export function SignupForm({ open, onOpenChange }: { open: boolean; onOpenChange
           
           <Button 
             type="submit" 
-            className="w-full bg-brand-blue hover:bg-brand-blue-dark text-sm"
+            className="w-full bg-brand-blue hover:bg-brand-blue-dark text-sm py-3 h-auto"
             disabled={loading}
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : success ? (
-              <span className="text-center leading-tight">
+              <span className="text-center leading-tight whitespace-normal">
                 Thank you for your interest! We will get back to you shortly. ✨
               </span>
             ) : (
