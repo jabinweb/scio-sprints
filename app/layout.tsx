@@ -31,7 +31,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className={`${inter.variable} ${montserrat.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${montserrat.variable} font-sans antialiased !pointer-events-auto`}>
         <main className="min-h-screen">
           <AuthProvider>
             {children}

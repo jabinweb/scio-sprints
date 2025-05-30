@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Logo } from './Logo';
 import { useRouter } from 'next/navigation';
+import { LoginDialog } from './auth/login-dialog';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -77,6 +78,7 @@ const Navbar = () => {
                 {link.label}
               </Button>
             ))}
+            <LoginDialog />
             <Button 
               className={cn(
                 "rounded-full font-semibold px-6",

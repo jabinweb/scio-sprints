@@ -7,8 +7,11 @@ import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
+  linkWithCredential,
+  unlink,
   type User,
-  type AuthError 
+  type AuthError,
+  PhoneAuthCredential,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
@@ -23,6 +26,9 @@ interface AuthContextType {
   sendMagicLink: (email: string) => Promise<void>;
   handleMagicLinkSignIn: () => Promise<void>;
   deleteRequest: (requestId: string) => Promise<void>;
+  linkPhoneNumber: (phoneCredential: PhoneAuthCredential) => Promise<void>;
+  unlinkProvider: (providerId: string) => Promise<void>;
+  getLinkedProviders: () => string[];
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -153,6 +159,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     await deleteDoc(doc(db, 'demoRequests', requestId));
   };
+  const linkPhoneNumber = async (phoneCredential: PhoneAuthCredential) => {
+    if (!auth.currentUser) throw new Error('No user signed in');
+    try {
+      await linkWithCredential(auth.currentUser, phoneCredential);
+    } catch (error) {
+      console.error('Error linking phone number:', error);
+      throw error;
+    }
+  };
+
+  const unlinkProvider = async (providerId: string) => {
+    if (!auth.currentUser) throw new Error('No user signed in');
+    try {
+      await unlink(auth.currentUser, providerId);
+    } catch (error) {
+      console.error('Error unlinking provider:', error);
+      throw error;
+    }
+  };
+
+  const getLinkedProviders = () => {
+    try {
+      const currentUser = auth?.currentUser;
+      if (!currentUser) return [];
+      return currentUser.providerData.map(provider => provider.providerId);
+    } catch (error) {
+      console.error('Error getting linked providers:', error);
+      return [];
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ 
@@ -163,7 +199,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithGoogle, 
       sendMagicLink,
       handleMagicLinkSignIn,
-      deleteRequest
+      deleteRequest,
+      linkPhoneNumber,
+      unlinkProvider,
+      getLinkedProviders,
     }}>
       {children}
     </AuthContext.Provider>

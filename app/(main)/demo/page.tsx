@@ -1,9 +1,17 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoginDialog } from '@/components/auth/login-dialog';
+import { LoadingScreen } from '@/components/ui/loading-screen';
 
 export default function Demo() {
+  const { user, loading } = useAuth();
+
   useEffect(() => {
+    // Only load Razorpay script if user is authenticated
+    if (!user) return;
+
     // Load Razorpay script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/payment-button.js';
@@ -22,7 +30,17 @@ export default function Demo() {
         form?.removeChild(script);
       }
     };
-  }, []);
+  }, [user]);
+
+  // Show loading screen while checking authentication
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  // Show login dialog if user is not authenticated
+  if (!user) {
+    return <LoginDialog defaultOpen />;
+  }
 
   return (
     <div className="min-h-screen py-32 bg-black">
