@@ -11,6 +11,37 @@ interface PaymentDialogProps {
   defaultOpen?: boolean;
 }
 
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: RazorpayResponse) => void;
+  prefill: {
+    name: string;
+    email: string;
+  };
+  theme: {
+    color: string;
+  };
+}
+
+declare global {
+  interface Window {
+    Razorpay: new (options: RazorpayOptions) => {
+      open: () => void;
+    };
+  }
+}
+
 export function PaymentDialog({ defaultOpen = false }: PaymentDialogProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -28,85 +59,65 @@ export function PaymentDialog({ defaultOpen = false }: PaymentDialogProps) {
   }, []);
 
   const handlePayment = async () => {
-    if (!isScriptLoaded) {
-      console.error('Razorpay script not loaded');
-      return;
-    }
+    if (!user) return;
 
-    setIsLoading(true);
     try {
-      const response = await fetch('/api/payment/create-order', {
+      setIsLoading(true);
+
+      const orderResponse = await fetch('/api/payment/create-order', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: razorpayConfig.isTestMode ? 100 : 89600, // ₹1 for test mode
+          amount: 89600,
           currency: 'INR',
-          userId: user?.uid,
+          userId: user.uid,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create order');
-      }
+      const orderData = await orderResponse.json() as { orderId: string };
 
-      const { orderId } = await response.json();
+      const options: RazorpayOptions = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        amount: 89600,
+        currency: 'INR',
+        name: 'ScioLabs',
+        description: 'Premium Subscription',
+        order_id: orderData.orderId,
+        handler: async (response: RazorpayResponse) => {
+          try {
+            const verifyResponse = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...response,
+                userId: user?.uid,
+              }),
+            });
 
-      const options = {
-        key: razorpayConfig.keyId,
-        amount: razorpayConfig.isTestMode ? 100 : 89600,
-        currency: "INR",
-        name: "ScioLabs",
-        description: razorpayConfig.isTestMode ? "Test Payment" : "Premium Dashboard Access",
-        order_id: orderId,
-        prefill: {
-          email: user?.email || undefined,
-        },
-        modal: {
-          escape: true,
-          ondismiss: () => {
-            setIsLoading(false);
+            if (verifyResponse.ok) {
+              window.location.href = '/dashboard';
+            }
+          } catch (error) {
+            console.error('Payment verification failed:', error);
           }
         },
-        handler: function(response: any) {
-          verifyPayment(response);
+        prefill: {
+          name: user.displayName || '',
+          email: user.email || '',
         },
         theme: {
-          color: "#4B9DCE"
-        }
+          color: '#4B9DCE',
+        },
       };
 
       const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function(response: any) {
-        console.error('Payment failed:', response.error);
-        setIsLoading(false);
-      });
       rzp.open();
     } catch (error) {
-      console.error('Payment initialization failed:', error);
+      console.error('Payment error:', error);
+    } finally {
       setIsLoading(false);
-    }
-  };
-
-  const verifyPayment = async (response: any) => {
-    try {
-      const verifyResponse = await fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...response,
-          userId: user?.uid,
-        }),
-      });
-
-      if (verifyResponse.ok) {
-        window.location.href = '/dashboard';
-      }
-    } catch (error) {
-      console.error('Payment verification failed:', error);
     }
   };
 
@@ -139,11 +150,4 @@ export function PaymentDialog({ defaultOpen = false }: PaymentDialogProps) {
       </DialogContent>
     </Dialog>
   );
-}
-
-// Add types for Razorpay
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
 }

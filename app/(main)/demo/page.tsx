@@ -26,8 +26,8 @@ export default function Demo() {
 
     // Cleanup
     return () => {
-      if (form && script) {
-        form?.removeChild(script);
+      if (form && script && form.contains(script)) {
+        form.removeChild(script);
       }
     };
   }, [user]);
