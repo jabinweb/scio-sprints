@@ -30,6 +30,23 @@ export async function sendDemoEmail(data: {
   school: string;
   role: string;
 }) {
+  // Mail sending is disabled - just log the data for now
+  console.log('Demo signup received:', {
+    name: data.name,
+    email: data.email,
+    school: data.school,
+    role: data.role,
+    timestamp: new Date().toISOString()
+  });
+
+  // Return a resolved promise to maintain the same interface
+  return Promise.resolve({
+    messageId: 'demo-disabled',
+    response: 'Email sending disabled'
+  });
+
+  // Keep the original mail template for future use:
+  /*
   const demoUrl = `${process.env.NEXT_PUBLIC_DEMO_URL}`;
 
   const htmlContent = `
@@ -64,4 +81,5 @@ export async function sendDemoEmail(data: {
     subject: "Welcome to ScioLabs Demo! 🎮",
     html: htmlContent,
   });
+  */
 }

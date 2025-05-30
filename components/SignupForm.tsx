@@ -66,7 +66,7 @@ export function SignupForm({ open, onOpenChange }: { open: boolean; onOpenChange
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent">
-            Get Demo Access
+            We Will Get Back
           </DialogTitle>
           <DialogDescription>
             Fill in your details to receive immediate demo access.
@@ -135,9 +135,9 @@ export function SignupForm({ open, onOpenChange }: { open: boolean; onOpenChange
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : success ? (
-              'Check your email for demo access! ✨'
+              'Thank you for showing your interest! We will get back to you shortly. ✨'
             ) : (
-              'Get Demo Access'
+              'We Will Get Back'
             )}
           </Button>
         </form>
