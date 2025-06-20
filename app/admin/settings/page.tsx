@@ -17,7 +17,7 @@ interface AppSettings {
   siteDescription: string;
   contactEmail: string;
   supportEmail: string;
-  subscriptionPrice: number;
+  subscriptionPrice: string; // Changed to string to handle form inputs better
   emailNotifications: boolean;
   maintenanceMode: boolean;
   razorpayKeyId: string;
@@ -31,13 +31,13 @@ interface AppSettings {
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
   const [settings, setSettings] = useState<AppSettings>({
     siteName: 'ScioLabs',
     siteDescription: 'Interactive Learning Platform',
     contactEmail: 'contact@sciolabs.com',
     supportEmail: 'support@sciolabs.com',
-    subscriptionPrice: 896,
+    subscriptionPrice: '896',
     emailNotifications: true,
     maintenanceMode: false,
     razorpayKeyId: '',
@@ -51,35 +51,70 @@ export default function SettingsPage() {
   });
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string>('');
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Check if user is admin
-  const isAdmin = user?.email === 'admin@sciolabs.com' || user?.email === 'jabincreators@gmail.com';
+  // Enhanced admin check
+  const isAdmin = user && userRole === 'ADMIN';
+  const isLoadingAuth = authLoading || (user && userRole === null);
 
   useEffect(() => {
-    if (!isAdmin) return;
-    
-    const fetchSettings = async () => {
-      try {
-        const response = await fetch('/api/admin/settings');
-        const data = await response.json();
-        setSettings(data);
-      } catch (error) {
-        console.error('Error loading settings:', error);
-      }
-    };
+    if (!isLoadingAuth && user && userRole !== 'ADMIN') {
+      window.location.href = '/';
+      return;
+    }
 
-    fetchSettings();
-  }, [isAdmin]);
+    if (isAdmin && !dataLoaded) {
+      const fetchSettings = async () => {
+        try {
+          const response = await fetch('/api/admin/settings');
+          const data = await response.json();
+          
+          // Ensure all values are defined and properly typed
+          const safeSettings: AppSettings = {
+            siteName: data.siteName || 'ScioLabs',
+            siteDescription: data.siteDescription || 'Interactive Learning Platform',
+            contactEmail: data.contactEmail || 'contact@sciolabs.com',
+            supportEmail: data.supportEmail || 'support@sciolabs.com',
+            subscriptionPrice: String(data.subscriptionPrice || '299'),
+            emailNotifications: Boolean(data.emailNotifications ?? true),
+            maintenanceMode: Boolean(data.maintenanceMode ?? false),
+            razorpayKeyId: data.razorpayKeyId || '',
+            razorpayKeySecret: data.razorpayKeySecret || '',
+            razorpayTestKeyId: data.razorpayTestKeyId || '',
+            razorpayTestKeySecret: data.razorpayTestKeySecret || '',
+            paymentMode: (data.paymentMode === 'live' ? 'live' : 'test') as 'test' | 'live',
+            smtpHost: data.smtpHost || '',
+            smtpPort: data.smtpPort || '587',
+            smtpUser: data.smtpUser || '',
+          };
+          
+          setSettings(safeSettings);
+          setDataLoaded(true);
+        } catch (error) {
+          console.error('Error loading settings:', error);
+          setDataLoaded(true);
+        }
+      };
+
+      fetchSettings();
+    }
+  }, [isAdmin, isLoadingAuth, dataLoaded, user, userRole]);
 
   const handleSave = async () => {
     setLoading(true);
     setSaveStatus('');
     
     try {
+      // Convert subscriptionPrice back to number for API
+      const apiSettings = {
+        ...settings,
+        subscriptionPrice: parseInt(settings.subscriptionPrice) || 299
+      };
+
       const response = await fetch('/api/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(apiSettings),
       });
 
       if (response.ok) {
@@ -101,6 +136,15 @@ export default function SettingsPage() {
     setSettings(prev => ({ ...prev, [field]: value }));
   };
 
+  // Show loading while checking auth and role
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -120,6 +164,15 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
           <p className="text-muted-foreground">You don&apos;t have permission to access this page.</p>
         </div>
+      </div>
+    );
+  }
+
+  // Don't render form until data is loaded
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -169,56 +222,58 @@ export default function SettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="siteName">Site Name</Label>
+                      <Input
+                        id="siteName"
+                        value={settings.siteName}
+                        onChange={(e) => handleInputChange('siteName', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contactEmail">Contact Email</Label>
+                      <Input
+                        id="contactEmail"
+                        type="email"
+                        value={settings.contactEmail}
+                        onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
                   <div>
-                    <Label htmlFor="siteName">Site Name</Label>
-                    <Input
-                      id="siteName"
-                      value={settings.siteName}
-                      onChange={(e) => handleInputChange('siteName', e.target.value)}
+                    <Label htmlFor="siteDescription">Site Description</Label>
+                    <Textarea
+                      id="siteDescription"
+                      value={settings.siteDescription}
+                      onChange={(e) => handleInputChange('siteDescription', e.target.value)}
+                      rows={3}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="contactEmail">Contact Email</Label>
-                    <Input
-                      id="contactEmail"
-                      type="email"
-                      value={settings.contactEmail}
-                      onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="siteDescription">Site Description</Label>
-                  <Textarea
-                    id="siteDescription"
-                    value={settings.siteDescription}
-                    onChange={(e) => handleInputChange('siteDescription', e.target.value)}
-                    rows={3}
-                  />
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="supportEmail">Support Email</Label>
-                    <Input
-                      id="supportEmail"
-                      type="email"
-                      value={settings.supportEmail}
-                      onChange={(e) => handleInputChange('supportEmail', e.target.value)}
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="supportEmail">Support Email</Label>
+                      <Input
+                        id="supportEmail"
+                        type="email"
+                        value={settings.supportEmail}
+                        onChange={(e) => handleInputChange('supportEmail', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="subscriptionPrice">Subscription Price (₹)</Label>
+                      <Input
+                        id="subscriptionPrice"
+                        type="number"
+                        value={settings.subscriptionPrice}
+                        onChange={(e) => handleInputChange('subscriptionPrice', e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="subscriptionPrice">Subscription Price (₹)</Label>
-                    <Input
-                      id="subscriptionPrice"
-                      type="number"
-                      value={settings.subscriptionPrice}
-                      onChange={(e) => handleInputChange('subscriptionPrice', parseInt(e.target.value))}
-                    />
-                  </div>
-                </div>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
@@ -232,78 +287,84 @@ export default function SettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Payment Mode</Label>
-                  <RadioGroup
-                    value={settings.paymentMode}
-                    onValueChange={(value) => handleInputChange('paymentMode', value as 'test' | 'live')}
-                    className="flex gap-6 mt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="test" id="test" />
-                      <Label htmlFor="test">Test Mode</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="live" id="live" />
-                      <Label htmlFor="live">Live Mode</Label>
-                    </div>
-                  </RadioGroup>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Select test mode for development or live mode for production
-                  </p>
-                </div>
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div>
+                    <Label>Payment Mode</Label>
+                    <RadioGroup
+                      value={settings.paymentMode}
+                      onValueChange={(value) => handleInputChange('paymentMode', value as 'test' | 'live')}
+                      className="flex gap-6 mt-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="test" id="test" />
+                        <Label htmlFor="test">Test Mode</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="live" id="live" />
+                        <Label htmlFor="live">Live Mode</Label>
+                      </div>
+                    </RadioGroup>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Select test mode for development or live mode for production
+                    </p>
+                  </div>
 
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3">Test Environment Keys</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="razorpayTestKeyId">Test Key ID</Label>
-                      <Input
-                        id="razorpayTestKeyId"
-                        type="password"
-                        value={settings.razorpayTestKeyId}
-                        onChange={(e) => handleInputChange('razorpayTestKeyId', e.target.value)}
-                        placeholder="rzp_test_..."
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="razorpayTestKeySecret">Test Key Secret</Label>
-                      <Input
-                        id="razorpayTestKeySecret"
-                        type="password"
-                        value={settings.razorpayTestKeySecret}
-                        onChange={(e) => handleInputChange('razorpayTestKeySecret', e.target.value)}
-                        placeholder="Enter your test secret key"
-                      />
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3">Test Environment Keys</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="razorpayTestKeyId">Test Key ID</Label>
+                        <Input
+                          id="razorpayTestKeyId"
+                          type="password"
+                          value={settings.razorpayTestKeyId}
+                          onChange={(e) => handleInputChange('razorpayTestKeyId', e.target.value)}
+                          placeholder="rzp_test_..."
+                          autoComplete="off"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="razorpayTestKeySecret">Test Key Secret</Label>
+                        <Input
+                          id="razorpayTestKeySecret"
+                          type="password"
+                          value={settings.razorpayTestKeySecret}
+                          onChange={(e) => handleInputChange('razorpayTestKeySecret', e.target.value)}
+                          placeholder="Enter your test secret key"
+                          autoComplete="off"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3">Live Environment Keys</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="razorpayKeyId">Live Key ID</Label>
-                      <Input
-                        id="razorpayKeyId"
-                        type="password"
-                        value={settings.razorpayKeyId}
-                        onChange={(e) => handleInputChange('razorpayKeyId', e.target.value)}
-                        placeholder="rzp_live_..."
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="razorpayKeySecret">Live Key Secret</Label>
-                      <Input
-                        id="razorpayKeySecret"
-                        type="password"
-                        value={settings.razorpayKeySecret}
-                        onChange={(e) => handleInputChange('razorpayKeySecret', e.target.value)}
-                        placeholder="Enter your live secret key"
-                      />
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3">Live Environment Keys</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="razorpayKeyId">Live Key ID</Label>
+                        <Input
+                          id="razorpayKeyId"
+                          type="password"
+                          value={settings.razorpayKeyId}
+                          onChange={(e) => handleInputChange('razorpayKeyId', e.target.value)}
+                          placeholder="rzp_live_..."
+                          autoComplete="off"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="razorpayKeySecret">Live Key Secret</Label>
+                        <Input
+                          id="razorpayKeySecret"
+                          type="password"
+                          value={settings.razorpayKeySecret}
+                          onChange={(e) => handleInputChange('razorpayKeySecret', e.target.value)}
+                          placeholder="Enter your live secret key"
+                          autoComplete="off"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                </form>
 
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <h4 className="font-medium text-blue-800 mb-2">🔒 Security Note</h4>
@@ -333,49 +394,51 @@ export default function SettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Send automated emails for form submissions and updates
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.emailNotifications}
-                    onCheckedChange={(checked) => handleInputChange('emailNotifications', checked)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="smtpHost">SMTP Host</Label>
-                    <Input
-                      id="smtpHost"
-                      value={settings.smtpHost}
-                      onChange={(e) => handleInputChange('smtpHost', e.target.value)}
-                      placeholder="smtp.gmail.com"
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Email Notifications</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Send automated emails for form submissions and updates
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings.emailNotifications}
+                      onCheckedChange={(checked) => handleInputChange('emailNotifications', checked)}
                     />
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="smtpHost">SMTP Host</Label>
+                      <Input
+                        id="smtpHost"
+                        value={settings.smtpHost}
+                        onChange={(e) => handleInputChange('smtpHost', e.target.value)}
+                        placeholder="smtp.gmail.com"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="smtpPort">SMTP Port</Label>
+                      <Input
+                        id="smtpPort"
+                        value={settings.smtpPort}
+                        onChange={(e) => handleInputChange('smtpPort', e.target.value)}
+                        placeholder="587"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="smtpPort">SMTP Port</Label>
+                    <Label htmlFor="smtpUser">SMTP Username</Label>
                     <Input
-                      id="smtpPort"
-                      value={settings.smtpPort}
-                      onChange={(e) => handleInputChange('smtpPort', e.target.value)}
-                      placeholder="587"
+                      id="smtpUser"
+                      value={settings.smtpUser}
+                      onChange={(e) => handleInputChange('smtpUser', e.target.value)}
+                      placeholder="your-email@gmail.com"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="smtpUser">SMTP Username</Label>
-                  <Input
-                    id="smtpUser"
-                    value={settings.smtpUser}
-                    onChange={(e) => handleInputChange('smtpUser', e.target.value)}
-                    placeholder="your-email@gmail.com"
-                  />
-                </div>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
@@ -386,18 +449,20 @@ export default function SettingsPage() {
                 <CardTitle>System Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Maintenance Mode</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Temporarily disable public access to the application
-                    </p>
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Maintenance Mode</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Temporarily disable public access to the application
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings.maintenanceMode}
+                      onCheckedChange={(checked) => handleInputChange('maintenanceMode', checked)}
+                    />
                   </div>
-                  <Switch
-                    checked={settings.maintenanceMode}
-                    onCheckedChange={(checked) => handleInputChange('maintenanceMode', checked)}
-                  />
-                </div>
+                </form>
 
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <h4 className="font-medium text-yellow-800 mb-2">⚠️ Warning</h4>

@@ -13,7 +13,7 @@ interface Subscription {
   paymentId: string;
   amount: number;
   status: string;
-  createdAt: string;
+  created_at: string;
 }
 
 interface RegisteredUser {
@@ -27,41 +27,58 @@ interface RegisteredUser {
 }
 
 export default function SubscriptionsPage() {
-  const { user } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataFetched, setDataFetched] = useState(false);
 
-  // Check if user is admin
-  const isAdmin = user?.email === 'admin@sciolabs.com' || user?.email === 'jabincreators@gmail.com';
+  // Enhanced admin check - wait for userRole to be loaded
+  const isAdmin = user && userRole === 'ADMIN';
+  const isLoadingAuth = loading || (user && userRole === null);
 
   useEffect(() => {
-    if (!isAdmin) {
-      setLoading(false);
+    // Only redirect if we're sure the user is not an admin and auth is fully loaded
+    if (!isLoadingAuth && user && userRole !== 'ADMIN') {
+      console.log('Redirecting non-admin user to home');
+      window.location.href = '/';
       return;
     }
 
-    const fetchData = async () => {
-      try {
-        const [subscriptionsResponse, usersResponse] = await Promise.all([
-          fetch('/api/admin/subscriptions'),
-          fetch('/api/admin/users')
-        ]);
-        
-        const subscriptionsData = await subscriptionsResponse.json();
-        const usersData = await usersResponse.json();
+    // Only fetch data once when user is confirmed admin and data hasn't been fetched yet
+    if (isAdmin && !dataFetched) {
+      const fetchData = async () => {
+        setDataLoading(true);
+        try {
+          const [subscriptionsResponse, usersResponse] = await Promise.all([
+            fetch('/api/admin/subscriptions'),
+            fetch('/api/admin/users')
+          ]);
+          
+          const subscriptionsData = await subscriptionsResponse.json();
+          const usersData = await usersResponse.json();
 
-        setSubscriptions(subscriptionsData);
-        setRegisteredUsers(usersData);
-      } catch (error) {
-        console.error('Error fetching subscription data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+          // Ensure arrays are returned
+          setSubscriptions(Array.isArray(subscriptionsData) ? subscriptionsData : []);
+          setRegisteredUsers(Array.isArray(usersData) ? usersData : []);
+          setDataFetched(true);
+        } catch (error) {
+          console.error('Error fetching subscription data:', error);
+          setSubscriptions([]);
+          setRegisteredUsers([]);
+          setDataFetched(true);
+        } finally {
+          setDataLoading(false);
+        }
+      };
 
-    fetchData();
-  }, [isAdmin]);
+      fetchData();
+    } else if (!isLoadingAuth && !user) {
+      setDataLoading(false);
+    } else if (!isLoadingAuth && userRole !== 'ADMIN') {
+      setDataLoading(false);
+    }
+  }, [isAdmin, isLoadingAuth, dataFetched, user, userRole]);
 
   const updateSubscriptionStatus = async (subscriptionId: string, newStatus: string) => {
     try {
@@ -104,7 +121,7 @@ export default function SubscriptionsPage() {
   };
 
   const refreshData = async () => {
-    setLoading(true);
+    setDataLoading(true);
     try {
       const [subscriptionsResponse, usersResponse] = await Promise.all([
         fetch('/api/admin/subscriptions'),
@@ -114,18 +131,29 @@ export default function SubscriptionsPage() {
       const subscriptionsData = await subscriptionsResponse.json();
       const usersData = await usersResponse.json();
       
-      setSubscriptions(subscriptionsData);
-      setRegisteredUsers(usersData);
+      setSubscriptions(Array.isArray(subscriptionsData) ? subscriptionsData : []);
+      setRegisteredUsers(Array.isArray(usersData) ? usersData : []);
     } catch (error) {
       console.error('Error refreshing data:', error);
+      setSubscriptions([]);
+      setRegisteredUsers([]);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
   const getUserBySubscription = (subscription: Subscription) => {
     return registeredUsers.find(user => user.uid === subscription.userId);
   };
+
+  // Show loading while checking auth and role
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -150,7 +178,7 @@ export default function SubscriptionsPage() {
     );
   }
 
-  if (loading) {
+  if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -158,8 +186,8 @@ export default function SubscriptionsPage() {
     );
   }
 
-  const activeSubscriptions = subscriptions.filter(s => s.status === 'active');
-  const totalRevenue = subscriptions.reduce((sum, s) => sum + s.amount, 0);
+  const activeSubscriptions = Array.isArray(subscriptions) ? subscriptions.filter(s => s.status === 'ACTIVE') : [];
+  const totalRevenue = Array.isArray(subscriptions) ? subscriptions.reduce((sum, s) => sum + (s.amount || 0), 0) : 0;
 
   return (
     <div className="p-6">
@@ -169,7 +197,7 @@ export default function SubscriptionsPage() {
             <h1 className="text-3xl font-bold mb-2">Subscription Management</h1>
             <p className="text-muted-foreground">Manage user subscriptions and payments</p>
           </div>
-          <Button onClick={refreshData} disabled={loading}>
+          <Button onClick={refreshData} disabled={dataLoading}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -200,7 +228,7 @@ export default function SubscriptionsPage() {
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">₹{Math.round(totalRevenue / 100).toLocaleString()}</div>
             </CardContent>
           </Card>
         </div>
@@ -223,7 +251,7 @@ export default function SubscriptionsPage() {
                       </p>
                       <p className="text-sm text-muted-foreground">Amount: ₹{subscription.amount}</p>
                       <p className="text-sm text-muted-foreground">
-                        Date: {new Date(subscription.createdAt).toLocaleDateString()}
+                        Date: {new Date(subscription.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">

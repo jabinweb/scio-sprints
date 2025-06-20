@@ -1,18 +1,26 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const subscriptionsRef = adminDb.collection('subscriptions');
-    const snapshot = await subscriptionsRef.orderBy('createdAt', 'desc').get();
-    
-    const subscriptions = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+    const { data: subscriptions, error } = await supabase
+      .from('subscriptions')
+      .select(`
+        *,
+        user:users(email, display_name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Transform the data to match expected format
+    const transformedSubscriptions = (subscriptions || []).map(sub => ({
+      ...sub,
+      paymentId: sub.id, // Use subscription ID as payment ID for now
+      created_at: sub.created_at, // Map for frontend compatibility
     }));
 
-    return NextResponse.json(subscriptions);
+    return NextResponse.json(transformedSubscriptions);
   } catch (error) {
     console.error('Error fetching subscriptions:', error);
     return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 });
@@ -27,7 +35,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Subscription ID and status are required' }, { status: 400 });
     }
 
-    await adminDb.collection('subscriptions').doc(subscriptionId).update({ status });
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({ 
+        status,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', subscriptionId);
+
+    if (error) throw error;
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating subscription:', error);
@@ -44,10 +61,18 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Subscription ID is required' }, { status: 400 });
     }
 
-    await adminDb.collection('subscriptions').doc(subscriptionId).delete();
+    const { error } = await supabase
+      .from('subscriptions')
+      .delete()
+      .eq('id', subscriptionId);
+
+    if (error) throw error;
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting subscription:', error);
     return NextResponse.json({ error: 'Failed to delete subscription' }, { status: 500 });
   }
 }
+  
+

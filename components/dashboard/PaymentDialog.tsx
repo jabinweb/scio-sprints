@@ -125,7 +125,7 @@ export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogPro
               },
               body: JSON.stringify({
                 ...response,
-                userId: user?.uid,
+                userId: user?.id,
               }),
             });
 
@@ -141,7 +141,7 @@ export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogPro
           }
         },
         prefill: {
-          name: user.displayName || '',
+          name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
           email: user.email || '',
         },
         theme: {

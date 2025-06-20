@@ -3,8 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { LoadingScreen } from '@/components/ui/loading-screen';
-import { collection, getDocs, limit, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { LoginDialog } from '@/components/auth/login-dialog';
 import { PaymentDialog } from '@/components/dashboard/PaymentDialog';
 import { Button } from "@/components/ui/button";
@@ -25,26 +24,27 @@ export default function DashboardLayout({
     if (!loading && user) {
       const checkSubscription = async () => {
         try {
-          // Query subscriptions by userId instead of paymentId
-          const subscriptionsRef = collection(db, 'subscriptions');
-          const q = query(
-            subscriptionsRef,
-            where('userId', '==', user.uid),
-            where('status', '==', 'active'),
-            limit(1)
-          );
+          const { data: subscription, error } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('userId', user.id)
+            .eq('status', 'ACTIVE')
+            .gte('endDate', new Date().toISOString())
+            .maybeSingle();
 
-          const querySnapshot = await getDocs(q);
-          
-          if (!querySnapshot.empty) {
-            console.log('Found subscription:', querySnapshot.docs[0].data());
-            setHasSubscription(true);
-          } else {
-            console.log('No active subscription found for user:', user.uid);
+          if (error) {
+            console.error('Detailed error checking subscription:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            });
             setHasSubscription(false);
+          } else {
+            setHasSubscription(!!subscription);
           }
         } catch (error) {
-          console.error('Error checking subscription:', error);
+          console.error('Unexpected error checking subscription:', error);
           setHasSubscription(false);
         } finally {
           setCheckingSubscription(false);
@@ -62,7 +62,7 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    return <LoginDialog defaultOpen />;
+    return <LoginDialog defaultOpen onClose={() => {}} />;
   }
 
   if (!hasSubscription) {
@@ -71,7 +71,7 @@ export default function DashboardLayout({
 
   return (
     <>
-      <div className="container">
+      <div className="container p-4">
         <Button 
           variant="ghost" 
           size="sm" 

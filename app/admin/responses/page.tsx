@@ -29,33 +29,50 @@ const statusOptions = [
 ];
 
 export default function ResponsesPage() {
-  const { user } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
   const [signups, setSignups] = useState<Signup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataFetched, setDataFetched] = useState(false);
 
-  // Check if user is admin
-  const isAdmin = user?.email === 'admin@sciolabs.com' || user?.email === 'jabincreators@gmail.com';
+  // Enhanced admin check
+  const isAdmin = user && userRole === 'ADMIN';
+  const isLoadingAuth = authLoading || (user && userRole === null);
 
   useEffect(() => {
-    if (!isAdmin) {
-      setLoading(false);
+    // Only redirect if we're sure the user is not an admin and auth is fully loaded
+    if (!isLoadingAuth && user && userRole !== 'ADMIN') {
+      console.log('Redirecting non-admin user to home');
+      window.location.href = '/';
       return;
     }
 
-    const fetchData = async () => {
-      try {
-        const responsesResponse = await fetch('/api/admin/responses');
-        const responsesData = await responsesResponse.json();
-        setSignups(responsesData);
-      } catch (error) {
-        console.error('Error fetching form responses:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Only fetch data once when user is confirmed admin and data hasn't been fetched yet
+    if (isAdmin && !dataFetched) {
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          const responsesResponse = await fetch('/api/admin/responses');
+          const responsesData = await responsesResponse.json();
+          
+          // Ensure we always set an array
+          setSignups(Array.isArray(responsesData) ? responsesData : []);
+          setDataFetched(true);
+        } catch (error) {
+          console.error('Error fetching form responses:', error);
+          setSignups([]);
+          setDataFetched(true);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    fetchData();
-  }, [isAdmin]);
+      fetchData();
+    } else if (!isLoadingAuth && !user) {
+      setLoading(false);
+    } else if (!isLoadingAuth && userRole !== 'ADMIN') {
+      setLoading(false);
+    }
+  }, [isAdmin, isLoadingAuth, dataFetched, user, userRole]);
 
   const deleteResponse = async (signupId: string) => {
     if (!confirm('Are you sure you want to delete this form response?')) return;
@@ -103,9 +120,10 @@ export default function ResponsesPage() {
     try {
       const responsesResponse = await fetch('/api/admin/responses');
       const responsesData = await responsesResponse.json();
-      setSignups(responsesData);
+      setSignups(Array.isArray(responsesData) ? responsesData : []);
     } catch (error) {
       console.error('Error refreshing data:', error);
+      setSignups([]);
     } finally {
       setLoading(false);
     }
@@ -138,11 +156,21 @@ export default function ResponsesPage() {
     );
   };
 
-  const statusStats = signups.reduce((acc, signup) => {
+  // Safe reduce with array check
+  const statusStats = Array.isArray(signups) ? signups.reduce((acc, signup) => {
     const status = signup.status || 'pending';
     acc[status] = (acc[status] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>) : {};
+
+  // Show loading while checking auth and role
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -202,7 +230,7 @@ export default function ResponsesPage() {
               <CardTitle className="text-sm font-medium">Total</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{signups.length}</div>
+              <div className="text-2xl font-bold">{Array.isArray(signups) ? signups.length : 0}</div>
             </CardContent>
           </Card>
 
@@ -259,7 +287,7 @@ export default function ResponsesPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {signups.map((signup) => (
+              {Array.isArray(signups) && signups.map((signup) => (
                 <div key={signup.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -312,7 +340,7 @@ export default function ResponsesPage() {
                   </div>
                 </div>
               ))}
-              {signups.length === 0 && (
+              {(!Array.isArray(signups) || signups.length === 0) && (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">No form responses found.</p>
                 </div>

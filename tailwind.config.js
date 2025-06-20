@@ -33,7 +33,6 @@ module.exports = {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
         },
-        // ...rest of the existing colors...
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
@@ -51,8 +50,6 @@ module.exports = {
         'body': ['1rem', { lineHeight: '1.6' }],
         'body-sm': ['0.875rem', { lineHeight: '1.6' }],
       },
-      // ...rest of the existing config...
     },
   },
-  // ...plugins...
 }

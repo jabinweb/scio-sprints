@@ -1,21 +1,23 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const responsesRef = adminDb.collection('formResponses');
-    const snapshot = await responsesRef.orderBy('timestamp', 'desc').get();
-    
-    const responses = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || new Date().toISOString(),
-    }));
+    // Since there's no form responses table in your schema, let's return user activities as responses
+    const { data: responses, error } = await supabase
+      .from('user_activities')
+      .select(`
+        *,
+        user:users(email, display_name)
+      `)
+      .order('created_at', { ascending: false });
 
-    return NextResponse.json(responses);
+    if (error) throw error;
+
+    return NextResponse.json(responses || []);
   } catch (error) {
-    console.error('Error fetching form responses:', error);
-    return NextResponse.json({ error: 'Failed to fetch form responses' }, { status: 500 });
+    console.error('Error fetching user activities:', error);
+    return NextResponse.json({ error: 'Failed to fetch user activities' }, { status: 500 });
   }
 }
 
@@ -28,30 +30,41 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Response ID is required' }, { status: 400 });
     }
 
-    await adminDb.collection('formResponses').doc(responseId).delete();
+    const { error } = await supabase
+      .from('user_activities')
+      .delete()
+      .eq('id', responseId);
+
+    if (error) throw error;
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting form response:', error);
-    return NextResponse.json({ error: 'Failed to delete form response' }, { status: 500 });
+    console.error('Error deleting user activity:', error);
+    return NextResponse.json({ error: 'Failed to delete user activity' }, { status: 500 });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
-    const { responseId, status } = await request.json();
+    const { responseId, metadata } = await request.json();
     
-    if (!responseId || !status) {
-      return NextResponse.json({ error: 'Response ID and status are required' }, { status: 400 });
+    if (!responseId) {
+      return NextResponse.json({ error: 'Response ID is required' }, { status: 400 });
     }
 
-    await adminDb.collection('formResponses').doc(responseId).update({ 
-      status,
-      updatedAt: new Date()
-    });
+    const { error } = await supabase
+      .from('user_activities')
+      .update({ 
+        metadata: metadata || {},
+      })
+      .eq('id', responseId);
+
+    if (error) throw error;
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating response status:', error);
-    return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
+    console.error('Error updating user activity:', error);
+    return NextResponse.json({ error: 'Failed to update user activity' }, { status: 500 });
   }
 }
+

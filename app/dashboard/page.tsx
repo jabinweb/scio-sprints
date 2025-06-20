@@ -1,52 +1,59 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { DashboardContent } from '@/components/dashboard/DashboardContent';
-import { LoadingScreen } from '@/components/ui/loading-screen';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { DashboardContent } from "@/components/dashboard/DashboardContent";
+import { PaymentDialog } from "@/components/dashboard/PaymentDialog";
+import { LoadingScreen } from "@/components/ui/loading-screen";
+import { supabase } from "@/lib/supabase";
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [hasSubscription, setHasSubscription] = useState(false);
+  const { user, loading } = useAuth();
+  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (!user) return;
+
     const checkSubscription = async () => {
-      if (!user) return;
-
       try {
-        const q = query(
-          collection(db, 'subscriptions'),
-          where('userId', '==', user.uid),
-          where('status', '==', 'active')
-        );
+        const { data: subscription, error } = await supabase
+          .from("subscriptions")
+          .select("*")
+          .eq("userId", user.id)
+          .eq("status", "ACTIVE")
+          .gte("endDate", new Date().toISOString())
+          .maybeSingle();
 
-        const snapshot = await getDocs(q);
-        setHasSubscription(!snapshot.empty);
+        if (error) {
+          console.error("Detailed subscription check error:", {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+          });
+          setHasSubscription(false);
+        } else {
+          setHasSubscription(!!subscription);
+        }
       } catch (error) {
-        console.error('Error checking subscription:', error);
+        console.error("Unexpected error checking subscription:", error);
         setHasSubscription(false);
-      } finally {
-        setLoading(false);
       }
     };
 
     checkSubscription();
   }, [user]);
 
-  if (loading) {
+  if (loading || hasSubscription === null) {
     return <LoadingScreen />;
   }
 
+  if (!user) {
+    return <div>Please log in to access the dashboard.</div>;
+  }
+
   if (!hasSubscription) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-2">Subscription Required</h1>
-        <p className="text-muted-foreground">Please complete your subscription to access the dashboard.</p>
-      </div>
-    </div>;
+    return <PaymentDialog defaultOpen />;
   }
 
   return <DashboardContent />;

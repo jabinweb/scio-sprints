@@ -1,0 +1,358 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Core Learning Models
+model Class {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String
+  isActive    Boolean   @default(true)
+  created_at   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  subjects    Subject[]
+
+  @@map("classes")
+}
+
+model Subject {
+  id          String    @id @default(cuid())
+  name        String
+  icon        String
+  color       String
+  isLocked    Boolean   @default(false)
+  orderIndex  Int
+  classId     Int
+  class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  chapters    Chapter[]
+  created_at   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("subjects")
+}
+
+model Chapter {
+  id          String   @id @default(cuid())
+  name        String
+  orderIndex  Int
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topics      Topic[]
+  created_at   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("chapters")
+}
+
+model Topic {
+  id          String      @id @default(cuid())
+  name        String
+  type        TopicType
+  duration    String
+  orderIndex  Int
+  chapterId   String
+  chapter     Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  content     TopicContent?
+  progress    UserTopicProgress[]
+  created_at   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("topics")
+}
+
+model TopicContent {
+  id           String      @id @default(cuid())
+  topicId      String      @unique
+  topic        Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  contentType  ContentType
+  url          String?
+  videoUrl     String?
+  pdfUrl       String?
+  textContent  String?
+  widgetConfig Json?
+  created_at    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@map("topic_contents")
+}
+
+// User Management & Progress Tracking
+model User {
+  id           String        @id // Supabase UUID as string
+  email        String        @unique
+  displayName  String?       @map("display_name")
+  photoURL     String?       @map("photo_url")
+  role         UserRole      @default(USER)
+  isActive     Boolean       @default(true) @map("is_active")
+  lastLoginAt  DateTime?     @map("last_login_at")
+  created_at    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  
+  // Relations
+  progress     UserTopicProgress[]
+  subscriptions Subscription[]
+  payments     Payment[]
+  activities   UserActivity[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model UserTopicProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId     String
+  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  timeSpent   Int?     // in seconds
+  created_at   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, topicId])
+  @@map("user_topic_progress")
+}
+
+// Subscription & Payment Models
+model Subscription {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      SubscriptionStatus @default(INACTIVE)
+  planType    String             // "basic", "premium", "annual", etc.
+  planName    String?
+  amount      Int?               // Amount paid in paisa (₹1 = 100 paisa)
+  currency    String             @default("INR")
+  startDate   DateTime           @default(now())
+  endDate     DateTime?
+  autoRenew   Boolean            @default(false)
+  created_at   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Razorpay Integration
+  razorpayPaymentId String?       @unique
+  razorpayOrderId   String?
+  razorpaySignature String?
+  
+  // Payment Details
+  amount            Int           // Amount in paisa
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  paymentMethod     String?       // "card", "upi", "netbanking", etc.
+  description       String?
+  
+  // Metadata
+  failureReason     String?
+  refundId          String?
+  metadata          Json?
+  
+  created_at         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  @@map("payments")
+}
+
+// Admin & Content Management
+model AdminSettings {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  value           String
+  description     String?
+  category        String?  // "payment", "content", "features", etc.
+  dataType        String   @default("string") // "string", "number", "boolean", "json"
+  isPublic        Boolean  @default(false)
+  created_at       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_settings")
+}
+
+model ContentPage {
+  id          String      @id @default(cuid())
+  title       String
+  content     String      // Rich text content
+  slug        String      @unique
+  pageType    ContentPageType
+  isPublished Boolean     @default(false)
+  metaTitle   String?
+  metaDescription String?
+  author      String?
+  tags        String[]    @default([])
+  created_at   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("content_pages")
+}
+
+// Activity & Analytics
+model UserActivity {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      ActivityType
+  description String
+  metadata    Json?        // Additional data like topic_id, class_id, etc.
+  ipAddress   String?
+  userAgent   String?
+  sessionId   String?
+  created_at   DateTime     @default(now()) @map("created_at")
+
+  @@index([userId, created_at])
+  @@index([action, created_at])
+  @@map("user_activities")
+}
+
+model Notification {
+  id          String             @id @default(cuid())
+  userId      String?            // null for global notifications
+  user        User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  type        NotificationType   @default(INFO)
+  priority    NotificationPriority @default(NORMAL)
+  isRead      Boolean            @default(false)
+  data        Json?              // Additional data for deep linking
+  expiresAt   DateTime?          // Auto-expire notifications
+  created_at   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@index([userId, isRead, created_at])
+  @@map("notifications")
+}
+
+model Analytics {
+  id          String      @id @default(cuid())
+  eventType   String      // "page_view", "topic_start", "topic_complete", etc.
+  eventData   Json        // Event-specific data
+  userId      String?
+  sessionId   String?
+  ipAddress   String?
+  userAgent   String?
+  referrer    String?
+  created_at   DateTime    @default(now()) @map("created_at")
+
+  @@index([eventType, created_at])
+  @@index([userId, created_at])
+  @@index([sessionId, created_at])
+  @@map("analytics")
+}
+
+// Support for features like announcements, promotions
+model Announcement {
+  id          String      @id @default(cuid())
+  title       String
+  content     String
+  type        AnnouncementType @default(INFO)
+  isActive    Boolean     @default(true)
+  targetUsers String[]    @default([]) // User roles or specific user IDs
+  startDate   DateTime?
+  endDate     DateTime?
+  created_at   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("announcements")
+}
+
+// Enums
+enum TopicType {
+  VIDEO
+  INTERACTIVE
+  EXERCISE
+  AUDIO
+}
+
+enum ContentType {
+  EXTERNAL_LINK
+  VIDEO
+  PDF
+  TEXT
+  INTERACTIVE_WIDGET
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+  TEACHER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  EXPIRED
+  TRIAL
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum ContentPageType {
+  PRIVACY_POLICY
+  TERMS_OF_SERVICE
+  ABOUT_US
+  FAQ
+  HELP
+  CONTACT
+  BLOG_POST
+}
+
+enum ActivityType {
+  LOGIN
+  LOGOUT
+  TOPIC_STARTED
+  TOPIC_COMPLETED
+  SUBSCRIPTION_CREATED
+  SUBSCRIPTION_CANCELLED
+  PAYMENT_INITIATED
+  PAYMENT_COMPLETED
+  PAYMENT_FAILED
+  PROFILE_UPDATED
+  CLASS_ACCESSED
+  SUBJECT_ACCESSED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  ANNOUNCEMENT
+  SUBSCRIPTION_REMINDER
+  PAYMENT_REMINDER
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum AnnouncementType {
+  INFO
+  UPDATE
+  MAINTENANCE
+  PROMOTION
+  WARNING
+}

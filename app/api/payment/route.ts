@@ -1,24 +1,33 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { adminDb } from '@/lib/firebase-admin';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   try {
     const { amount } = await req.json();
 
     // Fetch payment settings from database
-    const settingsDoc = await adminDb.collection('appSettings').doc('general').get();
-    
-    if (!settingsDoc.exists) {
+    const { data: settings, error: settingsError } = await supabase
+      .from('admin_settings')
+      .select('key, value')
+      .in('key', ['paymentMode', 'razorpayTestKeyId', 'razorpayKeyId', 'razorpayTestKeySecret', 'razorpayKeySecret']);
+
+    if (settingsError) {
+      console.error('Error fetching settings:', settingsError);
       return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
     }
 
-    const settings = settingsDoc.data();
-    const paymentMode = settings?.paymentMode || 'test';
+    // Convert array to object
+    const settingsObj = settings.reduce((acc: Record<string, string>, setting: { key: string; value: string }) => {
+      acc[setting.key] = setting.value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const paymentMode = settingsObj.paymentMode || 'test';
     
     // Use appropriate keys based on payment mode
-    const keyId = paymentMode === 'test' ? settings?.razorpayTestKeyId : settings?.razorpayKeyId;
-    const keySecret = paymentMode === 'test' ? settings?.razorpayTestKeySecret : settings?.razorpayKeySecret;
+    const keyId = paymentMode === 'test' ? settingsObj.razorpayTestKeyId : settingsObj.razorpayKeyId;
+    const keySecret = paymentMode === 'test' ? settingsObj.razorpayTestKeySecret : settingsObj.razorpayKeySecret;
 
     if (!keyId || !keySecret) {
       return NextResponse.json({ 

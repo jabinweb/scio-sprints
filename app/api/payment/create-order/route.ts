@@ -1,30 +1,48 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 import Razorpay from 'razorpay';
-import { razorpayConfig } from '@/lib/razorpay-config';
 
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+});
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const { amount, currency, userId } = await req.json();
+    const { amount, currency, userId } = await request.json();
 
-     const razorpay = new Razorpay({
-      key_id: razorpayConfig.keyId!,
-      key_secret: razorpayConfig.keySecret!,
-    });
-
+    // Create Razorpay order
     const order = await razorpay.orders.create({
       amount,
       currency,
-      notes: {
-        userId,
-      },
+      receipt: `order_${Date.now()}`,
     });
+
+    // Create payment record in Supabase
+    const { error } = await supabase
+      .from('payments')
+      .insert({
+        userId: userId,
+        razorpayOrderId: order.id,
+        amount: amount,
+        currency: currency,
+        status: 'PENDING',
+        description: 'Premium Learning Subscription',
+      });
+
+    if (error) {
+      console.error('Error creating payment record:', error);
+      return NextResponse.json(
+        { error: 'Payment record creation failed' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ orderId: order.id });
   } catch (error) {
-    console.error('Order creation failed:', error);
+    console.error('Payment order creation error:', error);
     return NextResponse.json(
-      { error: 'Failed to create order' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
