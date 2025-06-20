@@ -99,17 +99,26 @@ async function main() {
 
           console.log(`      Created topic: ${topic.name}`);
 
-          // Seed topic content - only if content exists and has valid data
-          if (topic.content && (topic.content.url || topic.content.videoUrl || topic.content.pdfUrl || topic.content.textContent)) {
+          // Only create content if topic has a 'content' property
+          if (
+            'content' in topic &&
+            topic.content &&
+            (
+              (topic.content as any).url ||
+              (topic.content as any).videoUrl ||
+              (topic.content as any).pdfUrl ||
+              (topic.content as any).textContent
+            )
+          ) {
             await prisma.topicContent.create({
               data: {
                 topicId: topicRecord.id,
-                contentType: convertContentType(topic.content.type),
-                url: topic.content.url || null,
-                videoUrl: topic.content.videoUrl || null,
-                pdfUrl: topic.content.pdfUrl || null,
-                textContent: topic.content.textContent || null,
-                widgetConfig: topic.content.widgetConfig || null,
+                contentType: convertContentType((topic.content as any).type),
+                url: (topic.content as any).url || null,
+                videoUrl: (topic.content as any).videoUrl || null,
+                pdfUrl: (topic.content as any).pdfUrl || null,
+                textContent: (topic.content as any).textContent || null,
+                widgetConfig: (topic.content as any).widgetConfig || null,
               },
             });
 

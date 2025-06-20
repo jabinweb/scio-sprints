@@ -8,8 +8,8 @@ export interface DbTopic {
   type: 'video' | 'interactive' | 'exercise' | 'audio';
   duration: string;
   orderIndex: number;
-  content?: {
-    contentType: 'external_link' | 'video' | 'pdf' | 'text' | 'interactive_widget';
+  content: {
+    type?: 'external_link' | 'video' | 'pdf' | 'text' | 'interactive_widget';
     url?: string;
     videoUrl?: string;
     pdfUrl?: string;

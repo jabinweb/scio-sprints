@@ -78,13 +78,13 @@ export default function ClassPage() {
       ...topic,
       completed: userProgress.get(topic.id) || false,
       content: topic.content ? {
-        contentType: topic.content.contentType, // Keep contentType as is
+        type: topic.content.type, // Keep contentType as is
         url: topic.content.url,
         videoUrl: topic.content.videoUrl,
         pdfUrl: topic.content.pdfUrl,
         textContent: topic.content.textContent,
         widgetConfig: topic.content.widgetConfig
-      } : undefined
+      } : {}
     };
     setSelectedTopic(topicWithCompleted);
     setIsPlayerOpen(true);

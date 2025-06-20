@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Play, FileText, Monitor } from 'lucide-react';
-import { Topic } from '@/data/classData';
+import { type DbTopic } from '@/hooks/useClassData';
+
 
 interface ContentPlayerProps {
-  topic: Topic | null;
+  topic: DbTopic | null;
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;

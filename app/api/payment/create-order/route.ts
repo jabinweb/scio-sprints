@@ -2,14 +2,26 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import Razorpay from 'razorpay';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
-
 export async function POST(request: Request) {
   try {
     const { amount, currency, userId } = await request.json();
+
+    // Fetch Razorpay keys from environment variables and validate
+    const key_id = process.env.RAZORPAY_KEY_ID;
+    const key_secret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!key_id || !key_secret) {
+      console.error('Missing Razorpay key_id or key_secret in environment variables');
+      return NextResponse.json(
+        { error: 'Payment gateway not configured. Please contact support.' },
+        { status: 500 }
+      );
+    }
+
+    const razorpay = new Razorpay({
+      key_id,
+      key_secret,
+    });
 
     // Create Razorpay order
     const order = await razorpay.orders.create({
