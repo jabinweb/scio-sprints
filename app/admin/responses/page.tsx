@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2, RefreshCw, AlertCircle, Download } from 'lucide-react';
+import { Trash2, RefreshCw, AlertCircle, Download, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 interface Signup {
   id: string;
@@ -33,6 +34,7 @@ export default function ResponsesPage() {
   const [signups, setSignups] = useState<Signup[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Enhanced admin check
   const isAdmin = user && userRole === 'ADMIN';
@@ -156,12 +158,29 @@ export default function ResponsesPage() {
     );
   };
 
-  // Safe reduce with array check
-  const statusStats = Array.isArray(signups) ? signups.reduce((acc, signup) => {
-    const status = signup.status || 'pending';
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>) : {};
+  // Filter responses based on search term
+  const filteredSignups = useMemo(() => {
+    if (!searchTerm.trim()) return signups;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return signups.filter(signup => 
+      signup.name?.toLowerCase().includes(searchLower) ||
+      signup.email?.toLowerCase().includes(searchLower) ||
+      signup.school?.toLowerCase().includes(searchLower) ||
+      signup.role?.toLowerCase().includes(searchLower) ||
+      signup.status?.toLowerCase().includes(searchLower)
+    );
+  }, [signups, searchTerm]);
+
+  // Calculate status stats
+  const statusStats = useMemo(() => {
+    const stats: Record<string, number> = {};
+    filteredSignups.forEach(signup => {
+      const status = signup.status || 'pending';
+      stats[status] = (stats[status] || 0) + 1;
+    });
+    return stats;
+  }, [filteredSignups]);
 
   // Show loading while checking auth and role
   if (isLoadingAuth) {
@@ -223,14 +242,34 @@ export default function ResponsesPage() {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by name, email, school, role, or status..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{Array.isArray(signups) ? signups.length : 0}</div>
+              {searchTerm && (
+                <p className="text-xs text-muted-foreground">
+                  {filteredSignups.length} matching
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -287,7 +326,7 @@ export default function ResponsesPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Array.isArray(signups) && signups.map((signup) => (
+              {Array.isArray(filteredSignups) && filteredSignups.map((signup) => (
                 <div key={signup.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -340,7 +379,12 @@ export default function ResponsesPage() {
                   </div>
                 </div>
               ))}
-              {(!Array.isArray(signups) || signups.length === 0) && (
+              {filteredSignups.length === 0 && searchTerm && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No responses found matching &quot;{searchTerm}&quot;</p>
+                </div>
+              )}
+              {(!Array.isArray(signups) || signups.length === 0) && !searchTerm && (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">No form responses found.</p>
                 </div>

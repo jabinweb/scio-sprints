@@ -148,10 +148,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [getUserRole]);
 
   const signInWithGoogle = async () => {
+    // Get the current origin dynamically (works for both localhost and production)
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${currentOrigin}/dashboard`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -172,11 +175,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName?: string) => {
+    // Get the current origin dynamically
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${currentOrigin}/dashboard`,
         data: {
           full_name: displayName || email.split('@')[0],
         }

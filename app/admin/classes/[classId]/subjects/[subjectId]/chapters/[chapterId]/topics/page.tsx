@@ -90,10 +90,56 @@ export default function TopicsPage() {
 
   // When editing, ensure content is always an object or undefined, never a string
   const handleEditTopic = (topic: Topic) => {
-    setEditingTopic({
+    console.log('Editing topic:', topic);
+    console.log('Topic content type:', typeof topic.content);
+    console.log('Topic content value:', topic.content);
+    
+    // Parse content if it's a string (from database)
+    let parsedContent;
+    if (typeof topic.content === 'string') {
+      try {
+        parsedContent = JSON.parse(topic.content);
+        console.log('Parsed content from string:', parsedContent);
+      } catch (error) {
+        console.error('Failed to parse content string:', error);
+        parsedContent = {
+          contentType: 'external_link',
+          url: '',
+          videoUrl: '',
+          pdfUrl: '',
+          textContent: '',
+        };
+      }
+    } else if (topic.content && typeof topic.content === 'object') {
+      // Content is already an object, ensure all fields are present and convert contentType
+      parsedContent = {
+        contentType: topic.content.contentType?.toLowerCase().replace('_', '_') || 'external_link',
+        url: topic.content.url || '',
+        videoUrl: topic.content.videoUrl || '',
+        pdfUrl: topic.content.pdfUrl || '',
+        textContent: topic.content.textContent || '',
+        widgetConfig: topic.content.widgetConfig || undefined,
+      };
+      console.log('Content is object, normalized:', parsedContent);
+    } else {
+      // No content, create default
+      parsedContent = {
+        contentType: 'external_link',
+        url: '',
+        videoUrl: '',
+        pdfUrl: '',
+        textContent: '',
+      };
+      console.log('No content, using default:', parsedContent);
+    }
+
+    const topicForEditing = {
       ...topic,
-      content: typeof topic.content === 'object' ? topic.content : undefined,
-    });
+      content: parsedContent,
+    };
+    
+    console.log('Final topic for editing:', topicForEditing);
+    setEditingTopic(topicForEditing);
     setFormOpen(true);
   };
 

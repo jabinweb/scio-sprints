@@ -5,11 +5,11 @@ import { supabase } from '@/lib/supabase';
 export interface DbTopic {
   id: string;
   name: string;
-  type: 'video' | 'interactive' | 'exercise' | 'audio';
+  type: 'video' | 'interactive' | 'exercise' | 'audio'; // This is the topic type enum
   duration: string;
   orderIndex: number;
   content: {
-    type?: 'external_link' | 'video' | 'pdf' | 'text' | 'interactive_widget';
+    contentType?: string; // This is the actual content type
     url?: string;
     videoUrl?: string;
     pdfUrl?: string;
@@ -40,6 +40,8 @@ export interface DbClass {
   name: string;
   description: string;
   subjects: DbSubject[];
+  isActive: boolean;
+  price?: number; // Change from string to number to match database
 }
 
 export function useClassData(classId?: string) {
@@ -79,6 +81,8 @@ export function useClassData(classId?: string) {
           id: cls.id,
           name: cls.name,
           description: cls.description,
+          isActive: cls.isActive,
+          price: cls.price, // Keep price as number from database
           subjects: cls.subjects
             .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
             .map((subject: any) => ({
@@ -99,17 +103,19 @@ export function useClassData(classId?: string) {
                     .map((topic: any) => ({
                       id: topic.id,
                       name: topic.name,
-                      type: topic.type,
+                      type: topic.type, // Keep the topic type as is
                       duration: topic.duration,
                       orderIndex: topic.orderIndex,
                       content: topic.content?.[0] ? {
-                        contentType: topic.content[0].contentType,
+                        contentType: topic.content[0].contentType, // Use the actual content type
                         url: topic.content[0].url,
                         videoUrl: topic.content[0].videoUrl,
                         pdfUrl: topic.content[0].pdfUrl,
                         textContent: topic.content[0].textContent,
                         widgetConfig: topic.content[0].widgetConfig,
-                      } : undefined
+                      } : {
+                        contentType: 'text', // Default content type
+                      }
                     }))
                 }))
             }))
@@ -159,6 +165,8 @@ export function useClassData(classId?: string) {
           id: classData.id,
           name: classData.name,
           description: classData.description,
+          isActive: classData.isActive,
+          price: classData.price, // Keep price as number from database
           subjects: classData.subjects
             .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
             .map((subject: any) => ({
@@ -179,17 +187,19 @@ export function useClassData(classId?: string) {
                     .map((topic: any) => ({
                       id: topic.id,
                       name: topic.name,
-                      type: topic.type,
+                      type: topic.type, // Keep the topic type as is
                       duration: topic.duration,
                       orderIndex: topic.orderIndex,
                       content: topic.content?.[0] ? {
-                        contentType: topic.content[0].contentType,
+                        contentType: topic.content[0].contentType, // Use the actual content type
                         url: topic.content[0].url,
                         videoUrl: topic.content[0].videoUrl,
                         pdfUrl: topic.content[0].pdfUrl,
                         textContent: topic.content[0].textContent,
                         widgetConfig: topic.content[0].widgetConfig,
-                      } : undefined
+                      } : {
+                        contentType: 'text', // Default content type
+                      }
                     }))
                 }))
             }))

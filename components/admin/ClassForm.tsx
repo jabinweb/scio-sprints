@@ -4,16 +4,16 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { LoadingSpinner } from '@/components/ui/loading';
 
 interface ClassFormData {
   id?: string;
   name: string;
   description: string;
   isActive: boolean;
+  price?: string; // Keep as string for form input
 }
 
 interface ClassFormProps {
@@ -25,99 +25,115 @@ interface ClassFormProps {
 }
 
 export function ClassForm({ isOpen, onClose, onSubmit, initialData, mode }: ClassFormProps) {
-  const [formData, setFormData] = useState<ClassFormData>(
-    initialData || { name: '', description: '', isActive: true }
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<ClassFormData>({
+    name: '',
+    description: '',
+    isActive: true,
+    price: '299', // Default price in rupees
+  });
+  const [loading, setLoading] = useState(false);
 
-  // Update form data when initialData changes
   useEffect(() => {
-    if (initialData) {
-      setFormData(initialData);
-    } else {
-      setFormData({ name: '', description: '', isActive: true });
+    if (isOpen) {
+      if (initialData && mode === 'edit') {
+        setFormData({
+          id: initialData.id,
+          name: initialData.name || '',
+          description: initialData.description || '',
+          isActive: initialData.isActive !== undefined ? initialData.isActive : true,
+          price: initialData.price || '299',
+        });
+      } else {
+        setFormData({
+          name: '',
+          description: '',
+          isActive: true,
+          price: '299',
+        });
+      }
     }
-  }, [initialData]);
+  }, [isOpen, initialData, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
+    setLoading(true);
     try {
-      // Ensure id is included for edit mode
-      const submitData = mode === 'edit' && initialData?.id 
-        ? { ...formData, id: initialData.id }
-        : formData;
-      
-      await onSubmit(submitData);
+      await onSubmit(formData);
       onClose();
-      
-      // Reset form after successful submission
-      if (mode === 'create') {
-        setFormData({ name: '', description: '', isActive: true });
-      }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error submitting class:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleChange = (field: keyof ClassFormData, value: string | boolean) => {
+  const updateFormData = (field: keyof ClassFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? 'Create New Class' : 'Edit Class'}
-          </DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'Edit Class' : 'Create New Class'}</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Class Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                placeholder="e.g., Class 5"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Brief description of the class"
-                rows={3}
-                required
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Active</Label>
-              <Switch
-                id="isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => handleChange('isActive', checked)}
-              />
-            </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Class Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => updateFormData('name', e.target.value)}
+              placeholder="e.g., Class 5"
+              required
+            />
           </div>
-          
-          <div className="flex justify-end gap-3">
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => updateFormData('description', e.target.value)}
+              placeholder="Brief description of the class"
+              rows={3}
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="price">Price (₹)</Label>
+            <Input
+              id="price"
+              type="number"
+              value={formData.price}
+              onChange={(e) => updateFormData('price', e.target.value)}
+              placeholder="299"
+              min="0"
+              step="1"
+              required
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Price for accessing this class. Set to 0 for free access.
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="active"
+              checked={formData.isActive}
+              onCheckedChange={(checked) => updateFormData('isActive', checked)}
+            />
+            <Label htmlFor="active">Active</Label>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <LoadingSpinner className="mr-2" />}
-              {mode === 'create' ? 'Create Class' : 'Update Class'}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Saving...' : mode === 'edit' ? 'Update Class' : 'Create Class'}
             </Button>
           </div>
         </form>
@@ -125,3 +141,4 @@ export function ClassForm({ isOpen, onClose, onSubmit, initialData, mode }: Clas
     </Dialog>
   );
 }
+              

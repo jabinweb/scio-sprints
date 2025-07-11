@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, RefreshCw, AlertCircle, UserCheck } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Trash2, RefreshCw, AlertCircle, UserCheck, Plus, Edit, UserX, Search } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface Subscription {
   id: string;
@@ -21,12 +26,23 @@ interface RegisteredUser {
   uid: string;
   email: string;
   displayName: string | null;
+  photoUrl?: string | null; // Add photo URL support
   creationTime: string;
   lastSignInTime: string | null;
   subscription: Subscription | null;
   hasActiveSubscription: boolean;
   totalPayments: number;
   totalAmountPaid: number;
+  role?: string; // Add role to interface
+  isActive?: boolean; // Add isActive to interface
+}
+
+interface UserFormData {
+  email: string;
+  displayName: string;
+  password: string;
+  role: 'USER' | 'ADMIN' | 'MODERATOR' | 'TEACHER';
+  isActive: boolean;
 }
 
 export default function UsersPage() {
@@ -34,6 +50,16 @@ export default function UsersPage() {
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<RegisteredUser | null>(null);
+  const [formData, setFormData] = useState<UserFormData>({
+    email: '',
+    displayName: '',
+    password: '',
+    role: 'USER',
+    isActive: true,
+  });
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Enhanced admin check
   const isAdmin = user && userRole === 'ADMIN';
@@ -91,17 +117,95 @@ export default function UsersPage() {
     }
   };
 
-  const toggleUserStatus = async (userId: string, isActive: boolean) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        refreshData();
+        setFormOpen(false);
+        resetForm();
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Failed to create user');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      alert('Failed to create user');
+    }
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
     try {
       const response = await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, is_active: !isActive }),
+        body: JSON.stringify({
+          userId: editingUser.uid,
+          email: formData.email,
+          displayName: formData.displayName,
+          role: formData.role,
+          isActive: formData.isActive,
+        }),
+      });
+
+      if (response.ok) {
+        refreshData();
+        setFormOpen(false);
+        setEditingUser(null);
+        resetForm();
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Failed to update user');
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('Failed to update user');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      email: '',
+      displayName: '',
+      password: '',
+      role: 'USER',
+      isActive: true,
+    });
+  };
+
+  const openEditForm = (user: RegisteredUser) => {
+    setEditingUser(user);
+    setFormData({
+      email: user.email,
+      displayName: user.displayName || '',
+      password: '', // Don't populate password for editing
+      role: 'USER', // Default, would need to be fetched from user data
+      isActive: true, // Default, would need to be fetched from user data
+    });
+    setFormOpen(true);
+  };
+
+  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId, 
+          isActive: !currentStatus 
+        }),
       });
       
       if (response.ok) {
-        // Update local state - note: this would require adding isActive to the RegisteredUser interface
-        // For now, just refresh the data
         refreshData();
       }
     } catch (error) {
@@ -123,6 +227,18 @@ export default function UsersPage() {
       setDataLoading(false);
     }
   };
+
+  // Filter users based on search term
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm.trim()) return registeredUsers;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return registeredUsers.filter(user => 
+      user.displayName?.toLowerCase().includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower) ||
+      user.role?.toLowerCase().includes(searchLower)
+    );
+  }, [registeredUsers, searchTerm]);
 
   // Show loading while checking auth and role
   if (isLoadingAuth) {
@@ -172,20 +288,46 @@ export default function UsersPage() {
             <h1 className="text-3xl font-bold mb-2">User Management</h1>
             <p className="text-muted-foreground">Manage registered users and their subscriptions</p>
           </div>
-          <Button onClick={refreshData} disabled={dataLoading}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={refreshData} variant="outline" disabled={dataLoading}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+          </div>
         </div>
 
+        {/* Search Bar */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by name, email, or role..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{registeredUsers.length}</div>
+              {searchTerm && (
+                <p className="text-xs text-muted-foreground">
+                  {filteredUsers.length} matching search
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -217,7 +359,7 @@ export default function UsersPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ₹{Math.round(registeredUsers.reduce((sum, u) => sum + u.totalAmountPaid, 0) / 100).toLocaleString()}
+                ₹{Math.round(registeredUsers.reduce((sum, u) => sum + u.totalAmountPaid, 0)).toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -230,18 +372,31 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {registeredUsers.map((registeredUser) => (
+              {filteredUsers.map((registeredUser) => (
                 <div key={registeredUser.uid} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                      {registeredUser.displayName?.[0] || registeredUser.email[0].toUpperCase()}
-                    </div>
+                    <Avatar className="w-10 h-10">
+                      {registeredUser.photoUrl && (
+                        <AvatarImage src={registeredUser.photoUrl} alt={registeredUser.displayName || 'User'} />
+                      )}
+                      <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white font-semibold">
+                        {registeredUser.displayName?.[0] || registeredUser.email[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <h3 className="font-semibold">{registeredUser.displayName || 'Anonymous'}</h3>
                       <p className="text-sm text-muted-foreground">{registeredUser.email}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant={registeredUser.hasActiveSubscription ? 'default' : 'secondary'}>
                           {registeredUser.hasActiveSubscription ? 'Active Subscriber' : 'Free User'}
+                        </Badge>
+                        <Badge 
+                          variant={registeredUser.role === 'ADMIN' ? 'destructive' : registeredUser.role === 'TEACHER' ? 'default' : 'outline'}
+                        >
+                          {registeredUser.role || 'USER'}
+                        </Badge>
+                        <Badge variant={registeredUser.isActive !== false ? 'default' : 'secondary'}>
+                          {registeredUser.isActive !== false ? 'Active' : 'Inactive'}
                         </Badge>
                         {registeredUser.subscription && (
                           <Badge variant="outline">
@@ -254,7 +409,7 @@ export default function UsersPage() {
                   
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-sm font-medium">₹{Math.round(registeredUser.totalAmountPaid / 100)}</p>
+                      <p className="text-sm font-medium">₹{registeredUser.totalAmountPaid}</p>
                       <p className="text-xs text-muted-foreground">{registeredUser.totalPayments} payments</p>
                       <p className="text-xs text-muted-foreground">
                         Joined: {new Date(registeredUser.creationTime).toLocaleDateString()}
@@ -265,9 +420,16 @@ export default function UsersPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => openEditForm(registeredUser)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={registeredUser.hasActiveSubscription ? 'secondary' : 'outline'}
+                        size="sm"
                         onClick={() => toggleUserStatus(registeredUser.uid, true)}
                       >
-                        <UserCheck className="h-4 w-4" />
+                        {registeredUser.hasActiveSubscription ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                       </Button>
                       <Button
                         variant="destructive"
@@ -280,7 +442,12 @@ export default function UsersPage() {
                   </div>
                 </div>
               ))}
-              {registeredUsers.length === 0 && (
+              {filteredUsers.length === 0 && searchTerm && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No users found matching &quot;{searchTerm}&quot;</p>
+                </div>
+              )}
+              {registeredUsers.length === 0 && !searchTerm && (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">No users found.</p>
                 </div>
@@ -288,6 +455,110 @@ export default function UsersPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* User Form Dialog */}
+        <Dialog open={formOpen} onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) {
+            setEditingUser(null);
+            resetForm();
+          }
+        }}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingUser ? 'Edit User' : 'Add New User'}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={editingUser ? handleUpdateUser : handleCreateUser} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                    disabled={!!editingUser} // Don't allow email changes for existing users
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="displayName">Display Name</Label>
+                  <Input
+                    id="displayName"
+                    value={formData.displayName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                {!editingUser && (
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      required={!editingUser}
+                      placeholder="Minimum 6 characters"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value: 'USER' | 'ADMIN' | 'MODERATOR' | 'TEACHER') => 
+                      setFormData(prev => ({ ...prev, role: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USER">User</SelectItem>
+                      <SelectItem value="TEACHER">Teacher</SelectItem>
+                      <SelectItem value="MODERATOR">Moderator</SelectItem>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                    className="rounded"
+                  />
+                  <Label htmlFor="isActive">Active User</Label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setFormOpen(false);
+                    setEditingUser(null);
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingUser ? 'Update User' : 'Create User'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

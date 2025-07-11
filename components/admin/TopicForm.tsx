@@ -1,13 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoadingSpinner } from '@/components/ui/loading';
+import { Textarea } from '@/components/ui/textarea';
+
+interface TopicContentData {
+  contentType: string;
+  url?: string;
+  videoUrl?: string;
+  pdfUrl?: string;
+  textContent?: string;
+  widgetConfig?: Record<string, unknown>;
+}
 
 interface TopicFormData {
   id?: string;
@@ -16,14 +24,7 @@ interface TopicFormData {
   duration: string;
   orderIndex: number;
   chapterId: string;
-  content?: {
-    contentType: string;
-    url?: string;
-    videoUrl?: string;
-    pdfUrl?: string;
-    textContent?: string;
-    widgetConfig?: Record<string, unknown>;
-  };
+  content?: TopicContentData;
 }
 
 interface TopicFormProps {
@@ -35,58 +36,109 @@ interface TopicFormProps {
   chapterId: string;
 }
 
-const topicTypes = [
-  { value: 'VIDEO', label: 'Video' },
-  { value: 'INTERACTIVE', label: 'Interactive' },
-  { value: 'EXERCISE', label: 'Exercise' },
-  { value: 'AUDIO', label: 'Audio' },
-];
-
-const contentTypes = [
-  { value: 'EXTERNAL_LINK', label: 'External Link' },
-  { value: 'VIDEO', label: 'Video' },
-  { value: 'PDF', label: 'PDF' },
-  { value: 'TEXT', label: 'Text' },
-  { value: 'INTERACTIVE_WIDGET', label: 'Interactive Widget' },
-];
-
 export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapterId }: TopicFormProps) {
-  const [formData, setFormData] = useState<TopicFormData>(
-    initialData || { 
-      name: '', 
-      type: 'VIDEO', 
-      duration: '', 
-      orderIndex: 0, 
-      chapterId,
-      content: { contentType: 'EXTERNAL_LINK' }
+  const [formData, setFormData] = useState<TopicFormData>({
+    name: '',
+    type: 'video',
+    duration: '',
+    orderIndex: 0,
+    chapterId,
+    content: {
+      contentType: 'external_link',
+      url: '',
+      videoUrl: '',
+      pdfUrl: '',
+      textContent: '',
     }
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  });
+  const [loading, setLoading] = useState(false);
+
+  // Reset form when dialog opens/closes or initialData changes
+  useEffect(() => {
+    console.log('TopicForm useEffect triggered:', { isOpen, initialData });
+    
+    if (isOpen && initialData) {
+      console.log('Initializing form with data:', initialData);
+      
+      // Parse content if it's a string
+      let parsedContent = initialData.content;
+      if (typeof initialData.content === 'string') {
+        try {
+          parsedContent = JSON.parse(initialData.content);
+          console.log('Parsed content from string:', parsedContent);
+        } catch (error) {
+          console.error('Failed to parse content:', error);
+          parsedContent = {
+            contentType: 'external_link',
+            url: '',
+            videoUrl: '',
+            pdfUrl: '',
+            textContent: '',
+          };
+        }
+      }
+
+      // Ensure all content fields are properly set
+      const contentData = {
+        contentType: parsedContent?.contentType || 'external_link',
+        url: parsedContent?.url || '',
+        videoUrl: parsedContent?.videoUrl || '',
+        pdfUrl: parsedContent?.pdfUrl || '',
+        textContent: parsedContent?.textContent || '',
+        widgetConfig: parsedContent?.widgetConfig || undefined,
+      };
+
+      console.log('Setting form data:', {
+        ...initialData,
+        content: contentData
+      });
+
+      setFormData({
+        ...initialData,
+        content: contentData
+      });
+    } else if (isOpen && !initialData) {
+      console.log('Resetting form for new topic');
+      setFormData({
+        name: '',
+        type: 'video',
+        duration: '',
+        orderIndex: 0,
+        chapterId,
+        content: {
+          contentType: 'external_link',
+          url: '',
+          videoUrl: '',
+          pdfUrl: '',
+          textContent: '',
+        }
+      });
+    }
+  }, [isOpen, initialData, chapterId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
+    setLoading(true);
     try {
-      await onSubmit({ ...formData, chapterId });
+      await onSubmit(formData);
       onClose();
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error submitting topic:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleChange = (field: keyof TopicFormData, value: string | number | object) => {
+  const updateFormData = (field: keyof TopicFormData, value: string | number | object) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleContentChange = (field: string, value: string) => {
+  const updateContentData = (field: keyof TopicContentData, value: string | number | object) => {
     setFormData(prev => ({
       ...prev,
       content: { 
-        contentType: 'EXTERNAL_LINK',
-        ...prev.content, 
+        ...prev.content,
+        contentType: prev.content?.contentType || 'external_link', // Ensure contentType is always defined
         [field]: value 
       }
     }));
@@ -94,137 +146,145 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? 'Create New Topic' : 'Edit Topic'}
-          </DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'Edit Topic' : 'Create New Topic'}</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Topic Name</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              placeholder="e.g., Introduction to Variables"
-              required
-            />
-          </div>
-          
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="type">Topic Type</Label>
-              <Select 
-                value={formData.type} 
-                onValueChange={(value) => handleChange('type', value)}
-              >
+              <Label htmlFor="name">Topic Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => updateFormData('name', e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="type">Type</Label>
+              <Select value={formData.type} onValueChange={(value) => updateFormData('type', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {topicTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="video">Video</SelectItem>
+                  <SelectItem value="interactive">Interactive</SelectItem>
+                  <SelectItem value="exercise">Exercise</SelectItem>
+                  <SelectItem value="audio">Audio</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="duration">Duration</Label>
               <Input
                 id="duration"
                 value={formData.duration}
-                onChange={(e) => handleChange('duration', e.target.value)}
+                onChange={(e) => updateFormData('duration', e.target.value)}
                 placeholder="e.g., 15 min"
                 required
               />
             </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="orderIndex">Order Index</Label>
-            <Input
-              id="orderIndex"
-              type="number"
-              value={formData.orderIndex}
-              onChange={(e) => handleChange('orderIndex', parseInt(e.target.value))}
-              min="0"
-              required
-            />
-          </div>
 
-          {/* Content Section */}
-          <div className="border-t pt-4 space-y-4">
-            <h4 className="font-medium">Content Details</h4>
-            
             <div>
-              <Label htmlFor="contentType">Content Type</Label>
-              <Select 
-                value={formData.content?.contentType || 'EXTERNAL_LINK'} 
-                onValueChange={(value) => handleContentChange('contentType', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {contentTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="orderIndex">Order Index</Label>
+              <Input
+                id="orderIndex"
+                type="number"
+                value={formData.orderIndex}
+                onChange={(e) => updateFormData('orderIndex', parseInt(e.target.value) || 0)}
+                required
+              />
             </div>
-
-            {(formData.content?.contentType === 'EXTERNAL_LINK' || formData.content?.contentType === 'PDF') && (
-              <div>
-                <Label htmlFor="url">URL</Label>
-                <Input
-                  id="url"
-                  value={formData.content?.url || ''}
-                  onChange={(e) => handleContentChange('url', e.target.value)}
-                  placeholder="https://example.com"
-                />
-              </div>
-            )}
-
-            {formData.content?.contentType === 'VIDEO' && (
-              <div>
-                <Label htmlFor="videoUrl">Video URL</Label>
-                <Input
-                  id="videoUrl"
-                  value={formData.content?.videoUrl || ''}
-                  onChange={(e) => handleContentChange('videoUrl', e.target.value)}
-                  placeholder="https://youtube.com/watch?v=..."
-                />
-              </div>
-            )}
-
-            {formData.content?.contentType === 'TEXT' && (
-              <div>
-                <Label htmlFor="textContent">Text Content</Label>
-                <Textarea
-                  id="textContent"
-                  value={formData.content?.textContent || ''}
-                  onChange={(e) => handleContentChange('textContent', e.target.value)}
-                  placeholder="Enter the text content..."
-                  rows={4}
-                />
-              </div>
-            )}
           </div>
-          
-          <div className="flex justify-end gap-3">
+
+          <div>
+            <Label htmlFor="contentType">Content Type</Label>
+            <Select 
+              value={formData.content?.contentType || 'external_link'} 
+              onValueChange={(value) => updateContentData('contentType', value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="external_link">External Link</SelectItem>
+                <SelectItem value="video">Video</SelectItem>
+                <SelectItem value="pdf">PDF</SelectItem>
+                <SelectItem value="text">Text Content</SelectItem>
+                <SelectItem value="interactive_widget">Interactive Widget</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Conditional Content Fields */}
+          {formData.content?.contentType === 'external_link' && (
+            <div>
+              <Label htmlFor="url">URL</Label>
+              <Input
+                id="url"
+                type="url"
+                value={formData.content?.url || ''}
+                onChange={(e) => {
+                  console.log('URL changed to:', e.target.value);
+                  updateContentData('url', e.target.value);
+                }}
+                placeholder="https://example.com"
+              />
+              <p className="text-xs text-gray-500 mt-1">Current value: &quot;{formData.content?.url}&quot;</p>
+            </div>
+          )}
+
+          {formData.content?.contentType === 'video' && (
+            <div>
+              <Label htmlFor="videoUrl">Video URL</Label>
+              <Input
+                id="videoUrl"
+                type="url"
+                value={formData.content?.videoUrl || ''}
+                onChange={(e) => updateContentData('videoUrl', e.target.value)}
+                placeholder="https://youtube.com/watch?v=..."
+              />
+            </div>
+          )}
+
+          {formData.content?.contentType === 'pdf' && (
+            <div>
+              <Label htmlFor="pdfUrl">PDF URL</Label>
+              <Input
+                id="pdfUrl"
+                type="url"
+                value={formData.content?.pdfUrl || ''}
+                onChange={(e) => updateContentData('pdfUrl', e.target.value)}
+                placeholder="https://example.com/document.pdf"
+              />
+            </div>
+          )}
+
+          {formData.content?.contentType === 'text' && (
+            <div>
+              <Label htmlFor="textContent">Text Content</Label>
+              <Textarea
+                id="textContent"
+                value={formData.content?.textContent || ''}
+                onChange={(e) => updateContentData('textContent', e.target.value)}
+                rows={4}
+                placeholder="Enter your text content here..."
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <LoadingSpinner className="mr-2" />}
-              {mode === 'create' ? 'Create Topic' : 'Update Topic'}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Saving...' : mode === 'edit' ? 'Update Topic' : 'Create Topic'}
             </Button>
           </div>
         </form>

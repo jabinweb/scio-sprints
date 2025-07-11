@@ -6,10 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { useRouter } from 'next/navigation';
+import { GraduationCap } from 'lucide-react';
 
 interface PaymentDialogProps {
   defaultOpen?: boolean;
   onClose?: () => void;
+  classId?: number;
+  className?: string;
+  price?: number;
 }
 
 interface RazorpayResponse {
@@ -51,7 +55,7 @@ interface AppSettings {
   razorpayTestKeyId: string;
 }
 
-export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogProps) {
+export function PaymentDialog({ defaultOpen = false, onClose, classId, className, price }: PaymentDialogProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -59,6 +63,12 @@ export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogPro
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  // Reset state when defaultOpen changes
+  useEffect(() => {
+    setIsOpen(defaultOpen);
+    setPaymentSuccess(false); // Reset success state when dialog reopens
+  }, [defaultOpen]);
 
   useEffect(() => {
     const loadRazorpay = async () => {
@@ -85,8 +95,8 @@ export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogPro
 
   const handleClose = () => {
     setIsOpen(false);
+    setPaymentSuccess(false); // Reset success state on close
     onClose?.();
-    router.back(); // Go back to previous page
   };
 
   const handlePayment = async () => {
@@ -95,12 +105,15 @@ export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogPro
     try {
       setIsLoading(true);
 
-      const orderResponse = await fetch('/api/payment', {
+      const paymentEndpoint = classId ? '/api/payment/class' : '/api/payment';
+      const paymentData = classId 
+        ? { classId, userId: user.id }
+        : { amount: price };
+
+      const orderResponse = await fetch(paymentEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: settings.subscriptionPrice,
-        }),
+        body: JSON.stringify(paymentData),
       });
 
       const orderData = await orderResponse.json();
@@ -114,26 +127,31 @@ export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogPro
         amount: orderData.amount,
         currency: orderData.currency,
         name: settings.siteName,
-        description: 'Premium Subscription',
+        description: classId ? `${className} Subscription` : 'Premium Subscription',
         order_id: orderData.orderId,
         handler: async (response: RazorpayResponse) => {
           try {
-            const verifyResponse = await fetch('/api/payment/verify', {
+            const verifyEndpoint = classId ? '/api/payment/class/verify' : '/api/payment/verify';
+            const verifyData = classId 
+              ? { ...response, userId: user.id, classId }
+              : { ...response, userId: user.id };
+
+            const verifyResponse = await fetch(verifyEndpoint, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({
-                ...response,
-                userId: user?.id,
-              }),
+              body: JSON.stringify(verifyData),
             });
 
             if (verifyResponse.ok) {
               setPaymentSuccess(true);
-              // Redirect after showing success for 2 seconds
               setTimeout(() => {
-                window.location.href = '/dashboard';
+                if (classId) {
+                  router.push(`/dashboard/class/${classId}`);
+                } else {
+                  router.push('/dashboard');
+                }
               }, 2000);
             }
           } catch (error) {
@@ -145,7 +163,7 @@ export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogPro
           email: user.email || '',
         },
         theme: {
-          color: '#4B9DCE',
+          color: '#3B82F6',
         },
       };
 
@@ -173,10 +191,13 @@ export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogPro
                 </svg>
               </div>
               <p className="text-muted-foreground">
-                Welcome to {settings?.siteName}! Your subscription is now active.
+                {classId 
+                  ? `Welcome to ${className}! Your subscription is now active.`
+                  : `Welcome to ${settings?.siteName}! Your subscription is now active.`
+                }
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                Redirecting to dashboard...
+                Redirecting...
               </p>
             </div>
           </div>
@@ -185,39 +206,66 @@ export function PaymentDialog({ defaultOpen = false, onClose }: PaymentDialogPro
     );
   }
 
+  const displayPrice = price ? Math.round(price / 100) : (settings?.subscriptionPrice || 299);
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        handleClose();
+      }
+    }}>
+      <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
         {settings?.paymentMode === 'test' && (
-          <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md text-sm mb-4">
-            Test Mode - Use card number 4111 1111 1111 1111
+          <div className="bg-amber-50 border-b border-amber-200 text-amber-800 px-6 py-3 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              Test Mode - Use card number 4111 1111 1111 1111
+            </div>
           </div>
         )}
-        <DialogHeader>
-          <DialogTitle className="text-2xl text-center mb-4">Complete Your Subscription</DialogTitle>
-        </DialogHeader>
-        <div className="text-center">
-          <p className="text-muted-foreground mb-6">
-            Welcome {user?.email}! To access the dashboard, please complete your subscription.
-          </p>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1 py-6 text-lg"
-            >
-              Maybe Later
-            </Button>
-            <Button
-              onClick={handlePayment}
-              disabled={isLoading || !isScriptLoaded || !settings}
-              className="flex-1 py-6 text-lg"
-            >
-              {isLoading ? (
-                <LoadingSpinner className="mr-2" />
-              ) : null}
-              {!isScriptLoaded || !settings ? 'Loading...' : `Pay ₹${settings.subscriptionPrice}`}
-            </Button>
+        
+        <div className="p-6">
+          <DialogHeader className="text-center space-y-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto">
+              <GraduationCap className="w-8 h-8 text-white" />
+            </div>
+            <DialogTitle className="text-2xl font-bold">
+              {classId ? `Subscribe to ${className}` : 'Complete Your Subscription'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="text-center mt-6 space-y-6">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+              <div className="text-3xl font-bold text-blue-600 mb-1">₹{displayPrice}</div>
+              <div className="text-sm text-blue-600 font-medium">One-time payment</div>
+            </div>
+            
+            <p className="text-gray-600 leading-relaxed">
+              {classId 
+                ? `Get unlimited access to ${className} with all subjects, chapters, and interactive content.`
+                : `Welcome ${user?.email}! Complete your subscription to access all features.`
+              }
+            </p>
+            
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className="flex-1 py-3 text-base hover:bg-gray-50"
+              >
+                Maybe Later
+              </Button>
+              <Button
+                onClick={handlePayment}
+                disabled={isLoading || !isScriptLoaded || !settings}
+                className="flex-1 py-3 text-base bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                {isLoading ? (
+                  <LoadingSpinner className="mr-2" />
+                ) : null}
+                {!isScriptLoaded || !settings ? 'Loading...' : `Pay ₹${displayPrice}`}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

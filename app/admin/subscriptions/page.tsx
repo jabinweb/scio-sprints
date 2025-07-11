@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Trash2, RefreshCw, AlertCircle, Search } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Crown, Calendar, DollarSign } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { AvatarImage } from '@radix-ui/react-avatar';
 
 interface Subscription {
   id: string;
@@ -24,6 +29,7 @@ interface RegisteredUser {
   lastSignInTime: string | null;
   subscription: Subscription | null;
   hasActiveSubscription: boolean;
+  photoUrl?: string;
 }
 
 export default function SubscriptionsPage() {
@@ -32,6 +38,7 @@ export default function SubscriptionsPage() {
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Enhanced admin check - wait for userRole to be loaded
   const isAdmin = user && userRole === 'ADMIN';
@@ -142,9 +149,21 @@ export default function SubscriptionsPage() {
     }
   };
 
-  const getUserBySubscription = (subscription: Subscription) => {
-    return registeredUsers.find(user => user.uid === subscription.userId);
-  };
+  // Filter subscriptions based on search term
+  const filteredSubscriptions = useMemo(() => {
+    if (!searchTerm.trim()) return subscriptions;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return subscriptions.filter(subscription => {
+      const user = registeredUsers.find(user => user.uid === subscription.userId);
+      return (
+        user?.displayName?.toLowerCase().includes(searchLower) ||
+        user?.email?.toLowerCase().includes(searchLower) ||
+        subscription.status.toLowerCase().includes(searchLower) ||
+        subscription.paymentId.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [subscriptions, searchTerm, registeredUsers]);
 
   // Show loading while checking auth and role
   if (isLoadingAuth) {
@@ -203,6 +222,21 @@ export default function SubscriptionsPage() {
           </Button>
         </div>
 
+        {/* Search Bar */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by user name, email, status, or payment ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
@@ -211,6 +245,11 @@ export default function SubscriptionsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{subscriptions.length}</div>
+              {searchTerm && (
+                <p className="text-xs text-muted-foreground">
+                  {filteredSubscriptions.length} matching search
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -234,68 +273,132 @@ export default function SubscriptionsPage() {
         </div>
 
         {/* Subscriptions List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All Subscriptions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {subscriptions.map((subscription) => {
-                const subscriptionUser = getUserBySubscription(subscription);
-                return (
-                  <div key={subscription.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h3 className="font-semibold">Payment ID: {subscription.paymentId}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        User: {subscriptionUser?.email || subscription.userId}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Amount: ₹{subscription.amount}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Date: {new Date(subscription.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right space-y-2">
-                        <div className="flex gap-2">
-                          <Button
-                            variant={subscription.status === 'active' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => updateSubscriptionStatus(subscription.id, 'active')}
-                          >
-                            Active
-                          </Button>
-                          <Button
-                            variant={subscription.status === 'inactive' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => updateSubscriptionStatus(subscription.id, 'inactive')}
-                          >
-                            Inactive
-                          </Button>
-                        </div>
-                        <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'}>
-                          {subscription.status}
-                        </Badge>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          {filteredSubscriptions.map((subscription) => {
+            const subscriptionUser = registeredUsers.find(user => user.uid === subscription.userId);
+            const isActive = subscription.status === 'ACTIVE';
+            
+            return (
+              <Card key={subscription.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
+                <CardHeader className={`pb-4 ${isActive ? 'bg-gradient-to-r from-green-50 to-emerald-50' : 'bg-gradient-to-r from-gray-50 to-slate-50'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`relative ${isActive ? 'ring-2 ring-green-200' : 'ring-2 ring-gray-200'} rounded-full`}>
+                        <Avatar className="h-10 w-10">
+                            {subscriptionUser?.photoUrl && (
+                              <AvatarImage src={subscriptionUser?.photoUrl} alt={subscriptionUser?.displayName || 'User'} />
+                            )}
+                          <AvatarFallback className={`${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'} font-semibold text-sm`}>
+                            {subscriptionUser?.displayName?.[0] || subscriptionUser?.email?.[0].toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        {isActive && (
+                          <div className="absolute top-0 right-1 bg-green-500 text-white rounded-full p-1">
+                            <Crown className="h-2 w-2" />
+                          </div>
+                        )}
                       </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => deleteSubscription(subscription.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-sm line-clamp-1">
+                          {subscriptionUser?.displayName || 'Anonymous User'}
+                        </h3>
+                        <p className="text-xs text-gray-500 line-clamp-1">
+                          {subscriptionUser?.email || subscription.userId.slice(0, 8) + '...'}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge 
+                      variant={isActive ? 'default' : 'secondary'}
+                      className={`${isActive ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-gray-100 text-gray-800'} font-medium text-xs`}
+                    >
+                      {subscription.status}
+                    </Badge>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4 p-4">
+                  {/* Subscription Details */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                      <DollarSign className="h-3 w-3 text-blue-600" />
+                      <div>
+                        <div className="text-xs text-blue-600 font-medium">Amount</div>
+                        <div className="font-semibold text-gray-900 text-sm">₹{subscription.amount/100}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
+                      <Calendar className="h-3 w-3 text-purple-600" />
+                      <div>
+                        <div className="text-xs text-purple-600 font-medium">Date</div>
+                        <div className="font-semibold text-gray-900 text-xs">
+                          {new Date(subscription.created_at).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: '2-digit' 
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-              {subscriptions.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No subscriptions found.</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
+                  <Separator />
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Button
+                        variant={subscription.status === 'ACTIVE' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => updateSubscriptionStatus(subscription.id, 'ACTIVE')}
+                        className="flex-1 text-xs h-8"
+                        disabled={subscription.status === 'ACTIVE'}
+                      >
+                        {subscription.status === 'ACTIVE' ? 'Active' : 'Activate'}
+                      </Button>
+                      <Button
+                        variant={subscription.status === 'INACTIVE' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => updateSubscriptionStatus(subscription.id, 'INACTIVE')}
+                        className="flex-1 text-xs h-8"
+                        disabled={subscription.status === 'INACTIVE'}
+                      >
+                        {subscription.status === 'INACTIVE' ? 'Inactive' : 'Deactivate'}
+                      </Button>
+                    </div>
+                    
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteSubscription(subscription.id)}
+                      className="w-full text-xs h-8"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {filteredSubscriptions.length === 0 && searchTerm && (
+          <Card className="p-12 text-center">
+            <Crown className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-600 mb-2">No Subscriptions Found</h3>
+            <p className="text-muted-foreground">No subscriptions match your search for &quot;{searchTerm}&quot;</p>
+          </Card>
+        )}
+
+        {subscriptions.length === 0 && !searchTerm && (
+          <Card className="p-12 text-center">
+            <Crown className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-600 mb-2">No Subscriptions Found</h3>
+            <p className="text-muted-foreground">Subscription data will appear here once users start subscribing.</p>
+          </Card>
+        )}
       </div>
     </div>
   );
 }
+     

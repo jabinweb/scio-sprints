@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, RefreshCw, AlertCircle, BookOpen, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, AlertCircle, BookOpen, ChevronRight, Users } from 'lucide-react';
 import { ClassForm } from '@/components/admin/ClassForm';
 import { useRouter } from 'next/navigation';
 
@@ -14,9 +14,13 @@ interface Class {
   name: string;
   description: string;
   isActive: boolean;
+  price: string; // Change from string to number
+  currency: string;
   created_at: string;
   updated_at: string;
   subjects?: Array<{ id: string; name: string }>;
+  subscriptions?: Array<{ id: string; status: string; user: { email: string; display_name: string } }>;
+
 }
 
 interface ClassFormData {
@@ -24,6 +28,7 @@ interface ClassFormData {
   name: string;
   description: string;
   isActive: boolean;
+  price?: string; // Keep as string for form handling
 }
 
 export default function ClassesPage() {
@@ -85,10 +90,11 @@ export default function ClassesPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        id: parseInt(formData.id, 10), // Convert string back to number for API
+        id: parseInt(formData.id, 10),
         name: formData.name,
         description: formData.description,
-        isActive: formData.isActive
+        isActive: formData.isActive,
+        price: formData.price ? parseInt(formData.price) : undefined // Handle price conversion
       }),
     });
 
@@ -120,12 +126,16 @@ export default function ClassesPage() {
 
   const openEditForm = (classItem: Class) => {
     setEditingClass({
-      id: String(classItem.id), // Convert number to string for form compatibility
+      id: String(classItem.id),
       name: classItem.name,
       description: classItem.description,
       isActive: classItem.isActive,
+      price: String(Math.round((typeof classItem.price === 'string' ? parseInt(classItem.price) : classItem.price || 29900) / 100)),
+      currency: classItem.currency,
       created_at: classItem.created_at,
-      updated_at: classItem.updated_at
+      updated_at: classItem.updated_at,
+      subjects: classItem.subjects,
+      subscriptions: classItem.subscriptions,
     });
     setFormOpen(true);
   };
@@ -185,63 +195,76 @@ export default function ClassesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classes.map((classItem) => (
-              <Card key={classItem.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl">{classItem.name}</CardTitle>
-                    <Badge variant={classItem.isActive ? 'default' : 'secondary'}>
-                      {classItem.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{classItem.description}</p>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
+            {classes.map((classItem) => {
+              // Ensure price is a number for arithmetic
+              const priceNum = typeof classItem.price === 'string' ? parseInt(classItem.price) : classItem.price;
+              return (
+                <Card key={classItem.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl">{classItem.name}</CardTitle>
                       <div className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{classItem.subjects?.length || 0} Subjects</span>
-                      </div>
-                      <div className="text-muted-foreground">
-                        ID: {classItem.id}
+                        <Badge variant="outline" className="text-green-600 border-green-200">
+                          ₹{Math.round((priceNum || 0) / 100)}
+                        </Badge>
+                        <Badge variant={classItem.isActive ? 'default' : 'secondary'}>
+                          {classItem.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
                       </div>
                     </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditForm(classItem)}
-                        className="flex-1"
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteClass(Number(classItem.id))}
-                        className="flex-1"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleManageClass(Number(classItem.id))}
-                        className="flex-1"
-                      >
-                        Manage
-                        <ChevronRight className="h-4 w-4 ml-2" />
-                      </Button>
+                    <p className="text-sm text-muted-foreground">{classItem.description}</p>
+                  </CardHeader>
+                  
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          <span>{classItem.subjects?.length || 0} Subjects</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          <span>{classItem.subscriptions?.length || 0} Students</span>
+                        </div>
+                        <div className="text-muted-foreground">
+                          ID: {classItem.id}
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditForm(classItem)}
+                          className="flex-1"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteClass(Number(classItem.id))}
+                          className="flex-1"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleManageClass(Number(classItem.id))}
+                          className="flex-1"
+                        >
+                          Manage
+                          <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 

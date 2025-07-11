@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LoadingSpinner } from '@/components/ui/loading';
 
 interface ChapterFormData {
   id?: string;
@@ -24,26 +23,49 @@ interface ChapterFormProps {
 }
 
 export function ChapterForm({ isOpen, onClose, onSubmit, initialData, mode, subjectId }: ChapterFormProps) {
-  const [formData, setFormData] = useState<ChapterFormData>(
-    initialData || { name: '', orderIndex: 0, subjectId }
-  );
+  const [formData, setFormData] = useState<ChapterFormData>({
+    name: '',
+    orderIndex: 0,
+    subjectId,
+  });
   const [isLoading, setIsLoading] = useState(false);
+
+  // Reset form when dialog opens/closes or initialData changes
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData && mode === 'edit') {
+        console.log('Setting chapter form data from initialData:', initialData);
+        setFormData({
+          id: initialData.id,
+          name: initialData.name || '',
+          orderIndex: initialData.orderIndex || 0,
+          subjectId: initialData.subjectId || subjectId,
+        });
+      } else {
+        // Reset to default values for create mode
+        setFormData({
+          name: '',
+          orderIndex: 0,
+          subjectId,
+        });
+      }
+    }
+  }, [isOpen, initialData, mode, subjectId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
-      await onSubmit({ ...formData, subjectId });
+      await onSubmit(formData);
       onClose();
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error submitting chapter:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (field: keyof ChapterFormData, value: string | number) => {
+  const updateFormData = (field: keyof ChapterFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -62,7 +84,7 @@ export function ChapterForm({ isOpen, onClose, onSubmit, initialData, mode, subj
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
+              onChange={(e) => updateFormData('name', e.target.value)}
               placeholder="e.g., Introduction to Algebra"
               required
             />
@@ -74,8 +96,7 @@ export function ChapterForm({ isOpen, onClose, onSubmit, initialData, mode, subj
               id="orderIndex"
               type="number"
               value={formData.orderIndex}
-              onChange={(e) => handleChange('orderIndex', parseInt(e.target.value))}
-              min="0"
+              onChange={(e) => updateFormData('orderIndex', parseInt(e.target.value) || 0)}
               required
             />
           </div>
@@ -85,8 +106,7 @@ export function ChapterForm({ isOpen, onClose, onSubmit, initialData, mode, subj
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading && <LoadingSpinner className="mr-2" />}
-              {mode === 'create' ? 'Create Chapter' : 'Update Chapter'}
+              {isLoading ? 'Saving...' : mode === 'edit' ? 'Update Chapter' : 'Create Chapter'}
             </Button>
           </div>
         </form>

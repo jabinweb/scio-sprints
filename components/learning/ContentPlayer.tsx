@@ -22,15 +22,15 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete }: ContentPla
   const handleContentAction = () => {
     setIsLoading(true);
     
-    switch (topic.content.type) {
+    switch (topic.content.contentType?.toLowerCase()) {
       case 'external_link':
         if (topic.content.url) {
           window.open(topic.content.url, '_blank');
         }
         break;
       case 'video':
-        // Handle video playback
-        console.log('Playing video:', topic.content.videoUrl);
+        // For video content, we'll embed it in the player instead of opening in new tab
+        console.log('Video will be embedded in player');
         break;
       case 'pdf':
         // Handle PDF viewing
@@ -45,13 +45,17 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete }: ContentPla
         // Handle interactive widget
         console.log('Loading widget:', topic.content.widgetConfig);
         break;
+      default:
+        console.warn('Unknown content type:', topic.content.contentType);
+        break;
     }
     
     setTimeout(() => setIsLoading(false), 1000);
   };
 
   const getContentIcon = () => {
-    switch (topic.content.type) {
+    const contentType = topic.content.contentType?.toLowerCase();
+    switch (contentType) {
       case 'external_link': return <ExternalLink className="h-5 w-5" />;
       case 'video': return <Play className="h-5 w-5" />;
       case 'pdf': return <FileText className="h-5 w-5" />;
@@ -62,7 +66,8 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete }: ContentPla
   };
 
   const getActionText = () => {
-    switch (topic.content.type) {
+    const contentType = topic.content.contentType?.toLowerCase();
+    switch (contentType) {
       case 'external_link': return 'Open Link';
       case 'video': return 'Play Video';
       case 'pdf': return 'View PDF';
@@ -85,17 +90,62 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete }: ContentPla
         <div className="space-y-4">
           {/* Content Display Area */}
           <div className="min-h-[300px] bg-gray-50 rounded-lg p-6">
-            {topic.content.type === 'text' && topic.content.textContent ? (
+            {topic.content.contentType?.toLowerCase() === 'text' && topic.content.textContent ? (
               <div className="prose max-w-none">
                 <p>{topic.content.textContent}</p>
               </div>
-            ) : topic.content.type === 'video' && topic.content.videoUrl ? (
+            ) : topic.content.contentType?.toLowerCase() === 'video' && topic.content.videoUrl ? (
+              <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                {/* Handle different video URL formats */}
+                {topic.content.videoUrl.includes('youtube.com') || topic.content.videoUrl.includes('youtu.be') ? (
+                  <iframe 
+                    src={topic.content.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                    className="w-full h-full"
+                    allowFullScreen
+                    title={topic.name}
+                  />
+                ) : topic.content.videoUrl.includes('vimeo.com') ? (
+                  <iframe 
+                    src={topic.content.videoUrl.replace('vimeo.com/', 'player.vimeo.com/video/')}
+                    className="w-full h-full"
+                    allowFullScreen
+                    title={topic.name}
+                  />
+                ) : (
+                  <video 
+                    controls
+                    className="w-full h-full"
+                    title={topic.name}
+                  >
+                    <source src={topic.content.videoUrl} type="video/mp4" />
+                    <source src={topic.content.videoUrl} type="video/webm" />
+                    <source src={topic.content.videoUrl} type="video/ogg" />
+                    Your browser does not support the video tag.
+                  </video>
+                )}
+              </div>
+            ) : topic.content.contentType?.toLowerCase() === 'pdf' && topic.content.pdfUrl ? (
               <div className="aspect-video">
                 <iframe 
-                  src={topic.content.videoUrl}
+                  src={topic.content.pdfUrl}
                   className="w-full h-full rounded-lg"
-                  allowFullScreen
+                  title="PDF Viewer"
                 />
+              </div>
+            ) : topic.content.contentType?.toLowerCase() === 'interactive_widget' ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="mb-4 p-4 bg-white rounded-full">
+                  <Monitor className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Interactive Widget</h3>
+                <p className="text-muted-foreground mb-4">
+                  This content will load an interactive learning experience.
+                </p>
+                {topic.content.widgetConfig && (
+                  <pre className="text-xs bg-gray-100 p-2 rounded max-w-md overflow-auto">
+                    {JSON.stringify(topic.content.widgetConfig, null, 2)}
+                  </pre>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center">
@@ -104,7 +154,7 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete }: ContentPla
                 </div>
                 <h3 className="text-lg font-medium mb-2">{topic.name}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Duration: {topic.duration} • Type: {topic.type}
+                  Duration: {topic.duration} • Type: {topic.content.contentType || 'content'}
                 </p>
                 <Button 
                   onClick={handleContentAction}

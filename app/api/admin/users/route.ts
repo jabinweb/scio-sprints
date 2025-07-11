@@ -24,6 +24,7 @@ interface DatabaseUser {
   id: string;
   email: string;
   display_name: string | null;
+  photo_url: string | null; // Add photo URL field
   created_at: string;
   last_login_at: string | null;
   role: string;
@@ -82,8 +83,11 @@ export async function GET() {
         uid: user.id,
         email: user.email,
         displayName: user.display_name,
+        photoUrl: user.photo_url, // Include photo URL
         creationTime: user.created_at,
         lastSignInTime: user.last_login_at,
+        role: user.role,
+        isActive: user.is_active,
         subscription: activeSubscription ? {
           id: activeSubscription.id,
           status: activeSubscription.status,
@@ -131,25 +135,105 @@ export async function DELETE(request: Request) {
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const { email, displayName, password, role, isActive } = await request.json();
+    
+    if (!email || !displayName || !password) {
+      return NextResponse.json({ error: 'Email, display name, and password are required' }, { status: 400 });
+    }
+
+    // Create user in Supabase Auth
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      user_metadata: {
+        full_name: displayName,
+      },
+      email_confirm: true, // Skip email confirmation for admin-created users
+    });
+
+    if (authError) {
+      return NextResponse.json({ error: authError.message }, { status: 400 });
+    }
+
+    // Create user record in our database
+    const { error: dbError } = await supabase
+      .from('users')
+      .insert({
+        id: authUser.user.id,
+        email: email,
+        display_name: displayName,
+        role: role || 'USER',
+        is_active: isActive !== undefined ? isActive : true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+    if (dbError) {
+      // If database insert fails, we should clean up the auth user
+      console.error('Error creating user in database:', dbError);
+      
+      // Try to delete the auth user
+      await supabase.auth.admin.deleteUser(authUser.user.id);
+      
+      return NextResponse.json({ error: 'Failed to create user record' }, { status: 500 });
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      user: {
+        id: authUser.user.id,
+        email: authUser.user.email,
+        displayName: displayName,
+        role: role || 'USER',
+        isActive: isActive !== undefined ? isActive : true,
+      }
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request) {
   try {
-    const { userId, role, isActive } = await request.json();
+    const { userId, displayName, role, isActive } = await request.json();
     
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const updateData: { role?: string; is_active?: boolean; updated_at?: string } = {};
+    const updateData: Record<string, string | boolean> = {};
+
     if (role !== undefined) updateData.role = role;
     if (isActive !== undefined) updateData.is_active = isActive;
     updateData.updated_at = new Date().toISOString();
 
-    const { error } = await supabase
+    // Update user in our database
+    const { error: dbError } = await supabase
       .from('users')
       .update(updateData)
       .eq('id', userId);
 
-    if (error) throw error;
+    if (dbError) {
+      console.error('Error updating user in database:', dbError);
+      return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+    }
+
+    // Update user metadata in Supabase Auth if displayName changed
+    if (displayName !== undefined) {
+      try {
+        await supabase.auth.admin.updateUserById(userId, {
+          user_metadata: {
+            full_name: displayName,
+          }
+        });
+      } catch (authError) {
+        console.error('Error updating auth user metadata:', authError);
+        // Don't fail the entire operation if auth update fails
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

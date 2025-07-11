@@ -259,7 +259,7 @@ export default function AdminPage() {
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{Math.round(totalRevenue / 100).toLocaleString()}</div>
+              <div className="text-2xl font-bold">₹{(totalRevenue/100).toLocaleString()}</div>
             </CardContent>
           </Card>
         </div>
@@ -301,7 +301,7 @@ export default function AdminPage() {
                 {subscriptions.slice(0, 5).map((subscription) => (
                   <div key={subscription.id} className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">₹{Math.round((subscription.amount || 0) / 100)}</p>
+                      <p className="font-medium">₹{(subscription.amount/100 || 0)}</p>
                       <p className="text-sm text-muted-foreground">{subscription.userId.slice(0, 8)}...</p>
                     </div>
                     <div className="text-right">

@@ -10,12 +10,14 @@ import { ArrowLeft, BookOpen, Play, Clock, CheckCircle, Lock, Video, FileText, H
 import { useClassData, type DbTopic } from '@/hooks/useClassData';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
 
-const getTopicIcon = (type: string) => {
-  switch (type) {
-    case 'video': return <Video className="h-4 w-4" />;
-    case 'interactive': return <Play className="h-4 w-4" />;
-    case 'exercise': return <FileText className="h-4 w-4" />;
-    case 'audio': return <Headphones className="h-4 w-4" />;
+const getTopicIcon = (contentType: string | undefined) => {
+  switch (contentType) {
+    case 'VIDEO': return <Video className="h-4 w-4" />;
+    case 'EXTERNAL_LINK': return <Play className="h-4 w-4" />;
+    case 'PDF': return <FileText className="h-4 w-4" />;
+    case 'TEXT': return <FileText className="h-4 w-4" />;
+    case 'INTRACTIVE_WIGET': return <Play className="h-4 w-4" />;
+    case 'AUDIO': return <Headphones className="h-4 w-4" />;
     default: return <BookOpen className="h-4 w-4" />;
   }
 };
@@ -78,7 +80,7 @@ export default function ClassPage() {
       ...topic,
       completed: userProgress.get(topic.id) || false,
       content: topic.content ? {
-        type: topic.content.type, // Keep contentType as is
+        contentType: topic.content.contentType, // Use contentType for the content type
         url: topic.content.url,
         videoUrl: topic.content.videoUrl,
         pdfUrl: topic.content.pdfUrl,
@@ -253,6 +255,7 @@ export default function ClassPage() {
                           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                             {chapter.topics.map((topic) => {
                               const isCompleted = userProgress.get(topic.id) || false;
+                              const contentType = topic.content?.contentType;
                               
                               return (
                                 <div
@@ -267,10 +270,15 @@ export default function ClassPage() {
                                   <div className="flex items-start justify-between mb-3">
                                     <div className="flex items-center gap-2">
                                       <div className={`p-2 rounded-lg ${isCompleted ? 'bg-green-200' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
-                                        {getTopicIcon(topic.type)}
+                                        {getTopicIcon(contentType)}
                                       </div>
-                                      <Badge variant={topic.type === 'video' ? 'default' : topic.type === 'interactive' ? 'secondary' : 'outline'} className="text-xs">
-                                        {topic.type}
+                                      <Badge variant={
+                                        contentType === 'video' ? 'default' : 
+                                        contentType === 'external_link' ? 'secondary' : 
+                                        contentType === 'interactive_widget' ? 'secondary' : 
+                                        'outline'
+                                      } className="text-xs">
+                                        {contentType || topic.type}
                                       </Badge>
                                     </div>
                                     {isCompleted ? (
@@ -319,4 +327,3 @@ export default function ClassPage() {
     </div>
   );
 }
-    

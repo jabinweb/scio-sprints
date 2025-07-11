@@ -14,9 +14,12 @@ model Class {
   name        String
   description String
   isActive    Boolean   @default(true)
+  price       Int?      @default(29900) // Price in paisa, null means free
+  currency    String    @default("INR")
   created_at   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   subjects    Subject[]
+  subscriptions Subscription[] // Updated relation
 
   @@map("classes")
 }
@@ -92,11 +95,11 @@ model User {
   isActive     Boolean       @default(true) @map("is_active")
   lastLoginAt  DateTime?     @map("last_login_at")
   created_at    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
   
   // Relations
   progress     UserTopicProgress[]
-  subscriptions Subscription[]
+  subscriptions Subscription[] // Keep old global subscriptions for migration
   payments     Payment[]
   activities   UserActivity[]
   notifications Notification[]
@@ -125,8 +128,10 @@ model Subscription {
   id          String             @id @default(cuid())
   userId      String
   user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classId     Int?               // NULL for global subscriptions, specific class ID for class subscriptions
+  class       Class?             @relation(fields: [classId], references: [id], onDelete: Cascade)
   status      SubscriptionStatus @default(INACTIVE)
-  planType    String             // "basic", "premium", "annual", etc.
+  planType    String             // "basic", "premium", "annual", "class_access", etc.
   planName    String?
   amount      Int?               // Amount paid in paisa (₹1 = 100 paisa)
   currency    String             @default("INR")
@@ -136,6 +141,7 @@ model Subscription {
   created_at   DateTime           @default(now()) @map("created_at")
   updatedAt   DateTime           @updatedAt @map("updated_at")
 
+  @@unique([userId, classId]) // One subscription per user per class (NULL classId allowed for global)
   @@map("subscriptions")
 }
 
@@ -341,6 +347,7 @@ enum NotificationType {
   SUBSCRIPTION_REMINDER
   PAYMENT_REMINDER
 }
+
 
 enum NotificationPriority {
   LOW

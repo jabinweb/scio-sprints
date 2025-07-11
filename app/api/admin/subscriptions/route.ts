@@ -16,6 +16,7 @@ export async function GET() {
     // Transform the data to match expected format
     const transformedSubscriptions = (subscriptions || []).map(sub => ({
       ...sub,
+      amount: sub.amount || 0, // Keep amount as-is, don't divide by 100
       paymentId: sub.id, // Use subscription ID as payment ID for now
       created_at: sub.created_at, // Map for frontend compatibility
     }));
@@ -74,5 +75,5 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Failed to delete subscription' }, { status: 500 });
   }
 }
-  
+
 
