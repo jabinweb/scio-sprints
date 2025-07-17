@@ -25,20 +25,6 @@ export default function ClassLayout({
     if (!loading && user && classId) {
       const checkSubscription = async () => {
         try {
-          // Get class details
-          const { error: classError } = await supabase
-            .from('classes')
-            .select('id, name, price')
-            .eq('id', parseInt(classId))
-            .single();
-
-          if (classError) {
-            console.error('Error fetching class:', classError);
-            setHasSubscription(false);
-            setCheckingSubscription(false);
-            return;
-          }
-
           // Check for active subscription with valid end date
           const { data: subscription, error } = await supabase
             .from('subscriptions')
@@ -108,6 +94,7 @@ export default function ClassLayout({
     </>
   );
 }
-    
+
+
 
 

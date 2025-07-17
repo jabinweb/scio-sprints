@@ -41,7 +41,14 @@ export interface DbClass {
   description: string;
   subjects: DbSubject[];
   isActive: boolean;
-  price?: number; // Change from string to number to match database
+  price?: number;
+  accessLevel?: 'school' | 'subscribed' | 'both' | 'none';
+  accessMessage?: string;
+  schoolAccess?: boolean;
+  subscriptionAccess?: boolean;
+  hasAnyAccess?: boolean;
+  // Legacy fields
+  accessType?: string;
 }
 
 export function useClassData(classId?: string) {
@@ -51,86 +58,48 @@ export function useClassData(classId?: string) {
   const [userProgress, setUserProgress] = useState<Map<string, boolean>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accessMessage, setAccessMessage] = useState<string>('');
+  const [accessType, setAccessType] = useState<'subscription' | 'school' | 'free' | 'none'>('none');
 
-  // Fetch all classes
+  // Fetch accessible classes for the user (including school access)
   useEffect(() => {
-    const fetchClasses = async () => {
+    const fetchAccessibleClasses = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const { data: classes, error } = await supabase
-          .from('classes')
-          .select(`
-            *,
-            subjects:subjects(
-              *,
-              chapters:chapters(
-                *,
-                topics:topics(
-                  *,
-                  content:topic_contents(*)
-                )
-              )
-            )
-          `)
-          .eq('isActive', true)
-          .order('id', { ascending: true });
+        console.log('Fetching classes for user:', user.id);
+        const response = await fetch(`/api/classes/accessible?userId=${user.id}`);
+        const data = await response.json();
 
-        if (error) throw error;
+        console.log('Classes API response:', data);
 
-        // Transform data structure to match expected format
-        const transformedClasses = classes?.map(cls => ({
-          id: cls.id,
-          name: cls.name,
-          description: cls.description,
-          isActive: cls.isActive,
-          price: cls.price, // Keep price as number from database
-          subjects: cls.subjects
-            .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
-            .map((subject: any) => ({
-              id: subject.id,
-              name: subject.name,
-              icon: subject.icon,
-              color: subject.color,
-              isLocked: subject.isLocked,
-              orderIndex: subject.orderIndex,
-              chapters: subject.chapters
-                .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
-                .map((chapter: any) => ({
-                  id: chapter.id,
-                  name: chapter.name,
-                  orderIndex: chapter.orderIndex,
-                  topics: chapter.topics
-                    .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
-                    .map((topic: any) => ({
-                      id: topic.id,
-                      name: topic.name,
-                      type: topic.type, // Keep the topic type as is
-                      duration: topic.duration,
-                      orderIndex: topic.orderIndex,
-                      content: topic.content?.[0] ? {
-                        contentType: topic.content[0].contentType, // Use the actual content type
-                        url: topic.content[0].url,
-                        videoUrl: topic.content[0].videoUrl,
-                        pdfUrl: topic.content[0].pdfUrl,
-                        textContent: topic.content[0].textContent,
-                        widgetConfig: topic.content[0].widgetConfig,
-                      } : {
-                        contentType: 'text', // Default content type
-                      }
-                    }))
-                }))
-            }))
-        })) || [];
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch accessible classes');
+        }
 
-        setClasses(transformedClasses);
+        // Set the raw data first
+        setClasses(data.accessibleClasses || []);
+        setAccessMessage(data.message || '');
+        setAccessType(data.accessType || 'none');
+
+        console.log('Set classes:', data.accessibleClasses?.length || 0);
+        console.log('Access type:', data.accessType);
+        console.log('Access message:', data.message);
+
       } catch (err) {
+        console.error('Error fetching classes:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
+        setClasses([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchClasses();
-  }, []);
+    fetchAccessibleClasses();
+  }, [user?.id]);
 
   // Fetch specific class
   useEffect(() => {
@@ -311,6 +280,9 @@ export function useClassData(classId?: string) {
     userProgress,
     loading,
     error,
+    accessMessage,
+    accessType,
     markTopicComplete,
   };
 }
+         

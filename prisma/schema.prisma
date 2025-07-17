@@ -94,12 +94,24 @@ model User {
   role         UserRole      @default(USER)
   isActive     Boolean       @default(true) @map("is_active")
   lastLoginAt  DateTime?     @map("last_login_at")
-  created_at    DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  created_at   DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  
+  // School relationship - fix type to match schools.id
+  schoolId     String?       @map("school_id")
+  school       School?       @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  // new student profile fields
+  grade        String?       @map("grade")
+  section      String?       @map("section")
+  rollNumber   String?       @map("roll_number")
+  phone        String?       
+  parentName   String?       @map("parent_name")
+  parentEmail  String?       @map("parent_email")
   
   // Relations
   progress     UserTopicProgress[]
-  subscriptions Subscription[] // Keep old global subscriptions for migration
+  subscriptions Subscription[]
   payments     Payment[]
   activities   UserActivity[]
   notifications Notification[]
@@ -272,6 +284,31 @@ model Announcement {
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
   @@map("announcements")
+}
+
+// School Management - ensure consistent field naming
+model School {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String?
+  address       String?
+  website       String?
+  logo          String?
+  studentCount  Int      @default(0) @map("student_count")
+  isActive      Boolean  @default(true) @map("is_active")
+  
+  // School admin/contact details
+  principalName String?  @map("principal_name")
+  contactPerson String?  @map("contact_person")
+  
+  // Relations
+  users         User[]   // Students and teachers belonging to this school
+  
+  created_at    DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("schools")
 }
 
 // Enums

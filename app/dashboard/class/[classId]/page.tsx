@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, BookOpen, Play, Clock, CheckCircle, Lock, Video, FileText, Headphones } from 'lucide-react';
 import { useClassData, type DbTopic } from '@/hooks/useClassData';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
+import { useAuth } from '@/contexts/AuthContext';
 
 const getTopicIcon = (contentType: string | undefined) => {
   switch (contentType) {
@@ -43,11 +44,67 @@ export default function ClassPage() {
   const params = useParams();
   const router = useRouter();
   const classId = params.classId as string;
+  const { user } = useAuth();
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedTopic, setSelectedTopic] = useState<DbTopic & { completed: boolean } | null>(null);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+  const [accessMessage, setAccessMessage] = useState<string>('');
+  const [accessType, setAccessType] = useState<string>('');
   
   const { currentClass, userProgress, loading, error, markTopicComplete } = useClassData(classId);
+
+  // Check if user has access to this specific class (school or subscription)
+  useEffect(() => {
+    const checkClassAccess = async () => {
+      if (!user?.id || !classId) return;
+
+      try {
+        interface ClassAccess {
+          id: string;
+          accessType?: string;
+          schoolAccess?: boolean;
+          subscriptionAccess?: boolean;
+        }
+  
+        interface ClassAccessResponse {
+          accessibleClasses: ClassAccess[];
+          userGrade: number;
+          message?: string;
+        }
+  
+        const response = await fetch(`/api/classes/accessible?userId=${user.id}`);
+        const data: ClassAccessResponse = await response.json();
+  
+        if (response.ok) {
+          const classAccess = data.accessibleClasses.find((cls: ClassAccess) => cls.id.toString() === classId);
+          const hasAccessToClass = !!classAccess;
+          
+          setHasAccess(hasAccessToClass);
+          if (hasAccessToClass) {
+            setAccessType(classAccess.accessType || 'unknown');
+            setAccessMessage(classAccess.schoolAccess 
+              ? `School access granted for Grade ${data.userGrade}` 
+              : classAccess.subscriptionAccess 
+              ? 'Access via active subscription'
+              : 'Free access'
+            );
+          } else {
+            setAccessMessage(data.message || 'Access denied');
+          }
+        } else {
+          setHasAccess(false);
+          setAccessMessage('Access denied');
+        }
+      } catch (error) {
+        console.error('Error checking class access:', error);
+        setHasAccess(false);
+        setAccessMessage('Unable to verify access');
+      }
+    };
+
+    checkClassAccess();
+  }, [user?.id, classId]);
 
   useEffect(() => {
     // Auto-select first unlocked subject
@@ -113,10 +170,34 @@ export default function ClassPage() {
 
   const selectedSubjectData = currentClass.subjects.find(s => s.id === selectedSubject);
 
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold mb-2 text-gray-900">Access Denied</h1>
+          <p className="text-gray-600 mb-4">{accessMessage}</p>
+          <div className="space-y-2">
+            <Button onClick={() => router.push('/dashboard')}>
+              Back to Dashboard
+            </Button>
+            <p className="text-sm text-gray-500">
+              Contact your school administrator or purchase a subscription to access this content.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Enhanced Header with Progress */}
+        {/* Enhanced Header with Access Info */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center gap-4 mb-4">
             <Button 
@@ -128,8 +209,23 @@ export default function ClassPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold">{currentClass.name}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl md:text-3xl font-bold">{currentClass.name}</h1>
+                {accessType === 'school' && (
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                    School Access
+                  </span>
+                )}
+                {accessType === 'subscription' && (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    Subscribed
+                  </span>
+                )}
+              </div>
               <p className="text-muted-foreground">{currentClass.description}</p>
+              {accessMessage && (
+                <p className="text-sm text-green-600 mt-1">{accessMessage}</p>
+              )}
             </div>
             <div className="hidden md:flex items-center gap-4">
               <div className="text-center">

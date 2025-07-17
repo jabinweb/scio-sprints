@@ -15,7 +15,10 @@ interface ClassWithSubjects {
   id: number;
   name: string;
   description: string;
-  price?: number; // Keep as number
+  price?: number;
+  accessType?: string;
+  schoolAccess?: boolean;
+  subscriptionAccess?: boolean;
   subjects: Array<{
     id: string;
     name: string;
@@ -30,63 +33,57 @@ interface ClassWithSubjects {
   }>;
 }
 
+// Define a proper type for the user profile returned from Supabase
+interface UserProfile {
+  id: string;
+  grade?: number;
+  school?: {
+    name: string;
+    is_active: boolean;
+  };
+  // add other user fields here if needed
+}
+
 export function DashboardContent() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const { classes, userProgress, loading, error } = useClassData();
+  const { classes, userProgress, loading, error, accessMessage, accessType } = useClassData();
   const [selectedClass, setSelectedClass] = useState<ClassWithSubjects | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [classSubscriptions, setClassSubscriptions] = useState<Map<number, boolean>>(new Map());
-  const [subscriptionsLoading, setSubscriptionsLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  // Check user's subscriptions for all classes
+  // Fetch user profile to show grade and school info
   useEffect(() => {
-    const checkAllSubscriptions = async () => {
-      if (!user?.id || !classes?.length) {
-        setSubscriptionsLoading(false);
-        return;
-      }
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
 
       try {
-        const subscriptionChecks = await Promise.all(
-          classes.map(async (cls) => {
-            const { data: subscription } = await supabase
-              .from('subscriptions')
-              .select('*')
-              .eq('userId', user.id)
-              .eq('classId', cls.id)
-              .eq('status', 'ACTIVE')
-              .gte('endDate', new Date().toISOString())
-              .maybeSingle();
+        const { data, error } = await supabase
+          .from('users')
+          .select(`
+            *,
+            school:schools(name, is_active)
+          `)
+          .eq('id', user.id)
+          .single();
 
-            return { classId: cls.id, hasSubscription: !!subscription };
-          })
-        );
-
-        const subscriptionMap = new Map();
-        subscriptionChecks.forEach(({ classId, hasSubscription }) => {
-          subscriptionMap.set(classId, hasSubscription);
-        });
-
-        setClassSubscriptions(subscriptionMap);
+        if (!error) {
+          setUserProfile(data);
+        }
       } catch (error) {
-        console.error('Error checking subscriptions:', error);
-      } finally {
-        setSubscriptionsLoading(false);
+        console.error('Error fetching user profile:', error);
       }
     };
 
-    checkAllSubscriptions();
-  }, [user?.id, classes]);
+    fetchUserProfile();
+  }, [user?.id]);
 
   const handleClassClick = (classData: ClassWithSubjects) => {
-    const hasSubscription = classSubscriptions.get(classData.id);
-    
-    if (hasSubscription) {
-      // User has subscription, navigate directly to class
+    // Check if user has any access (school or subscription)
+    if (classData.accessType === 'school' || classData.schoolAccess || classData.subscriptionAccess) {
       router.push(`/dashboard/class/${classData.id}`);
     } else {
-      // Show payment dialog for this class
+      // Show payment dialog for classes without access
       setSelectedClass(classData);
       setShowPaymentDialog(true);
     }
@@ -97,7 +94,7 @@ export function DashboardContent() {
     setSelectedClass(null);
   };
 
-  if (loading || subscriptionsLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -142,16 +139,19 @@ export function DashboardContent() {
     return Math.round((completedCount / allTopics.length) * 100);
   };
 
-  // Helper to convert DbClass to ClassWithSubjects (price is already number)
+  // Helper to convert DbClass to ClassWithSubjects
   const toClassWithSubjects = (cls: DbClass): ClassWithSubjects => ({
     ...cls,
-    price: cls.price, // No conversion needed, already a number
+    price: cls.price,
+    accessType: cls.accessType,
+    schoolAccess: cls.schoolAccess,
+    subscriptionAccess: cls.subscriptionAccess,
   });
 
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        {/* Enhanced Header */}
+        {/* Enhanced Header with School Info */}
         <div className="relative overflow-hidden bg-white border-b border-gray-200">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-indigo-600/5" />
           <div className="relative max-w-7xl mx-auto px-6 py-8">
@@ -164,7 +164,25 @@ export function DashboardContent() {
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                     Welcome back, {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student'}!
                   </h1>
-                  <p className="text-gray-600 mt-1">Continue your learning journey</p>
+                  <div className="flex items-center gap-4 mt-1">
+                    <p className="text-gray-600">Continue your learning journey</p>
+                    {userProfile?.grade && (
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                          Grade {userProfile.grade}
+                        </span>
+                        {userProfile.school && (
+                          <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                            userProfile.school.is_active 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {userProfile.school.name}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <Button 
@@ -176,6 +194,27 @@ export function DashboardContent() {
                 Sign Out
               </Button>
             </div>
+
+            {/* Access Message */}
+            {accessMessage && (
+              <div className={`mt-4 p-3 rounded-lg border ${
+                accessType === 'school' 
+                  ? 'bg-green-50 border-green-200' 
+                  : accessType === 'subscription'
+                  ? 'bg-blue-50 border-blue-200'
+                  : 'bg-yellow-50 border-yellow-200'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  accessType === 'school' 
+                    ? 'text-green-800' 
+                    : accessType === 'subscription'
+                    ? 'text-blue-800'
+                    : 'text-yellow-800'
+                }`}>
+                  {accessMessage}
+                </p>
+              </div>
+            )}
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
@@ -217,18 +256,23 @@ export function DashboardContent() {
         {/* Class Cards Section */}
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Classes</h2>
-            <p className="text-gray-600">Select a class to start or continue learning</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Your Classes {userProfile?.grade && `(Grade ${userProfile.grade})`}
+            </h2>
+            <p className="text-gray-600">
+              {accessType === 'school' 
+                ? 'Access content through your school enrollment and subscriptions'
+                : 'Select a class to start or continue learning'
+              }
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {classes.map((cls) => {
               const safeCls = toClassWithSubjects(cls);
-              const priceNum = safeCls.price || 0;
               const progress = calculateClassProgress(safeCls);
               const subjectCount = safeCls.subjects?.length || 0;
               const chapterCount = safeCls.subjects?.reduce((acc, s) => acc + (s.chapters?.length || 0), 0) || 0;
-              const hasSubscription = classSubscriptions.get(safeCls.id) || false;
 
               return (
                 <Card 
@@ -236,20 +280,26 @@ export function DashboardContent() {
                   className="group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer bg-white/80 backdrop-blur-sm"
                   onClick={() => handleClassClick(safeCls)}
                 >
-                  {/* Gradient Background */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 opacity-60 group-hover:opacity-80 transition-opacity" />
-                  
-                  {/* Subscription Status Badge */}
+                  {/* Access Type Badge */}
                   <div className="absolute top-4 right-4 z-10">
-                    {hasSubscription ? (
+                    {cls.schoolAccess ? (
                       <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        School Access
+                      </div>
+                    ) : cls.subscriptionAccess ? (
+                      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg flex items-center gap-1">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                         Subscribed
                       </div>
-                    ) : priceNum > 0 ? (
-                      ''
+                    ) : safeCls.price && safeCls.price > 0 ? (
+                      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                        ₹{Math.round(safeCls.price / 100)}
+                      </div>
                     ) : (
                       <div className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
                         Free
@@ -332,37 +382,37 @@ export function DashboardContent() {
                     {/* Action Button */}
                     <div className="pt-2">
                       <div className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                        hasSubscription 
+                        cls.schoolAccess || cls.subscriptionAccess
                           ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 group-hover:from-green-100 group-hover:to-emerald-100'
                           : 'bg-gradient-to-r from-gray-50 to-blue-50 border-gray-100 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:border-blue-200'
                       }`}>
                         <div className="flex items-center gap-2">
                           <div className={`p-1.5 rounded-lg transition-colors ${
-                            hasSubscription 
+                            cls.schoolAccess || cls.subscriptionAccess
                               ? 'bg-green-100 group-hover:bg-green-200'
                               : 'bg-blue-100 group-hover:bg-blue-200'
                           }`}>
-                            {hasSubscription ? (
-                              <Play className="h-3.5 w-3.5 text-green-600" />
-                            ) : (
-                              <Play className="h-3.5 w-3.5 text-blue-600" />
-                            )}
+                            <Play className={`h-3.5 w-3.5 ${
+                              cls.schoolAccess || cls.subscriptionAccess ? 'text-green-600' : 'text-blue-600'
+                            }`} />
                           </div>
                           <span className={`text-sm font-semibold transition-colors ${
-                            hasSubscription 
+                            cls.schoolAccess || cls.subscriptionAccess
                               ? 'text-green-700 group-hover:text-green-800'
                               : 'text-gray-700 group-hover:text-blue-700'
                           }`}>
-                            {hasSubscription 
+                            {cls.schoolAccess 
+                              ? 'Access via School'
+                              : cls.subscriptionAccess 
                               ? 'Continue Learning'
-                              : priceNum > 0 
-                                ? `Subscribe for ₹${Math.round(priceNum / 100)}`
-                                : 'Start Learning'
+                              : safeCls.price && safeCls.price > 0 
+                              ? `Subscribe for ₹${Math.round(safeCls.price / 100)}`
+                              : 'Start Learning'
                             }
                           </span>
                         </div>
                         <ChevronRight className={`h-4 w-4 transition-all group-hover:translate-x-1 ${
-                          hasSubscription 
+                          cls.schoolAccess || cls.subscriptionAccess
                             ? 'text-green-400 group-hover:text-green-600'
                             : 'text-gray-400 group-hover:text-blue-600'
                         }`} />
@@ -377,23 +427,29 @@ export function DashboardContent() {
             })}
           </div>
 
-          {/* Empty State */}
-          {classes.length === 0 && (
+          {/* Empty State for No Access */}
+          {classes.length === 0 && !loading && (
             <div className="text-center py-16">
               <div className="w-24 h-24 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
                 <BookOpen className="h-12 w-12 text-gray-400" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No Classes Available</h3>
               <p className="text-gray-600 max-w-md mx-auto">
-                Classes will appear here once they&apos;re added to the platform. Check back soon!
+                {userProfile?.school ? 
+                  (userProfile.school.is_active ? 
+                    `No classes available for your grade level. Contact your school administrator.` :
+                    'Your school account is currently inactive. Please contact your school.'
+                  ) :
+                  'You are not assigned to any school. Please contact an administrator.'
+                }
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Payment Dialog - only show if user doesn't have subscription */}
-      {selectedClass && !classSubscriptions.get(selectedClass.id) && (
+      {/* Payment Dialog - only show for classes without access */}
+      {selectedClass && !selectedClass.schoolAccess && !selectedClass.subscriptionAccess && (
         <PaymentDialog
           defaultOpen={showPaymentDialog}
           onClose={handlePaymentDialogClose}

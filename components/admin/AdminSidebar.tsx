@@ -12,11 +12,13 @@ import {
   MessageSquare,
   BookOpen,
   GraduationCap,
-  ChevronLeft
+  ChevronLeft,
+  School
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Schools', href: '/admin/schools', icon: School },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Classes', href: '/admin/classes', icon: GraduationCap },
   { name: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
