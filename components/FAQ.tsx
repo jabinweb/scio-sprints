@@ -6,24 +6,36 @@ import { Card } from "@/components/ui/card";
 
 const faqs = [
   {
-    question: "What age groups is ScioLabs suitable for?",
-    answer: "ScioLabs is designed for students from grades 6-12, with content tailored to different academic levels and curricula."
+    question: "What age groups is ScioSprints suitable for?",
+    answer: "ScioSprints is ideal for students in Classes 4–8, designed to support foundational learning and revision through engaging, curriculum-aligned activities."
+  },
+  {
+    question: "Is the content aligned with the school curriculum?",
+    answer: "Yes, the content is closely aligned with the CBSE curriculum. For ICSE and other boards, we offer custom portals tailored to each school's syllabus and focus areas."
   },
   {
     question: "How does the gamification system work?",
-    answer: "Students earn points, badges, and rewards while completing lessons and quizzes. They can compete with classmates and track their progress on leaderboards."
+    answer: "We use trusted gamification platforms like Baamboozle, Wordwall, Blooket, Educaplay, and Formative. Students earn points, track progress, and see their rank on leaderboards—making learning both fun and competitive."
   },
   {
-    question: "Is ScioLabs aligned with school curriculum?",
-    answer: "Yes, our content is fully aligned with CBSE and ICSE curricula, ensuring that students learn exactly what they need for their academic success."
+    question: "Can parents track progress?",
+    answer: "Yes! Our platform includes a Learning Management System where you can monitor activity completion. Each game or quiz has its own leaderboard and performance view."
   },
   {
-    question: "Can teachers customize the content?",
-    answer: "Absolutely! Teachers can create custom quizzes, modify existing content, and track student progress through our comprehensive dashboard."
+    question: "What devices can students use to access ScioSprints?",
+    answer: "ScioSprints works on mobiles, tablets, laptops, and desktops. For the best experience, a larger screen (tablet or computer) is recommended."
   },
   {
-    question: "What platforms does ScioLabs support?",
-    answer: "ScioLabs works seamlessly across multiple platforms including web browsers, tablets, and mobile devices, with integration support for various learning tools."
+    question: "Can students replay the activities?",
+    answer: "Absolutely! Students are encouraged to repeat games and quizzes to reinforce concepts and improve their scores."
+  },
+  {
+    question: "Can ScioSprints be used in classrooms with teacher tracking?",
+    answer: "Yes! We offer school-branded portals with features like custom content, teacher dashboards, and class activity reports. Contact us to set up a portal aligned with your school's focus areas."
+  },
+  {
+    question: "What should I do if I find an error or have a question?",
+    answer: "If you notice any issue, you can take a screenshot and report it via the contact form or inform your teacher (if using through school). We'll make the correction promptly."
   }
 ];
 

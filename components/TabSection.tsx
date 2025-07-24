@@ -80,21 +80,21 @@ export function TabSection({ tabs, activeTab, onTabChange }: TabSectionProps) {
             activeTab === 'features' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 absolute top-0 left-0 right-0'
           )}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8">
-              {[
+              { [
                 {
                   icon: <Gamepad2 className="w-12 h-12 text-primary" />,
-                  title: "Fun Learning Games",
-                  description: "Learn through exciting games and quizzes on multiple platforms"
-                },
-                {
-                  icon: <Trophy className="w-12 h-12 text-primary" />,
-                  title: "Win & Learn",
-                  description: "Compete with friends and earn points while mastering concepts"
+                  title: "Learn Smarter, Play Better",
+                  description: "Engaging games and quizzes that make learning fun, interactive, and rewarding."
                 },
                 {
                   icon: <Brain className="w-12 h-12 text-primary" />,
-                  title: "Brain Power",
-                  description: "Develop critical thinking skills through interactive challenges"
+                  title: "Think Sharp, Stay Ahead",
+                  description: "Boost critical thinking and retention through challenge-based, concept-driven modules."
+                },
+                {
+                  icon: <BookOpen className="w-12 h-12 text-primary" />,
+                  title: "Syllabus Simplified",
+                  description: "Aligned with CBSE & ICSE, offering chapter-wise learning, practice tests, and assessments."
                 }
               ].map((feature, index) => (
                 <Card key={index} className="bg-white/50 backdrop-blur-sm border border-white/20 hover:shadow-xl transition-all duration-200">
@@ -103,7 +103,7 @@ export function TabSection({ tabs, activeTab, onTabChange }: TabSectionProps) {
                     <h3 className="text-2xl font-semibold text-brand-blue">{feature.title}</h3>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 text-lg">{feature.description}</p>
+                    <p className="text-gray-600">{feature.description}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -118,14 +118,15 @@ export function TabSection({ tabs, activeTab, onTabChange }: TabSectionProps) {
             <div className="bg-background rounded-2xl p-8 shadow-lg">
               <div className="grid md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-2xl font-semibold mb-6 text-primary">Aligned with Your School</h3>
+                  <h3 className="text-2xl font-semibold mb-6 text-primary">Comprehensive Curriculum Coverage</h3>
                   <ul className="space-y-4">
-                    {[
-                      "CBSE & ICSE Curriculum Coverage",
-                      "Subject-wise Learning Modules",
-                      "Interactive Chapter Reviews",
-                      "Practice Tests & Assessments",
-                      "Concept-based Learning"
+                    { [
+                      "CBSE Classes 4–8",
+                      "Custom Curriculum for ICSE & IB",
+                      "Subject- & Chapter-wise Activities",
+                      "Covers Key Terms & Concepts",
+                      "HOTS Questions for Deeper Thinking",
+                      "Boosts Concept Clarity & Recall"
                     ].map((item, index) => (
                       <li key={index} className="flex items-center gap-3 text-lg">
                         <div className="bg-primary/10 p-2 rounded-full">
@@ -154,36 +155,36 @@ export function TabSection({ tabs, activeTab, onTabChange }: TabSectionProps) {
             activeTab === 'benefits' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 absolute top-0 left-0 right-0'
           )}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-              {[
+              { [
                 {
                   icon: <Target className="w-10 h-10 text-primary" />,
                   title: "Improved Focus",
-                  description: "Gamified learning keeps students engaged and focused"
+                  description: "Gamified challenges keep learners engaged and attentive."
                 },
                 {
                   icon: <Brain className="w-10 h-10 text-primary" />,
                   title: "Better Retention",
-                  description: "Interactive content enhances memory and understanding"
+                  description: "Interactive activities boost memory and deepen understanding."
                 },
                 {
                   icon: <Trophy className="w-10 h-10 text-primary" />,
                   title: "Confidence Boost",
-                  description: "Achievement system builds student confidence"
+                  description: "Progress tracking and rewards build learner confidence."
                 },
                 {
                   icon: <Users className="w-10 h-10 text-primary" />,
                   title: "Peer Learning",
-                  description: "Collaborative features promote group learning"
+                  description: "Collaborative features encourage group interaction and learning."
                 },
                 {
                   icon: <Rocket className="w-10 h-10 text-primary" />,
-                  title: "Rapid Progress",
-                  description: "Track and celebrate learning milestones"
+                  title: "Faster Progress",
+                  description: "Milestone-based tracking accelerates learning outcomes."
                 },
                 {
                   icon: <BookOpen className="w-10 h-10 text-primary" />,
-                  title: "Comprehensive Coverage",
-                  description: "Complete curriculum coverage with fun"
+                  title: "Complete Coverage",
+                  description: "Covers the entire curriculum through fun, bite-sized revision."
                 }
               ].map((benefit, index) => (
                 <Card key={index} className="bg-white/50 backdrop-blur-sm border border-white/20 group hover:shadow-lg transition-all duration-200">

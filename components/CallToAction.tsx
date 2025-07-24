@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Users, GraduationCap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
 import { SignupForm } from './SignupForm';
@@ -21,28 +22,45 @@ export function CallToAction() {
         <Card className="bg-white/50 backdrop-blur-sm border border-white/20">
           <CardContent className="text-center py-12 px-6">
             <h2 className="text-4xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent">Choose Your Path</span> 🚀
+              <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent">Choose Your Journey</span> 🚀
             </h2>
             <p className="text-base sm:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
-              Whether you&apos;re a parent or an educator, we have the perfect solution for you.
+              Whether you&apos;re a parent seeking engaging learning at home or a school looking to enhance classroom outcomes — we&apos;ve got you covered.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                onClick={() => router.push('/demo')}
-                className="bg-brand-blue hover:bg-brand-blue-dark text-white rounded-full px-8 py-6 text-lg"
-              >
-                <Users className="mr-2 h-5 w-5" />
-                I am a Parent
-              </Button>
-              <Button 
-                onClick={handleEducatorClick}
-                variant="outline"
-                className="border-brand-blue text-brand-blue hover:bg-brand-blue/10 rounded-full px-8 py-6 text-lg"
-              >
-                <GraduationCap className="mr-2 h-5 w-5" />
-                I am an Educator
-              </Button>
-            </div>
+            <TooltipProvider>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={() => router.push('/demo')}
+                      className="bg-brand-blue hover:bg-brand-blue-dark text-white rounded-full px-8 py-6 text-lg"
+                    >
+                      <Users className="mr-2 h-5 w-5" />
+                      I am a Parent
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-gray-900 !text-white border-gray-800 shadow-xl px-4 py-2 rounded-lg">
+                    <p>Fun, self-paced learning tools your child will love.</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={handleEducatorClick}
+                      variant="outline"
+                      className="border-brand-blue text-brand-blue hover:bg-brand-blue/10 rounded-full px-8 py-6 text-lg"
+                    >
+                      <GraduationCap className="mr-2 h-5 w-5" />
+                      I&apos;m a School Admin
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-gray-900 text-white border-gray-800 shadow-xl px-4 py-2 rounded-lg">
+                    <p>Custom portals, class reports, and curriculum-aligned resources.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </CardContent>
         </Card>
       </div>

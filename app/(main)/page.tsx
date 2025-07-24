@@ -83,7 +83,7 @@ export default function Home() {
                 <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent ">Multi-Platform Learning</span> 🎮
               </h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Learn and play across your favorite educational platforms
+                Learn and play across trusted educational platforms, all in one place.
               </p>
             </div>
 

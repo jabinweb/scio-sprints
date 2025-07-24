@@ -41,8 +41,8 @@ export function Hero() {
             </div>
 
             {/* Hero Title */}
-            <h1 className="display mb-6 text-gray-200 md:!leading-[6rem] leading-[4rem] sm:leading-[4rem] font-bold">
-              Make Learning Fun with{' '}
+            <h1 className="display mb-6 text-6xl text-gray-200 md:!leading-[5rem] leading-[4rem] font-bold">
+              Fun-Fueled Revisions with{' '}
               <span className="bg-gradient-to-r from-brand-blue via-white to-brand-green bg-clip-text text-transparent">
                 ScioSprints!
               </span>{' '}
@@ -51,8 +51,7 @@ export function Hero() {
             
             {/* Description */}
             <p className="lead max-w-2xl mx-auto mb-8 text-gray-300">
-              Transform your revision journey into an exciting adventure with our gamified learning platform. 
-              Join thousands of students who learn while having fun!
+              Play curriculum‑aligned games, compete with peers, and climb leaderboards—make your revisions fun and rewarding.
             </p>
           </div>
 
@@ -78,9 +77,9 @@ export function Hero() {
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl mx-auto px-4 animate-fade-in">
             {[
-              { number: '10K+', label: 'Active Students' },
-              { number: '500+', label: 'Quiz Games' },
-              { number: '98%', label: 'Success Rate' }
+              { number: '40+', label: 'Game Formats' },
+              { number: '4000+', label: 'Curriculum-Aligned Games' },
+              { number: '100+', label: 'HOTS Challenges' }
             ].map((stat, index) => (
               <Card key={index} className="bg-white/5 backdrop-blur-sm border-white/10 overflow-hidden group">
                 <CardContent className="p-4 relative">
