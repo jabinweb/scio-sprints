@@ -94,7 +94,7 @@ export function TabSection({ tabs, activeTab, onTabChange }: TabSectionProps) {
                 {
                   icon: <BookOpen className="w-12 h-12 text-primary" />,
                   title: "Syllabus Simplified",
-                  description: "Aligned with CBSE & ICSE, offering chapter-wise learning, practice tests, and assessments."
+                  description: "Aligned with CBSE curriculum offering chapter-wise learning activities."
                 }
               ].map((feature, index) => (
                 <Card key={index} className="bg-white/50 backdrop-blur-sm border border-white/20 hover:shadow-xl transition-all duration-200">
@@ -121,12 +121,10 @@ export function TabSection({ tabs, activeTab, onTabChange }: TabSectionProps) {
                   <h3 className="text-2xl font-semibold mb-6 text-primary">Comprehensive Curriculum Coverage</h3>
                   <ul className="space-y-4">
                     { [
-                      "CBSE Classes 4–8",
-                      "Custom Curriculum for ICSE & IB",
-                      "Subject- & Chapter-wise Activities",
+                      "CBSE : Classes 4–8",
+                      "Subject & Chapter-wise Activities",
                       "Covers Key Terms & Concepts",
                       "HOTS Questions for Deeper Thinking",
-                      "Boosts Concept Clarity & Recall"
                     ].map((item, index) => (
                       <li key={index} className="flex items-center gap-3 text-lg">
                         <div className="bg-primary/10 p-2 rounded-full">

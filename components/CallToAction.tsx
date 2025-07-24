@@ -25,7 +25,7 @@ export function CallToAction() {
               <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent">Choose Your Journey</span> 🚀
             </h2>
             <p className="text-base sm:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
-              Whether you&apos;re a parent seeking engaging learning at home or a school looking to enhance classroom outcomes — we&apos;ve got you covered.
+              Are you a parent seeking engaging learning at home or a school looking to enhance classroom outcomes? We’ve got you covered!
             </p>
             <TooltipProvider>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -40,7 +40,7 @@ export function CallToAction() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="bg-gray-900 !text-white border-gray-800 shadow-xl px-4 py-2 rounded-lg">
-                    <p>Fun, self-paced learning tools your child will love.</p>
+                    Fun, self-paced learning tools your child will love.
                   </TooltipContent>
                 </Tooltip>
                 
@@ -56,7 +56,7 @@ export function CallToAction() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="bg-gray-900 text-white border-gray-800 shadow-xl px-4 py-2 rounded-lg">
-                    <p>Custom portals, class reports, and curriculum-aligned resources.</p>
+                    Custom portals, class reports, and curriculum-aligned resources.
                   </TooltipContent>
                 </Tooltip>
               </div>
