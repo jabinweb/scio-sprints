@@ -14,7 +14,28 @@ export type Topic = {
   };
 };
 
-export const classData = {
+type Chapter = {
+  id: string;
+  name: string;
+  topics: Topic[];
+};
+
+type Subject = {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  isLocked: boolean;
+  chapters: Chapter[];
+};
+
+type ClassInfo = {
+  name: string;
+  description: string;
+  subjects: Subject[];
+};
+
+export const classData: Record<number, ClassInfo> = {
   5: {
     name: 'Class 5',
     description: 'Foundation level learning with interactive content',
@@ -31,7 +52,7 @@ export const classData = {
             name: 'Numbers and Operations',
             topics: [
               { 
-                id: 't1', 
+                id: 'c5-math-ch1-t1', 
                 name: 'Large Numbers', 
                 type: 'video', 
                 duration: '15 min', 
@@ -39,7 +60,7 @@ export const classData = {
                 content: { type: 'external_link', url: 'https://www.youtube.com/watch?v=example1' }
               },
               { 
-                id: 't2', 
+                id: 'c5-math-ch1-t2', 
                 name: 'Place Value', 
                 type: 'interactive', 
                 duration: '20 min', 
@@ -47,7 +68,7 @@ export const classData = {
                 content: { type: 'external_link', url: 'https://www.khanacademy.org/place-value' }
               },
               { 
-                id: 't3', 
+                id: 'c5-math-ch1-t3', 
                 name: 'Comparing Numbers', 
                 type: 'video', 
                 duration: '12 min', 
@@ -55,7 +76,7 @@ export const classData = {
                 content: { type: 'external_link', url: 'https://www.example.com/comparing-numbers' }
               },
               { 
-                id: 't4', 
+                id: 'c5-math-ch1-t4', 
                 name: 'Practice Questions', 
                 type: 'exercise', 
                 duration: '30 min', 
@@ -69,7 +90,7 @@ export const classData = {
             name: 'Basic Arithmetic',
             topics: [
               { 
-                id: 't5', 
+                id: 'c5-math-ch2-t1', 
                 name: 'Addition & Subtraction', 
                 type: 'video', 
                 duration: '18 min', 
@@ -77,7 +98,7 @@ export const classData = {
                 content: { type: 'external_link', url: 'https://www.example.com/addition-subtraction' }
               },
               { 
-                id: 't6', 
+                id: 'c5-math-ch2-t2', 
                 name: 'Multiplication Tables', 
                 type: 'audio', 
                 duration: '25 min', 
@@ -85,7 +106,7 @@ export const classData = {
                 content: { type: 'external_link', url: 'https://www.example.com/multiplication' }
               },
               { 
-                id: 't7', 
+                id: 'c5-math-ch2-t3', 
                 name: 'Division Methods', 
                 type: 'interactive', 
                 duration: '22 min', 
@@ -108,28 +129,28 @@ export const classData = {
             name: 'Our Environment',
             topics: [
               { 
-                id: 't1', 
+                id: 'c5-science-ch1-t1', 
                 name: 'Living and Non-living', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '16 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/living-nonliving' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/living-nonliving' }
               },
               { 
-                id: 't2', 
+                id: 'c5-science-ch1-t2', 
                 name: 'Plants Around Us', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '24 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/plants' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/plants' }
               },
               { 
-                id: 't3', 
+                id: 'c5-science-ch1-t3', 
                 name: 'Animals and Their Homes', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '20 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/animals' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/animals' }
               }
             ]
           },
@@ -138,20 +159,20 @@ export const classData = {
             name: 'Food and Health',
             topics: [
               { 
-                id: 't4', 
+                id: 'c5-science-ch2-t4', 
                 name: 'Healthy Food Habits', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '14 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/healthy-food' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/healthy-food' }
               },
               { 
-                id: 't5', 
+                id: 'c5-science-ch2-t5', 
                 name: 'Vitamins and Minerals', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '18 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/vitamins' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/vitamins' }
               }
             ]
           }
@@ -169,36 +190,36 @@ export const classData = {
             name: 'Grammar Basics',
             topics: [
               { 
-                id: 't1', 
+                id: 'c5-english-ch1-t1', 
                 name: 'Nouns and Pronouns', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '10 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/nouns-pronouns' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/nouns-pronouns' }
               },
               { 
-                id: 't2', 
+                id: 'c5-english-ch1-t2', 
                 name: 'Verbs and Adjectives', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '15 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/verbs-adjectives' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/verbs-adjectives' }
               },
               { 
-                id: 't3', 
+                id: 'c5-english-ch1-t3', 
                 name: 'Adverbs and Prepositions', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '12 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/adverbs-prepositions' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/adverbs-prepositions' }
               },
               { 
-                id: 't4', 
+                id: 'c5-english-ch1-t4', 
                 name: 'Sentence Structure', 
-                type: 'exercise', 
+                type: 'exercise' as const, 
                 duration: '25 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/sentence-structure' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/sentence-structure' }
               }
             ]
           },
@@ -207,28 +228,28 @@ export const classData = {
             name: 'Composition',
             topics: [
               { 
-                id: 't5', 
+                id: 'c5-english-ch2-t5', 
                 name: 'Paragraph Writing', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '20 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/paragraph-writing' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/paragraph-writing' }
               },
               { 
-                id: 't6', 
+                id: 'c5-english-ch2-t6', 
                 name: 'Essay Writing', 
-                type: 'audio', 
+                type: 'audio' as const, 
                 duration: '30 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/essay-writing' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/essay-writing' }
               },
               { 
-                id: 't7', 
+                id: 'c5-english-ch2-t7', 
                 name: 'Report Writing', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '28 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/report-writing' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/report-writing' }
               }
             ]
           }
@@ -246,28 +267,28 @@ export const classData = {
             name: 'Our Country',
             topics: [
               { 
-                id: 't1', 
+                id: 'c5-social-ch1-t1', 
                 name: 'States and Capitals', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '15 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/states-capitals' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/states-capitals' }
               },
               { 
-                id: 't2', 
+                id: 'c5-social-ch1-t2', 
                 name: 'Major Rivers', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '20 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/major-rivers' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/major-rivers' }
               },
               { 
-                id: 't3', 
+                id: 'c5-social-ch1-t3', 
                 name: 'Mountains and Plains', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '12 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/mountains-plains' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/mountains-plains' }
               }
             ]
           }
@@ -291,36 +312,36 @@ export const classData = {
             name: 'Integers and Rational Numbers',
             topics: [
               { 
-                id: 't1', 
+                id: 'c6-math-ch1-t1', 
                 name: 'Understanding Integers', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '15 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/integers' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/integers' }
               },
               { 
-                id: 't2', 
+                id: 'c6-math-ch1-t2', 
                 name: 'Rational Numbers', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '20 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/rational-numbers' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/rational-numbers' }
               },
               { 
-                id: 't3', 
+                id: 'c6-math-ch1-t3', 
                 name: 'Number Line', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '12 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/number-line' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/number-line' }
               },
               { 
-                id: 't4', 
+                id: 'c6-math-ch1-t4', 
                 name: 'Operations on Integers', 
-                type: 'exercise', 
+                type: 'exercise' as const, 
                 duration: '30 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/integer-operations' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/integer-operations' }
               }
             ]
           },
@@ -329,28 +350,28 @@ export const classData = {
             name: 'Algebraic Expressions',
             topics: [
               { 
-                id: 't5', 
+                id: 'c6-math-ch2-t1', 
                 name: 'Introduction to Algebra', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '18 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/algebra-intro' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/algebra-intro' }
               },
               { 
-                id: 't6', 
+                id: 'c6-math-ch2-t2', 
                 name: 'Variables and Constants', 
-                type: 'audio', 
+                type: 'audio' as const, 
                 duration: '25 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/variables-constants' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/variables-constants' }
               },
               { 
-                id: 't7', 
+                id: 'c6-math-ch2-t3', 
                 name: 'Algebraic Identities', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '22 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/algebraic-identities' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/algebraic-identities' }
               }
             ]
           }
@@ -368,28 +389,28 @@ export const classData = {
             name: 'Components of Food',
             topics: [
               { 
-                id: 't1', 
+                id: 'c6-science-ch1-t1', 
                 name: 'Carbohydrates', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '16 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/carbohydrates' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/carbohydrates' }
               },
               { 
-                id: 't2', 
+                id: 'c6-science-ch1-t2', 
                 name: 'Proteins and Fats', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '24 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/proteins-fats' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/proteins-fats' }
               },
               { 
-                id: 't3', 
+                id: 'c6-science-ch1-t3', 
                 name: 'Vitamins and Minerals', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '20 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/vitamins-minerals' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/vitamins-minerals' }
               }
             ]
           },
@@ -398,20 +419,20 @@ export const classData = {
             name: 'Chemical Reactions',
             topics: [
               { 
-                id: 't4', 
+                id: 'c6-science-ch2-t4', 
                 name: 'Introduction to Chemical Reactions', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '14 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/chemical-reactions' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/chemical-reactions' }
               },
               { 
-                id: 't5', 
+                id: 'c6-science-ch2-t5', 
                 name: 'Types of Chemical Reactions', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '18 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/reaction-types' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/reaction-types' }
               }
             ]
           }
@@ -429,36 +450,36 @@ export const classData = {
             name: 'Tenses',
             topics: [
               { 
-                id: 't1', 
+                id: 'c6-english-ch1-t1', 
                 name: 'Present Tense', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '10 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/present-tense' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/present-tense' }
               },
               { 
-                id: 't2', 
+                id: 'c6-english-ch1-t2', 
                 name: 'Past Tense', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '15 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/past-tense' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/past-tense' }
               },
               { 
-                id: 't3', 
+                id: 'c6-english-ch1-t3', 
                 name: 'Future Tense', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '12 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/future-tense' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/future-tense' }
               },
               { 
-                id: 't4', 
+                id: 'c6-english-ch1-t4', 
                 name: 'Perfect Tense', 
-                type: 'exercise', 
+                type: 'exercise' as const, 
                 duration: '25 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/perfect-tense' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/perfect-tense' }
               }
             ]
           },
@@ -467,28 +488,28 @@ export const classData = {
             name: 'Punctuation and Sentence Structure',
             topics: [
               { 
-                id: 't5', 
+                id: 'c6-english-ch2-t5', 
                 name: 'Commas and Full Stops', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '20 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/punctuation' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/punctuation' }
               },
               { 
-                id: 't6', 
+                id: 'c6-english-ch2-t6', 
                 name: 'Question Marks and Exclamation Points', 
-                type: 'audio', 
+                type: 'audio' as const, 
                 duration: '30 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/question-marks' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/question-marks' }
               },
               { 
-                id: 't7', 
+                id: 'c6-english-ch2-t7', 
                 name: 'Sentence Fragments and Run-ons', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '28 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/sentence-fragments' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/sentence-fragments' }
               }
             ]
           }
@@ -506,36 +527,36 @@ export const classData = {
             name: 'Geographical Features',
             topics: [
               { 
-                id: 't1', 
+                id: 'c6-social-ch1-t1', 
                 name: 'Mountains, Valleys, and Plains', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '15 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/geographical-features' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/geographical-features' }
               },
               { 
-                id: 't2', 
+                id: 'c6-social-ch1-t2', 
                 name: 'Rivers, Lakes, and Oceans', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '20 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/water-bodies' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/water-bodies' }
               },
               { 
-                id: 't3', 
+                id: 'c6-social-ch1-t3', 
                 name: 'Deserts and Forests', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '12 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/deserts-forests' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/deserts-forests' }
               },
               { 
-                id: 't4', 
+                id: 'c6-social-ch1-t4', 
                 name: 'Climate and Weather', 
-                type: 'exercise', 
+                type: 'exercise' as const, 
                 duration: '30 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/climate-weather' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/climate-weather' }
               }
             ]
           },
@@ -544,28 +565,28 @@ export const classData = {
             name: 'Cultural Heritage',
             topics: [
               { 
-                id: 't5', 
+                id: 'c6-social-ch2-t5', 
                 name: 'Famous Monuments', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '18 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/monuments' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/monuments' }
               },
               { 
-                id: 't6', 
+                id: 'c6-social-ch2-t6', 
                 name: 'Traditional Dances and Music', 
-                type: 'audio', 
+                type: 'audio' as const, 
                 duration: '25 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/traditional-arts' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/traditional-arts' }
               },
               { 
-                id: 't7', 
+                id: 'c6-social-ch2-t7', 
                 name: 'Festivals and Celebrations', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '22 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/festivals' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/festivals' }
               }
             ]
           }
@@ -574,304 +595,6 @@ export const classData = {
     ]
   },
   7: {
-    name: 'Class 6',
-    description: 'Intermediate level with advanced concepts',
-    subjects: [
-      {
-        id: 'math',
-        name: 'Mathematics',
-        icon: '🔢',
-        color: 'from-blue-400 to-blue-600',
-        isLocked: false,
-        chapters: [
-          {
-            id: 'ch1',
-            name: 'Integers and Rational Numbers',
-            topics: [
-              { 
-                id: 't1', 
-                name: 'Understanding Integers', 
-                type: 'video', 
-                duration: '15 min', 
-                completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/integers' }
-              },
-              { 
-                id: 't2', 
-                name: 'Rational Numbers', 
-                type: 'interactive', 
-                duration: '20 min', 
-                completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/rational-numbers' }
-              },
-              { 
-                id: 't3', 
-                name: 'Number Line', 
-                type: 'video', 
-                duration: '12 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/number-line' }
-              },
-              { 
-                id: 't4', 
-                name: 'Operations on Integers', 
-                type: 'exercise', 
-                duration: '30 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/integer-operations' }
-              }
-            ]
-          },
-          {
-            id: 'ch2',
-            name: 'Algebraic Expressions',
-            topics: [
-              { 
-                id: 't5', 
-                name: 'Introduction to Algebra', 
-                type: 'video', 
-                duration: '18 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/algebra-intro' }
-              },
-              { 
-                id: 't6', 
-                name: 'Variables and Constants', 
-                type: 'audio', 
-                duration: '25 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/variables-constants' }
-              },
-              { 
-                id: 't7', 
-                name: 'Algebraic Identities', 
-                type: 'interactive', 
-                duration: '22 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/algebraic-identities' }
-              }
-            ]
-          }
-        ]
-      },
-      {
-        id: 'science',
-        name: 'Science',
-        icon: '🔬',
-        color: 'from-green-400 to-green-600',
-        isLocked: false,
-        chapters: [
-          {
-            id: 'ch1',
-            name: 'Components of Food',
-            topics: [
-              { 
-                id: 't1', 
-                name: 'Carbohydrates', 
-                type: 'video', 
-                duration: '16 min', 
-                completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/carbohydrates' }
-              },
-              { 
-                id: 't2', 
-                name: 'Proteins and Fats', 
-                type: 'interactive', 
-                duration: '24 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/proteins-fats' }
-              },
-              { 
-                id: 't3', 
-                name: 'Vitamins and Minerals', 
-                type: 'video', 
-                duration: '20 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/vitamins-minerals' }
-              }
-            ]
-          },
-          {
-            id: 'ch2',
-            name: 'Chemical Reactions',
-            topics: [
-              { 
-                id: 't4', 
-                name: 'Introduction to Chemical Reactions', 
-                type: 'video', 
-                duration: '14 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/chemical-reactions' }
-              },
-              { 
-                id: 't5', 
-                name: 'Types of Chemical Reactions', 
-                type: 'interactive', 
-                duration: '18 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/reaction-types' }
-              }
-            ]
-          }
-        ]
-      },
-      {
-        id: 'english',
-        name: 'English',
-        icon: '📚',
-        color: 'from-purple-400 to-purple-600',
-        isLocked: false,
-        chapters: [
-          {
-            id: 'ch1',
-            name: 'Tenses',
-            topics: [
-              { 
-                id: 't1', 
-                name: 'Present Tense', 
-                type: 'video', 
-                duration: '10 min', 
-                completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/present-tense' }
-              },
-              { 
-                id: 't2', 
-                name: 'Past Tense', 
-                type: 'interactive', 
-                duration: '15 min', 
-                completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/past-tense' }
-              },
-              { 
-                id: 't3', 
-                name: 'Future Tense', 
-                type: 'video', 
-                duration: '12 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/future-tense' }
-              },
-              { 
-                id: 't4', 
-                name: 'Perfect Tense', 
-                type: 'exercise', 
-                duration: '25 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/perfect-tense' }
-              }
-            ]
-          },
-          {
-            id: 'ch2',
-            name: 'Punctuation and Sentence Structure',
-            topics: [
-              { 
-                id: 't5', 
-                name: 'Commas and Full Stops', 
-                type: 'video', 
-                duration: '20 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/punctuation' }
-              },
-              { 
-                id: 't6', 
-                name: 'Question Marks and Exclamation Points', 
-                type: 'audio', 
-                duration: '30 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/question-marks' }
-              },
-              { 
-                id: 't7', 
-                name: 'Sentence Fragments and Run-ons', 
-                type: 'interactive', 
-                duration: '28 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/sentence-fragments' }
-              }
-            ]
-          }
-        ]
-      },
-      {
-        id: 'social',
-        name: 'Social Studies',
-        icon: '🌍',
-        color: 'from-orange-400 to-orange-600',
-        isLocked: false,
-        chapters: [
-          {
-            id: 'ch1',
-            name: 'Geographical Features',
-            topics: [
-              { 
-                id: 't1', 
-                name: 'Mountains, Valleys, and Plains', 
-                type: 'video', 
-                duration: '15 min', 
-                completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/geographical-features' }
-              },
-              { 
-                id: 't2', 
-                name: 'Rivers, Lakes, and Oceans', 
-                type: 'interactive', 
-                duration: '20 min', 
-                completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/water-bodies' }
-              },
-              { 
-                id: 't3', 
-                name: 'Deserts and Forests', 
-                type: 'video', 
-                duration: '12 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/deserts-forests' }
-              },
-              { 
-                id: 't4', 
-                name: 'Climate and Weather', 
-                type: 'exercise', 
-                duration: '30 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/climate-weather' }
-              }
-            ]
-          },
-          {
-            id: 'ch2',
-            name: 'Cultural Heritage',
-            topics: [
-              { 
-                id: 't5', 
-                name: 'Famous Monuments', 
-                type: 'video', 
-                duration: '18 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/monuments' }
-              },
-              { 
-                id: 't6', 
-                name: 'Traditional Dances and Music', 
-                type: 'audio', 
-                duration: '25 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/traditional-arts' }
-              },
-              { 
-                id: 't7', 
-                name: 'Festivals and Celebrations', 
-                type: 'interactive', 
-                duration: '22 min', 
-                completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/festivals' }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  8: {
     name: 'Class 7',
     description: 'Advanced curriculum with exam preparation',
     subjects: [
@@ -887,36 +610,36 @@ export const classData = {
             name: 'Rational Numbers and Proportions',
             topics: [
               { 
-                id: 't1', 
+                id: 'c7-math-ch1-t1', 
                 name: 'Understanding Rational Numbers', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '15 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/rational-numbers' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/rational-numbers' }
               },
               { 
-                id: 't2', 
+                id: 'c7-math-ch1-t2', 
                 name: 'Proportions and Ratios', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '20 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/proportions' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/proportions' }
               },
               { 
-                id: 't3', 
+                id: 'c7-math-ch1-t3', 
                 name: 'Percentage', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '12 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/percentage' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/percentage' }
               },
               { 
-                id: 't4', 
+                id: 'c7-math-ch1-t4', 
                 name: 'Profit and Loss', 
-                type: 'exercise', 
+                type: 'exercise' as const, 
                 duration: '30 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/profit-loss' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/profit-loss' }
               }
             ]
           },
@@ -925,28 +648,28 @@ export const classData = {
             name: 'Linear Equations',
             topics: [
               { 
-                id: 't5', 
+                id: 'c7-math-ch2-t5', 
                 name: 'Introduction to Linear Equations', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '18 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/linear-equations' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/linear-equations' }
               },
               { 
-                id: 't6', 
+                id: 'c7-math-ch2-t6', 
                 name: 'Solving Equations', 
-                type: 'audio', 
+                type: 'audio' as const, 
                 duration: '25 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/solving-equations' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/solving-equations' }
               },
               { 
-                id: 't7', 
+                id: 'c7-math-ch2-t7', 
                 name: 'Applications of Linear Equations', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '22 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/linear-applications' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/linear-applications' }
               }
             ]
           }
@@ -964,28 +687,28 @@ export const classData = {
             name: 'Physical and Chemical Changes',
             topics: [
               { 
-                id: 't1', 
+                id: 'c7-science-ch1-t1', 
                 name: 'Understanding Physical Changes', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '16 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/physical-changes' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/physical-changes' }
               },
               { 
-                id: 't2', 
+                id: 'c7-science-ch1-t2', 
                 name: 'Chemical Reactions in Daily Life', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '24 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/chemical-reactions-daily' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/chemical-reactions-daily' }
               },
               { 
-                id: 't3', 
+                id: 'c7-science-ch1-t3', 
                 name: 'Acids, Bases, and Salts', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '20 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/acids-bases-salts' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/acids-bases-salts' }
               }
             ]
           },
@@ -994,20 +717,20 @@ export const classData = {
             name: 'Structure of the Atom',
             topics: [
               { 
-                id: 't4', 
+                id: 'c7-science-ch2-t4', 
                 name: 'Introduction to Atomic Structure', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '14 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/atomic-structure' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/atomic-structure' }
               },
               { 
-                id: 't5', 
+                id: 'c7-science-ch2-t5', 
                 name: 'Subatomic Particles', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '18 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/subatomic-particles' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/subatomic-particles' }
               }
             ]
           }
@@ -1025,36 +748,36 @@ export const classData = {
             name: 'Active and Passive Voice',
             topics: [
               { 
-                id: 't1', 
+                id: 'c7-english-ch1-t1', 
                 name: 'Understanding Active Voice', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '10 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/active-voice' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/active-voice' }
               },
               { 
-                id: 't2', 
+                id: 'c7-english-ch1-t2', 
                 name: 'Understanding Passive Voice', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '15 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/passive-voice' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/passive-voice' }
               },
               { 
-                id: 't3', 
+                id: 'c7-english-ch1-t3', 
                 name: 'Changing Voices', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '12 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/changing-voices' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/changing-voices' }
               },
               { 
-                id: 't4', 
+                id: 'c7-english-ch1-t4', 
                 name: 'Exercises on Voice', 
-                type: 'exercise', 
+                type: 'exercise' as const, 
                 duration: '25 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/voice-exercises' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/voice-exercises' }
               }
             ]
           },
@@ -1063,28 +786,28 @@ export const classData = {
             name: 'Direct and Indirect Speech',
             topics: [
               { 
-                id: 't5', 
+                id: 'c7-english-ch2-t5', 
                 name: 'Understanding Direct Speech', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '20 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/direct-speech' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/direct-speech' }
               },
               { 
-                id: 't6', 
+                id: 'c7-english-ch2-t6', 
                 name: 'Understanding Indirect Speech', 
-                type: 'audio', 
+                type: 'audio' as const, 
                 duration: '30 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/indirect-speech' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/indirect-speech' }
               },
               { 
-                id: 't7', 
+                id: 'c7-english-ch2-t7', 
                 name: 'Changing Speech Forms', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '28 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/speech-forms' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/speech-forms' }
               }
             ]
           }
@@ -1102,36 +825,36 @@ export const classData = {
             name: 'Revolutionary Leaders',
             topics: [
               { 
-                id: 't1', 
+                id: 'c7-social-ch1-t1', 
                 name: 'George Washington', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '15 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/george-washington' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/george-washington' }
               },
               { 
-                id: 't2', 
+                id: 'c7-social-ch1-t2', 
                 name: 'Mahatma Gandhi', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '20 min', 
                 completed: true,
-                content: { type: 'external_link', url: 'https://www.example.com/mahatma-gandhi' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/mahatma-gandhi' }
               },
               { 
-                id: 't3', 
+                id: 'c7-social-ch1-t3', 
                 name: 'Nelson Mandela', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '12 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/nelson-mandela' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/nelson-mandela' }
               },
               { 
-                id: 't4', 
+                id: 'c7-social-ch1-t4', 
                 name: 'Winston Churchill', 
-                type: 'exercise', 
+                type: 'exercise' as const, 
                 duration: '30 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/winston-churchill' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/winston-churchill' }
               }
             ]
           },
@@ -1140,28 +863,28 @@ export const classData = {
             name: 'Independence Movements',
             topics: [
               { 
-                id: 't5', 
+                id: 'c7-social-ch2-t5', 
                 name: 'American Revolution', 
-                type: 'video', 
+                type: 'video' as const, 
                 duration: '18 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/american-revolution' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/american-revolution' }
               },
               { 
-                id: 't6', 
+                id: 'c7-social-ch2-t6', 
                 name: 'French Revolution', 
-                type: 'audio', 
+                type: 'audio' as const, 
                 duration: '25 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/french-revolution' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/french-revolution' }
               },
               { 
-                id: 't7', 
+                id: 'c7-social-ch2-t7', 
                 name: 'Indian Independence', 
-                type: 'interactive', 
+                type: 'interactive' as const, 
                 duration: '22 min', 
                 completed: false,
-                content: { type: 'external_link', url: 'https://www.example.com/indian-independence' }
+                content: { type: 'external_link' as const, url: 'https://www.example.com/indian-independence' }
               }
             ]
           }
@@ -1169,7 +892,7 @@ export const classData = {
       }
     ]
   },
-  9: {
+  8: {
     name: 'Class 8',
     description: 'Pre-board preparation with comprehensive content',
     subjects: [
@@ -1184,19 +907,68 @@ export const classData = {
             id: 'ch1',
             name: 'Exponents and Powers',
             topics: [
-              { id: 't1', name: 'Understanding Exponents', type: 'video', duration: '15 min', completed: true },
-              { id: 't2', name: 'Laws of Exponents', type: 'interactive', duration: '20 min', completed: true },
-              { id: 't3', name: 'Scientific Notation', type: 'video', duration: '12 min', completed: false },
-              { id: 't4', name: 'Square and Cube Roots', type: 'exercise', duration: '30 min', completed: false }
+              { 
+                id: 'c8-math-ch1-t1', 
+                name: 'Understanding Exponents', 
+                type: 'video' as const, 
+                duration: '15 min', 
+                completed: true,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/exponents' }
+              },
+              { 
+                id: 'c8-math-ch1-t2', 
+                name: 'Laws of Exponents', 
+                type: 'interactive' as const, 
+                duration: '20 min', 
+                completed: true,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/laws-exponents' }
+              },
+              { 
+                id: 'c8-math-ch1-t3', 
+                name: 'Scientific Notation', 
+                type: 'video' as const, 
+                duration: '12 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/scientific-notation' }
+              },
+              { 
+                id: 'c8-math-ch1-t4', 
+                name: 'Square and Cube Roots', 
+                type: 'exercise' as const, 
+                duration: '30 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/square-cube-roots' }
+              }
             ]
           },
           {
             id: 'ch2',
             name: 'Polynomials',
             topics: [
-              { id: 't5', name: 'Introduction to Polynomials', type: 'video', duration: '18 min', completed: false },
-              { id: 't6', name: 'Types of Polynomials', type: 'audio', duration: '25 min', completed: false },
-              { id: 't7', name: 'Operations on Polynomials', type: 'interactive', duration: '22 min', completed: false }
+              { 
+                id: 'c8-math-ch2-t5', 
+                name: 'Introduction to Polynomials', 
+                type: 'video' as const, 
+                duration: '18 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/polynomials-intro' }
+              },
+              { 
+                id: 'c8-math-ch2-t6', 
+                name: 'Types of Polynomials', 
+                type: 'audio' as const, 
+                duration: '25 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/polynomial-types' }
+              },
+              { 
+                id: 'c8-math-ch2-t7', 
+                name: 'Operations on Polynomials', 
+                type: 'interactive' as const, 
+                duration: '22 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/polynomial-operations' }
+              }
             ]
           }
         ]
@@ -1212,17 +984,52 @@ export const classData = {
             id: 'ch1',
             name: 'Matter and Its Properties',
             topics: [
-              { id: 't1', name: 'States of Matter', type: 'video', duration: '16 min', completed: true },
-              { id: 't2', name: 'Physical and Chemical Properties', type: 'interactive', duration: '24 min', completed: false },
-              { id: 't3', name: 'Changes in States of Matter', type: 'video', duration: '20 min', completed: false }
+              { 
+                id: 'c8-science-ch1-t1', 
+                name: 'States of Matter', 
+                type: 'video' as const, 
+                duration: '16 min', 
+                completed: true,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/states-matter' }
+              },
+              { 
+                id: 'c8-science-ch1-t2', 
+                name: 'Physical and Chemical Properties', 
+                type: 'interactive' as const, 
+                duration: '24 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/matter-properties' }
+              },
+              { 
+                id: 'c8-science-ch1-t3', 
+                name: 'Changes in States of Matter', 
+                type: 'video' as const, 
+                duration: '20 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/state-changes' }
+              }
             ]
           },
           {
             id: 'ch2',
             name: 'Atoms and Molecules',
             topics: [
-              { id: 't4', name: 'Introduction to Atoms', type: 'video', duration: '14 min', completed: false },
-              { id: 't5', name: 'Molecules and Compounds', type: 'interactive', duration: '18 min', completed: false }
+              { 
+                id: 'c8-science-ch2-t4', 
+                name: 'Introduction to Atoms', 
+                type: 'video' as const, 
+                duration: '14 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/atoms-intro' }
+              },
+              { 
+                id: 'c8-science-ch2-t5', 
+                name: 'Molecules and Compounds', 
+                type: 'interactive' as const, 
+                duration: '18 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/molecules-compounds' }
+              }
             ]
           }
         ]
@@ -1238,19 +1045,68 @@ export const classData = {
             id: 'ch1',
             name: 'Conditional Sentences',
             topics: [
-              { id: 't1', name: 'Zero Conditional', type: 'video', duration: '10 min', completed: true },
-              { id: 't2', name: 'First Conditional', type: 'interactive', duration: '15 min', completed: true },
-              { id: 't3', name: 'Second Conditional', type: 'video', duration: '12 min', completed: false },
-              { id: 't4', name: 'Exercises on Conditionals', type: 'exercise', duration: '25 min', completed: false }
+              { 
+                id: 'c8-english-ch1-t1', 
+                name: 'Zero Conditional', 
+                type: 'video' as const, 
+                duration: '10 min', 
+                completed: true,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/zero-conditional' }
+              },
+              { 
+                id: 'c8-english-ch1-t2', 
+                name: 'First Conditional', 
+                type: 'interactive' as const, 
+                duration: '15 min', 
+                completed: true,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/first-conditional' }
+              },
+              { 
+                id: 'c8-english-ch1-t3', 
+                name: 'Second Conditional', 
+                type: 'video' as const, 
+                duration: '12 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/second-conditional' }
+              },
+              { 
+                id: 'c8-english-ch1-t4', 
+                name: 'Exercises on Conditionals', 
+                type: 'exercise' as const, 
+                duration: '25 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/conditional-exercises' }
+              }
             ]
           },
           {
             id: 'ch2',
             name: 'Reported Speech',
             topics: [
-              { id: 't5', name: 'Introduction to Reported Speech', type: 'video', duration: '20 min', completed: false },
-              { id: 't6', name: 'Changing Direct Speech to Reported Speech', type: 'audio', duration: '30 min', completed: false },
-              { id: 't7', name: 'Exercises on Reported Speech', type: 'interactive', duration: '28 min', completed: false }
+              { 
+                id: 'c8-english-ch2-t5', 
+                name: 'Introduction to Reported Speech', 
+                type: 'video' as const, 
+                duration: '20 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/reported-speech-intro' }
+              },
+              { 
+                id: 'c8-english-ch2-t6', 
+                name: 'Changing Direct Speech to Reported Speech', 
+                type: 'audio' as const, 
+                duration: '30 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/direct-to-reported' }
+              },
+              { 
+                id: 'c8-english-ch2-t7', 
+                name: 'Exercises on Reported Speech', 
+                type: 'interactive' as const, 
+                duration: '28 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/reported-speech-exercises' }
+              }
             ]
           }
         ]
@@ -1266,19 +1122,68 @@ export const classData = {
             id: 'ch1',
             name: 'Global Issues',
             topics: [
-              { id: 't1', name: 'Climate Change', type: 'video', duration: '15 min', completed: true },
-              { id: 't2', name: 'Pollution', type: 'interactive', duration: '20 min', completed: true },
-              { id: 't3', name: 'Sustainable Development', type: 'video', duration: '12 min', completed: false },
-              { id: 't4', name: 'Conservation of Resources', type: 'exercise', duration: '30 min', completed: false }
+              { 
+                id: 'c8-social-ch1-t1', 
+                name: 'Climate Change', 
+                type: 'video' as const, 
+                duration: '15 min', 
+                completed: true,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/climate-change' }
+              },
+              { 
+                id: 'c8-social-ch1-t2', 
+                name: 'Pollution', 
+                type: 'interactive' as const, 
+                duration: '20 min', 
+                completed: true,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/pollution' }
+              },
+              { 
+                id: 'c8-social-ch1-t3', 
+                name: 'Sustainable Development', 
+                type: 'video' as const, 
+                duration: '12 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/sustainable-development' }
+              },
+              { 
+                id: 'c8-social-ch1-t4', 
+                name: 'Conservation of Resources', 
+                type: 'exercise' as const, 
+                duration: '30 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/resource-conservation' }
+              }
             ]
           },
           {
             id: 'ch2',
             name: 'Current Affairs',
             topics: [
-              { id: 't5', name: 'National Events', type: 'video', duration: '18 min', completed: false },
-              { id: 't6', name: 'International Relations', type: 'audio', duration: '25 min', completed: false },
-              { id: 't7', name: 'Economic Developments', type: 'interactive', duration: '22 min', completed: false }
+              { 
+                id: 'c8-social-ch2-t5', 
+                name: 'National Events', 
+                type: 'video' as const, 
+                duration: '18 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/national-events' }
+              },
+              { 
+                id: 'c8-social-ch2-t6', 
+                name: 'International Relations', 
+                type: 'audio' as const, 
+                duration: '25 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/international-relations' }
+              },
+              { 
+                id: 'c8-social-ch2-t7', 
+                name: 'Economic Developments', 
+                type: 'interactive' as const, 
+                duration: '22 min', 
+                completed: false,
+                content: { type: 'external_link' as const, url: 'https://www.example.com/economic-developments' }
+              }
             ]
           }
         ]
@@ -1289,5 +1194,5 @@ export const classData = {
 
 export type ClassData = typeof classData;
 export type ClassId = keyof ClassData;
-export type Subject = ClassData[ClassId]['subjects'][0];
-export type Chapter = Subject['chapters'][0];
+// export type Subject = ClassData[ClassId]['subjects'][0];
+// export type Chapter = Subject['chapters'][0];

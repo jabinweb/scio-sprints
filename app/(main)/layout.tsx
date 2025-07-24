@@ -1,7 +1,6 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { WhatsAppChat } from '@/components/WhatsAppChat';
-import { AuthProtectedRoute } from '@/components/auth/AuthProtectedRoute';
 
 
 export default function Layout({
@@ -12,9 +11,7 @@ export default function Layout({
   return (
     <>
         <Navbar />
-        <AuthProtectedRoute>
           {children}
-        </AuthProtectedRoute>
         <Footer />
         <WhatsAppChat />
     </>
