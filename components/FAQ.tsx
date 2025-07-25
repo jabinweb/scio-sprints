@@ -45,7 +45,7 @@ export function FAQ() {
   return (
     <section className="py-12 sm:py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
-        <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8 sm:mb-12">
+        <h2 className="text-4xl font-bold text-center mb-8 sm:mb-12">
           <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent">
             Frequently Asked Questions
           </span> 💭

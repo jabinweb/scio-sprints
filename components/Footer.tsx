@@ -1,59 +1,115 @@
 import React from 'react';
-import { Rocket, Mail, Globe, MapPin } from 'lucide-react';
+import { Mail, Globe, MapPin, Phone } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const Footer = () => {
   return (
-    <footer className="bg-primary/90 text-primary-foreground">
+    <footer className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
       <div className="container mx-auto px-6 py-12">
-        <div className="grid md:grid-cols-3 gap-12">
+        <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Rocket className="w-8 h-8 text-primary-foreground/90" />
-              <span className="text-2xl font-bold text-primary-foreground" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
-                ScioLabs
-              </span>
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="relative w-32 h-12">
+                <Image
+                  src="/logo.png"
+                  alt="ScioSprints Logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
             </div>
-            <p className="text-lg mb-4 text-gray-100">
-              Revolutionizing student revision with interactive gamified learning.
+            <p className="text-slate-200 mb-6 max-w-md leading-relaxed">
+              Transforming education through interactive, gamified learning experiences. 
+              Empowering students to excel with engaging content aligned to CBSE curriculum.
             </p>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-teal-500/20 to-blue-500/20 rounded-full flex items-center justify-center hover:from-teal-500/30 hover:to-blue-500/30 transition-colors cursor-pointer border border-teal-500/30">
+                <Globe className="w-5 h-5 text-teal-300" />
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-teal-500/20 to-blue-500/20 rounded-full flex items-center justify-center hover:from-teal-500/30 hover:to-blue-500/30 transition-colors cursor-pointer border border-blue-500/30">
+                <Mail className="w-5 h-5 text-blue-300" />
+              </div>
+            </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-xl font-semibold mb-6 text-primary-foreground">Quick Links</h3>
+            <h3 className="text-xl font-semibold mb-6 text-white">Quick Links</h3>
             <ul className="space-y-3">
-              <li><Link href="#" className="hover:text-primary-foreground transition-colors">About Us</Link></li>
-              <li><Link href="#" className="hover:text-primary-foreground transition-colors">For Schools</Link></li>
-              <li><Link href="#" className="hover:text-primary-foreground transition-colors">Teacher Training</Link></li>
-              <li><Link href="#" className="hover:text-primary-foreground transition-colors">Try Demo</Link></li>
+              <li><Link href="/" className="text-slate-200 hover:text-teal-300 transition-colors">Home</Link></li>
+              <li><Link href="/demo" className="text-slate-200 hover:text-teal-300 transition-colors">Try Demo</Link></li>
+              <li><Link href="/dashboard" className="text-slate-200 hover:text-blue-300 transition-colors">Dashboard</Link></li>
+              <li><Link href="#features" className="text-slate-200 hover:text-teal-300 transition-colors">Features</Link></li>
+              <li><Link href="#about" className="text-slate-200 hover:text-blue-300 transition-colors">About Us</Link></li>
             </ul>
           </div>
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-xl font-semibold mb-6 text-primary-foreground">Contact Us</h3>
-            <ul className="space-y-4 text-muted-foreground">
-              <li className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-primary-foreground/90" />
-                N-304, Ashiyana, Sector N, Lucknow, UP - 226012
+            <h3 className="text-xl font-semibold mb-6 text-white">Contact Us</h3>
+            <ul className="space-y-4">
+              <li className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" />
+                <span className="text-slate-200 text-sm leading-relaxed">
+                  N-304, Ashiyana<br />
+                  Sector N, Lucknow<br />
+                  UP - 226012, India
+                </span>
               </li>
               <li className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-primary-foreground/90" />
-                info@sciolabs.in
+                <Mail className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                <a href="mailto:info@sciosprints.com" className="text-slate-200 hover:text-blue-300 transition-colors">
+                  info@sciosprints.com
+                </a>
               </li>
               <li className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-primary-foreground/90" />
-                www.sciolabs.in
+                <Phone className="w-5 h-5 text-teal-400 flex-shrink-0" />
+                <a href="tel:+919876543210" className="text-slate-200 hover:text-teal-300 transition-colors">
+                  +91 98765 43210
+                </a>
+              </li>
+              <li className="flex items-center gap-3">
+                <Globe className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                <a href="https://www.sciosprints.com" className="text-slate-200 hover:text-blue-300 transition-colors">
+                  www.sciosprints.com
+                </a>
               </li>
             </ul>
           </div>
-
         </div>
 
-        <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center text-sm text-gray-300">
-          <p className='text-gray-100'>&copy; {new Date().getFullYear()} ScioLabs. All rights reserved.</p>
+        {/* Bottom Section */}
+        <div className="border-t border-slate-700 mt-12 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-slate-300 text-sm">
+              &copy; {new Date().getFullYear()} ScioSprints. All rights reserved.
+            </p>
+            <div className="flex items-center gap-6 text-sm">
+              <Link href="/privacy" className="text-slate-300 hover:text-teal-300 transition-colors">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="text-slate-300 hover:text-blue-300 transition-colors">
+                Terms of Service
+              </Link>
+              <Link href="/support" className="text-slate-300 hover:text-teal-300 transition-colors">
+                Support
+              </Link>
+            </div>
+          </div>
+          
+          {/* Additional Info */}
+          <div className="mt-6 pt-6 border-t border-slate-700/50">
+            <div className="text-center">
+              <p className="text-slate-300 text-sm mb-2">
+                🎓 Aligned with CBSE Curriculum | 🎮 Gamified Learning | 📱 Mobile Friendly
+              </p>
+              <p className="text-slate-400 text-xs">
+                Built with <span className="text-red-400">❤️</span> for Indian students • Classes 4-8 • Interactive Content • Progress Tracking
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

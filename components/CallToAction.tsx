@@ -24,7 +24,7 @@ export function CallToAction() {
             <h2 className="text-4xl font-bold mb-6">
               <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent">Choose Your Journey</span> 🚀
             </h2>
-            <p className="text-base sm:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
               Are you a parent seeking engaging learning at home or a school looking to enhance classroom outcomes? We’ve got you covered!
             </p>
             <TooltipProvider>

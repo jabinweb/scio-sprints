@@ -22,7 +22,7 @@ export const Logo = ({ onClick }: LogoProps) => {
           alt="ScioLabs Logo"
           fill
           priority
-          className="object-contain"
+          className="object-contain object-left"
           sizes="(max-width: 768px) 150px, 200px"
         />
       </div>
