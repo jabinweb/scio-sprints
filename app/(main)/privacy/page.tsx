@@ -97,13 +97,13 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">5. Children's Privacy</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">5. Children&apos;s Privacy</h2>
               <div className="space-y-4 text-gray-700">
-                <p>We are committed to protecting children's privacy in accordance with COPPA and GDPR:</p>
+                <p>We are committed to protecting children&apos;s privacy in accordance with COPPA and GDPR:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>We do not knowingly collect personal information from children under 13 without parental consent</li>
-                  <li>Parents and teachers can review and delete children's information</li>
-                  <li>We do not use children's information for marketing purposes</li>
+                  <li>Parents and teachers can review and delete children&apos;s information</li>
+                  <li>We do not use children&apos;s information for marketing purposes</li>
                   <li>Educational data is used solely for learning purposes</li>
                 </ul>
               </div>
