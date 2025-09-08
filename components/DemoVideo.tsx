@@ -19,7 +19,7 @@ export function DemoVideo() {
       <div className="container mx-auto px-4 sm:px-6">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-4xl font-bold mb-3 sm:mb-4 px-4">
-            <span className=' bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent '>Experience ScioSprints in Action</span> ✨
+            <span className=' bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent '>Experience ScioSprints in Action</span> ✨
           </h2>
           <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
             See how interactive learning comes alive through our gamified platform.

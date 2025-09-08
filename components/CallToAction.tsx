@@ -17,12 +17,12 @@ export function CallToAction() {
 
   return (
     <section className="py-20 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/10 via-transparent to-brand-green/10" />
+      <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/10 via-transparent to-brand-orange/10" />
       <div className="container mx-auto px-4 sm:px-6 relative">
         <Card className="bg-white/50 backdrop-blur-sm border border-white/20">
           <CardContent className="text-center py-12 px-6">
             <h2 className="text-4xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent">Choose Your Journey</span> 🚀
+              <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">Choose Your Journey</span> 🚀
             </h2>
             <p className="text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
               Are you a parent seeking engaging learning at home or a school looking to enhance classroom outcomes? We’ve got you covered!

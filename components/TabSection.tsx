@@ -22,7 +22,7 @@ export function TabSection({ tabs, activeTab, onTabChange }: TabSectionProps) {
   return (
     <section className="py-8 sm:py-12 lg:py-20 relative overflow-hidden">
       {/* Background with playful gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-blue/5 via-brand-green/5 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-blue/5 via-brand-orange/5 to-transparent" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(75,157,206,0.1)_0%,transparent_50%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(76,174,84,0.1)_0%,transparent_50%)]" />
 
@@ -41,8 +41,8 @@ export function TabSection({ tabs, activeTab, onTabChange }: TabSectionProps) {
                         "relative group flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all duration-300 whitespace-nowrap",
                         "text-xs sm:text-sm lg:text-base font-medium flex-shrink-0",
                         activeTab === tab.id
-                          ? "bg-gradient-to-br from-brand-blue to-brand-green text-white shadow-md sm:shadow-lg scale-105"
-                          : "hover:bg-gradient-to-br hover:from-brand-blue/10 hover:to-brand-green/10 text-gray-600"
+                          ? "bg-gradient-to-br from-brand-blue to-brand-orange text-white shadow-md sm:shadow-lg scale-105"
+                          : "hover:bg-gradient-to-br hover:from-brand-blue/10 hover:to-brand-orange/10 text-gray-600"
                       )}
                     >
                       {/* Icon wrapper with responsive sizing */}

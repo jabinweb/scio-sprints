@@ -5,7 +5,7 @@ import { Menu, X, LogOut, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Logo } from './Logo';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { LoginDialog } from './auth/login-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,7 +13,12 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout } = useAuth();
+
+  // Pages that need solid navbar background
+  const solidNavbarPages = ['/support', '/privacy', '/terms', '/refund', '/dashboard', '/admin'];
+  const needsSolidBackground = solidNavbarPages.some(page => pathname?.startsWith(page));
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,6 +29,7 @@ const Navbar = () => {
   }, []);
 
   const isScrolled = scrollPosition > 50;
+  const shouldShowSolidBackground = isScrolled || needsSolidBackground;
 
   const scrollToSection = (sectionId: string) => {
     setIsOpen(false);
@@ -59,16 +65,16 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="fixed w-full z-50">
+    <nav className="sticky top-0 w-full z-50">
       <div className={cn(
         "absolute inset-0 transition-all duration-300",
-        isScrolled ? "bg-white/80 backdrop-blur-md shadow-sm" : "bg-transparent"
+        shouldShowSolidBackground ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-transparent"
       )} />
       <div className="container mx-auto px-6 relative">
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <Logo 
-            isScrolled={isScrolled} 
+            isScrolled={shouldShowSolidBackground} 
             onClick={() => router.push('/')}
           />
 
@@ -80,8 +86,10 @@ const Navbar = () => {
                 variant="ghost"
                 onClick={() => scrollToSection(link.id)}
                 className={cn(
-                  "transition-colors font-medium text-white/90 hover:text-white hover:bg-white/10",
-                  isScrolled && "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
+                  "transition-colors font-medium",
+                  shouldShowSolidBackground 
+                    ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50" 
+                    : "text-white/90 hover:text-white hover:bg-white/10"
                 )}
               >
                 {link.label}
@@ -94,8 +102,10 @@ const Navbar = () => {
                   variant="ghost"
                   onClick={() => router.push('/dashboard')}
                   className={cn(
-                    "transition-colors font-medium text-white/90 hover:text-white hover:bg-white/10",
-                    isScrolled && "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
+                    "transition-colors font-medium",
+                    shouldShowSolidBackground 
+                      ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50" 
+                      : "text-white/90 hover:text-white hover:bg-white/10"
                   )}
                 >
                   <User className="mr-2 h-4 w-4" />
@@ -105,8 +115,10 @@ const Navbar = () => {
                   variant="ghost"
                   onClick={handleLogout}
                   className={cn(
-                    "transition-colors font-medium text-white/90 hover:text-white hover:bg-white/10",
-                    isScrolled && "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
+                    "transition-colors font-medium",
+                    shouldShowSolidBackground 
+                      ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50" 
+                      : "text-white/90 hover:text-white hover:bg-white/10"
                   )}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -120,7 +132,7 @@ const Navbar = () => {
             <Button 
               className={cn(
                 "rounded-full font-semibold px-6",
-                isScrolled
+                shouldShowSolidBackground
                   ? "bg-brand-blue text-white hover:bg-brand-blue-dark"
                   : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
               )}
@@ -136,7 +148,7 @@ const Navbar = () => {
             size="icon"
             className={cn(
               "md:hidden",
-              isScrolled ? "text-gray-800" : "text-white"
+              shouldShowSolidBackground ? "text-gray-800" : "text-white"
             )}
             onClick={() => setIsOpen(!isOpen)}
           >

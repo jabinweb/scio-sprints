@@ -7,6 +7,7 @@ import { Hero } from '@/components/Hero';
 import { CallToAction } from '@/components/CallToAction';
 import { FAQ } from '@/components/FAQ';
 import { DemoVideo } from '@/components/DemoVideo';
+import { TryGamesSection } from '@/components/TryGamesSection';
 import Image from 'next/image';
 
 export default function Home() {
@@ -68,19 +69,21 @@ export default function Home() {
           <DemoVideo />
         </section>
 
+        <TryGamesSection />
+
         {/* Platforms Section */}
         <section id="platforms" className="py-20 relative overflow-hidden">
           {/* Animated Background */}
           <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/20 via-transparent to-brand-green/20" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(75,157,206,0.1)_0%,transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(76,174,84,0.1)_0%,transparent_50%)]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/20 via-transparent to-brand-orange/20" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,196,0.1)_0%,transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(245,158,11,0.1)_0%,transparent_50%)]" />
           </div>
 
           <div className="container mx-auto px-6 relative">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent ">Multi-Platform Learning</span> 🎮
+                <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent ">Multi-Platform Learning</span> 🎮
               </h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                 Learn and play across trusted educational platforms, all in one place.
@@ -97,7 +100,7 @@ export default function Home() {
                   className="group relative bg-white/50 backdrop-blur-sm p-6 rounded-2xl hover:shadow-xl transition-all duration-300 border-2 border-white/20 overflow-hidden flex items-center justify-center"
                 >
                   {/* Hover Effect Background */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/10 to-brand-green/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/10 to-brand-orange/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
                   {/* Platform Logo */}
                   <div className="relative h-12 w-full transition-all duration-300 group-hover:scale-110">
@@ -112,7 +115,7 @@ export default function Home() {
                   </div>
 
                   {/* Decorative dot pattern */}
-                  <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-gradient-to-br from-brand-blue/20 to-brand-green/20 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                  <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-gradient-to-br from-brand-blue/20 to-brand-orange/20 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300" />
                 </a>
               ))}
             </div>

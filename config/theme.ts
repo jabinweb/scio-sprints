@@ -1,15 +1,15 @@
 export const themeColors = {
-  blue: '#4B9DCE',
-  green: '#4CAE54',
+  blue: '#3B82C4',      // Scio Labs Blue
+  orange: '#F59E0B',    // Scio Labs Orange
   // Derived colors
-  blueLight: '#7BB8DE',
-  blueDark: '#3A7BA0',
-  greenLight: '#6FC575',
-  greenDark: '#3B8842',
+  blueLight: '#60A5FA',
+  blueDark: '#1E40AF',
+  orangeLight: '#FBBF24',
+  orangeDark: '#D97706',
 } as const;
 
 export const gradients = {
-  primary: 'from-[#4B9DCE] to-[#4CAE54]',
-  primaryAlt: 'from-[#7BB8DE] to-[#6FC575]',
-  dark: 'from-[#3A7BA0] to-[#3B8842]',
+  primary: 'from-[#3B82C4] to-[#F59E0B]',
+  primaryAlt: 'from-[#60A5FA] to-[#FBBF24]',
+  dark: 'from-[#1E40AF] to-[#D97706]',
 } as const;

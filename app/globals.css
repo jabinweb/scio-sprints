@@ -6,71 +6,71 @@
   :root {
     /* Main background and foreground */
     --background: 0 0% 100%;
-    --foreground: 210 20% 15%;
+    --foreground: 220 25% 15%;
 
     /* Card styles */
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 15%;
+    --card-foreground: 220 25% 15%;
     
     /* Popover styles */
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 15%;
+    --popover-foreground: 220 25% 15%;
 
-    /* Primary - Blue (#4B9DCE) */
-    --primary: 203 57% 55%;
-    --primary-foreground: 210 20% 98%;
+    /* Primary - Scio Blue (#3B82C4) */
+    --primary: 212 65% 51%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Green (#4CAE54) */
-    --secondary: 124 38% 49%;
-    --secondary-foreground: 210 20% 98%;
+    /* Secondary - Scio Orange (#F59E0B) */
+    --secondary: 38 92% 50%;
+    --secondary-foreground: 0 0% 100%;
 
     /* Other UI elements */
-    --muted: 210 20% 96%;
-    --muted-foreground: 210 20% 46%;
+    --muted: 220 15% 96%;
+    --muted-foreground: 220 15% 46%;
     
-    --accent: 203 57% 97%;
-    --accent-foreground: 203 57% 35%;
+    --accent: 212 65% 97%;
+    --accent-foreground: 212 65% 25%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 92%;
-    --input: 210 20% 92%;
-    --ring: 203 57% 55%;
+    --border: 220 15% 92%;
+    --input: 220 15% 92%;
+    --ring: 212 65% 51%;
 
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 210 20% 8%;
-    --foreground: 210 20% 98%;
+    --background: 220 25% 8%;
+    --foreground: 0 0% 98%;
 
-    --card: 210 20% 8%;
-    --card-foreground: 210 20% 98%;
+    --card: 220 25% 8%;
+    --card-foreground: 0 0% 98%;
     
-    --popover: 210 20% 8%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 220 25% 8%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Primary - Lighter Blue */
-    --primary: 203 57% 65%;
-    --primary-foreground: 210 20% 8%;
+    /* Primary - Scio Blue */
+    --primary: 212 65% 51%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Lighter Green */
-    --secondary: 124 38% 59%;
-    --secondary-foreground: 210 20% 8%;
+    /* Secondary - Scio Orange */
+    --secondary: 38 92% 50%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 20% 16%;
-    --muted-foreground: 210 20% 66%;
+    --muted: 220 25% 16%;
+    --muted-foreground: 220 15% 66%;
     
-    --accent: 203 57% 16%;
-    --accent-foreground: 203 57% 75%;
+    --accent: 212 65% 16%;
+    --accent-foreground: 212 65% 75%;
 
     --destructive: 0 74% 42%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 210 20% 16%;
-    --input: 210 20% 16%;
-    --ring: 203 57% 65%;
+    --border: 220 25% 16%;
+    --input: 220 25% 16%;
+    --ring: 212 65% 51%;
   }
 
   * {
@@ -169,5 +169,13 @@
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+  }
+
+  /* Grid pattern for background decoration */
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
   }
 }

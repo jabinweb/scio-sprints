@@ -24,7 +24,7 @@ export function Hero() {
         {/* Enhanced Mobile-friendly Gradient Overlays */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/40" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,transparent_30%,rgba(0,0,0,0.4)_100%)]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-blue/20 via-transparent to-brand-green/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-blue/20 via-transparent to-brand-orange/20" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 relative z-10 py-20">
@@ -43,7 +43,7 @@ export function Hero() {
             {/* Hero Title */}
             <h1 className="display mb-6 sm:w-5xl text-4xl md:text-6xl text-gray-200 md:!leading-[5rem] leading-[3rem] font-bold">
               Fun-Fueled Revisions with{' '}
-              <span className="bg-gradient-to-r from-brand-blue via-white to-brand-green bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-brand-blue via-white to-brand-orange bg-clip-text text-transparent">
                 ScioSprints!
               </span>{' '}
               <span className="inline-block animate-bounce">🚀</span>
@@ -83,9 +83,9 @@ export function Hero() {
             ].map((stat, index) => (
               <Card key={index} className="bg-white/5 backdrop-blur-sm border-white/10 overflow-hidden group">
                 <CardContent className="p-4 relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/10 to-brand-green/10 translate-y-full transform transition-transform duration-300 group-hover:translate-y-0" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/10 to-brand-orange/10 translate-y-full transform transition-transform duration-300 group-hover:translate-y-0" />
                   <div className="relative">
-                    <div className="text-3xl font-bold bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent mb-1">
+                    <div className="text-3xl font-bold bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent mb-1">
                       {stat.number}
                     </div>
                     <div className="text-sm text-white/80">{stat.label}</div>

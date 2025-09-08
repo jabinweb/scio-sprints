@@ -12,13 +12,13 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Custom brand colors
-        'brand-blue': '#4B9DCE',
-        'brand-green': '#4CAE54',
-        'brand-blue-light': '#7BB8DE',
-        'brand-green-light': '#6FC575',
-        'brand-blue-dark': '#3A7BA0',
-        'brand-green-dark': '#3B8842',
+        // Custom brand colors - Scio Labs
+        'brand-blue': '#3B82C4',
+        'brand-orange': '#F59E0B',
+        'brand-blue-light': '#60A5FA',
+        'brand-orange-light': '#FBBF24',
+        'brand-blue-dark': '#1E40AF',
+        'brand-orange-dark': '#D97706',
         
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
