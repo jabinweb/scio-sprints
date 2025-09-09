@@ -153,7 +153,7 @@ export default function Support() {
               <div className="space-y-4">
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Email Support</h4>
-                  <p className="text-gray-600 text-sm mb-1">info@sciosprints.com</p>
+                  <p className="text-gray-600 text-sm mb-1">info@sciolabs.in</p>
                   <p className="text-gray-500 text-xs">Response within 24 hours</p>
                 </div>
                 <div>

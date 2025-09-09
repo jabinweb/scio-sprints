@@ -1,5 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Montserrat } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ConnectionStatus } from '@/components/ui/ConnectionStatus';
@@ -19,6 +20,26 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: 'ScioLabs - Interactive Learning Platform',
   description: 'Revolutionizing student revision with interactive gamified learning',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ScioLabs',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icon-192x192.png',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#8B5CF6',
 };
 
 export default function RootLayout({
@@ -32,6 +53,10 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={`${inter.variable} ${montserrat.variable} font-sans antialiased !pointer-events-auto`}>
+        <Script 
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="beforeInteractive"
+        />
         <main className="min-h-screen">
           <AuthProvider>
             {children}

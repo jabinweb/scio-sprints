@@ -31,9 +31,12 @@ model Subject {
   color       String
   isLocked    Boolean   @default(false)
   orderIndex  Int
+  price       Int?      @default(7500) // Price in paisa, default to ₹75 per subject
+  currency    String    @default("INR")
   classId     Int
   class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
   chapters    Chapter[]
+  subscriptions Subscription[] // Subject-specific subscriptions
   created_at   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -97,7 +100,7 @@ model User {
   created_at   DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
   
-  // School relationship - fix type to match schools.id
+  // School relationship - match existing database structure
   schoolId     String?       @map("school_id")
   school       School?       @relation(fields: [schoolId], references: [id], onDelete: SetNull)
 
@@ -142,18 +145,27 @@ model Subscription {
   user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   classId     Int?               // NULL for global subscriptions, specific class ID for class subscriptions
   class       Class?             @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subjectId   String?            // NULL for class-wide, specific subject ID for subject-only subscriptions
+  subject     Subject?           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   status      SubscriptionStatus @default(INACTIVE)
-  planType    String             // "basic", "premium", "annual", "class_access", etc.
+  planType    String             // "subject_access", "class_access", "premium", "annual", etc.
   planName    String?
   amount      Int?               // Amount paid in paisa (₹1 = 100 paisa)
   currency    String             @default("INR")
   startDate   DateTime           @default(now())
   endDate     DateTime?
   autoRenew   Boolean            @default(false)
+  
+  // Upgrade tracking
+  upgradedFromId String?          // Reference to the subscription this was upgraded from
+  upgradedFrom   Subscription?    @relation("SubscriptionUpgrade", fields: [upgradedFromId], references: [id])
+  upgradedTo     Subscription[]   @relation("SubscriptionUpgrade")
+  
   created_at   DateTime           @default(now()) @map("created_at")
   updatedAt   DateTime           @updatedAt @map("updated_at")
 
-  @@unique([userId, classId]) // One subscription per user per class (NULL classId allowed for global)
+  // TODO: Add unique constraint after data cleanup
+  // @@unique([userId, classId, subjectId], name: "unique_user_subscription")
   @@map("subscriptions")
 }
 
@@ -286,7 +298,7 @@ model Announcement {
   @@map("announcements")
 }
 
-// School Management - ensure consistent field naming
+// School Management - match existing database structure
 model School {
   id            String   @id @default(cuid())
   name          String

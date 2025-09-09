@@ -62,7 +62,7 @@ export function FAQ() {
             >
               <div className="flex justify-between items-start gap-4">
                 <div>
-                  <h3 className="font-heading text-lg font-semibold mb-2 text-foreground">
+                  <h3 className="font-heading text-lg font-semibold text-foreground">
                     {faq.question}
                   </h3>
                   <div className={`

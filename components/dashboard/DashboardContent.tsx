@@ -8,20 +8,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, BookOpen, Users, Clock, ChevronRight, Star, Play, GraduationCap } from "lucide-react";
 import { useClassData } from '@/hooks/useClassData';
 import { supabase } from '@/lib/supabase';
-import { PaymentDialog } from '@/components/dashboard/PaymentDialog';
+import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
 import type { DbClass } from '@/hooks/useClassData';
 
 interface ClassWithSubjects {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   price?: number;
   accessType?: string;
   schoolAccess?: boolean;
   subscriptionAccess?: boolean;
+  subjectAccess?: Record<string, {
+    hasAccess: boolean;
+    accessType: 'school' | 'class_subscription' | 'subject_subscription' | 'none';
+  }>;
+  hasPartialAccess?: boolean;
   subjects: Array<{
     id: string;
     name: string;
+    icon?: string;
+    color?: string;
     chapters: Array<{
       id: string;
       name: string;
@@ -79,8 +86,8 @@ export function DashboardContent() {
   }, [user?.id]);
 
   const handleClassClick = (classData: ClassWithSubjects) => {
-    // Check if user has any access (school or subscription)
-    if (classData.accessType === 'school' || classData.schoolAccess || classData.subscriptionAccess) {
+    // Check if user has any access (school, full subscription, or partial subject access)
+    if (classData.accessType === 'school' || classData.schoolAccess || classData.subscriptionAccess || classData.hasPartialAccess) {
       router.push(`/dashboard/class/${classData.id}`);
     } else {
       // Show payment dialog for classes without access
@@ -294,7 +301,14 @@ export function DashboardContent() {
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                        Subscribed
+                        Full Access
+                      </div>
+                    ) : safeCls.hasPartialAccess ? (
+                      <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Partial Access
                       </div>
                     ) : safeCls.price && safeCls.price > 0 ? (
                       <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
@@ -384,27 +398,39 @@ export function DashboardContent() {
                       <div className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
                         cls.schoolAccess || cls.subscriptionAccess
                           ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 group-hover:from-green-100 group-hover:to-emerald-100'
+                          : safeCls.hasPartialAccess
+                          ? 'bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 group-hover:from-purple-100 group-hover:to-violet-100'
                           : 'bg-gradient-to-r from-gray-50 to-blue-50 border-gray-100 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:border-blue-200'
                       }`}>
                         <div className="flex items-center gap-2">
                           <div className={`p-1.5 rounded-lg transition-colors ${
                             cls.schoolAccess || cls.subscriptionAccess
                               ? 'bg-green-100 group-hover:bg-green-200'
+                              : safeCls.hasPartialAccess
+                              ? 'bg-purple-100 group-hover:bg-purple-200'
                               : 'bg-blue-100 group-hover:bg-blue-200'
                           }`}>
                             <Play className={`h-3.5 w-3.5 ${
-                              cls.schoolAccess || cls.subscriptionAccess ? 'text-green-600' : 'text-blue-600'
+                              cls.schoolAccess || cls.subscriptionAccess 
+                                ? 'text-green-600' 
+                                : safeCls.hasPartialAccess 
+                                ? 'text-purple-600' 
+                                : 'text-blue-600'
                             }`} />
                           </div>
                           <span className={`text-sm font-semibold transition-colors ${
                             cls.schoolAccess || cls.subscriptionAccess
                               ? 'text-green-700 group-hover:text-green-800'
+                              : safeCls.hasPartialAccess
+                              ? 'text-purple-700 group-hover:text-purple-800'
                               : 'text-gray-700 group-hover:text-blue-700'
                           }`}>
                             {cls.schoolAccess 
                               ? 'Access via School'
                               : cls.subscriptionAccess 
-                              ? 'Continue Learning'
+                              ? 'Full Access'
+                              : safeCls.hasPartialAccess
+                              ? 'View Subjects'
                               : safeCls.price && safeCls.price > 0 
                               ? `Subscribe for ₹${Math.round(safeCls.price / 100)}`
                               : 'Start Learning'
@@ -414,6 +440,8 @@ export function DashboardContent() {
                         <ChevronRight className={`h-4 w-4 transition-all group-hover:translate-x-1 ${
                           cls.schoolAccess || cls.subscriptionAccess
                             ? 'text-green-400 group-hover:text-green-600'
+                            : safeCls.hasPartialAccess
+                            ? 'text-purple-400 group-hover:text-purple-600'
                             : 'text-gray-400 group-hover:text-blue-600'
                         }`} />
                       </div>
@@ -448,14 +476,30 @@ export function DashboardContent() {
         </div>
       </div>
 
-      {/* Payment Dialog - only show for classes without access */}
+      {/* Subscription Dialog - only show for classes without access */}
       {selectedClass && !selectedClass.schoolAccess && !selectedClass.subscriptionAccess && (
-        <PaymentDialog
-          defaultOpen={showPaymentDialog}
+        <SubscriptionDialog
+          open={showPaymentDialog}
           onClose={handlePaymentDialogClose}
-          classId={selectedClass.id}
-          className={selectedClass.name}
-          price={selectedClass.price || 29900}
+          classData={{
+            id: selectedClass.id,
+            name: selectedClass.name,
+            description: selectedClass.description || '',
+            price: selectedClass.price || 29900,
+            subjects: selectedClass.subjects?.map(subject => ({
+              id: subject.id,
+              name: subject.name,
+              icon: subject.icon || '📚',
+              color: subject.color || 'from-blue-500 to-blue-600',
+              chapters: subject.chapters || []
+            })) || []
+          }}
+          onSubscribe={(type, options) => {
+            console.log('Subscription success:', type, options);
+            handlePaymentDialogClose();
+            // Reload the page to refresh access information
+            window.location.reload();
+          }}
         />
       )}
     </>

@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+interface Subject {
+  id: string;
+  name: string;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -49,10 +54,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch classes' }, { status: 500 });
     }
 
-    // Check user's paid subscriptions
+    // Check user's paid subscriptions (both class-wide and subject-specific)
     const { data: subscriptions, error: subsError } = await supabase
       .from('subscriptions')
-      .select('classId')
+      .select(`
+        classId,
+        subjectId,
+        planType,
+        status,
+        endDate
+      `)
       .eq('userId', userId)
       .eq('status', 'ACTIVE')
       .gte('endDate', new Date().toISOString());
@@ -61,7 +72,14 @@ export async function GET(request: Request) {
       console.error('Error fetching subscriptions:', subsError);
     }
 
-    const subscribedClassIds = new Set(subscriptions?.map(s => s.classId).filter(Boolean) || []);
+    // Separate class-wide and subject-specific subscriptions
+    const classSubscriptions = new Set(
+      subscriptions?.filter(s => s.classId && !s.subjectId).map(s => s.classId) || []
+    );
+    const subjectSubscriptions = new Map(
+      subscriptions?.filter(s => s.subjectId).map(s => [s.subjectId, s.classId]) || []
+    );
+    const subscribedClassIds = classSubscriptions; // Keep for backward compatibility
     
     // Define grade to class mapping at the top level
     const gradeToClassMap: Record<string, number[]> = {
@@ -118,13 +136,30 @@ export async function GET(request: Request) {
     const classesWithAccess = accessibleClasses.map(cls => {
       const hasSchoolAccess = user.school?.is_active && user.grade && 
         (gradeToClassMap[user.grade] || []).includes(cls.id);
-      const hasSubscription = subscribedClassIds.has(cls.id);
+      const hasClassSubscription = classSubscriptions.has(cls.id);
+      
+      // Check which subjects have individual subscriptions
+      const subjectAccess = new Map();
+      if (cls.subjects) {
+        cls.subjects.forEach((subject: Subject) => {
+          const hasSubjectSubscription = subjectSubscriptions.has(subject.id);
+          subjectAccess.set(subject.id, {
+            hasAccess: hasSchoolAccess || hasClassSubscription || hasSubjectSubscription,
+            accessType: hasSchoolAccess ? 'school' : 
+                       hasClassSubscription ? 'class_subscription' :
+                       hasSubjectSubscription ? 'subject_subscription' : 'none'
+          });
+        });
+      }
 
       return {
         ...cls,
-        accessType: hasSchoolAccess ? 'school' : hasSubscription ? 'subscription' : 'none',
+        accessType: hasSchoolAccess ? 'school' : hasClassSubscription ? 'subscription' : 'none',
         schoolAccess: hasSchoolAccess,
-        subscriptionAccess: hasSubscription
+        subscriptionAccess: hasClassSubscription,
+        subjectAccess: Object.fromEntries(subjectAccess),
+        hasPartialAccess: !hasSchoolAccess && !hasClassSubscription && 
+          Array.from(subjectAccess.values()).some(access => access.hasAccess)
       };
     });
 

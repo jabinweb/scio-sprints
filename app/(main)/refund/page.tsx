@@ -47,7 +47,7 @@ export default function RefundPolicy() {
               <div className="space-y-4 text-gray-700">
                 <h3 className="text-lg font-medium">How to Request a Refund</h3>
                 <ol className="list-decimal pl-6 space-y-2">
-                  <li>Contact our support team at info@sciosprints.com</li>
+                  <li>Contact our support team at info@sciolabs.in</li>
                   <li>Provide your account information and reason for refund</li>
                   <li>Include any relevant documentation or screenshots</li>
                   <li>Allow 5-7 business days for review and processing</li>
@@ -190,13 +190,13 @@ export default function RefundPolicy() {
                 <div className="bg-gray-50 p-4 rounded-lg grid md:grid-cols-2 gap-4">
                   <div>
                     <p><strong>Refund Requests:</strong></p>
-                    <p>Email: info@sciosprints.com</p>
+                    <p>Email: info@sciolabs.in</p>
                     <p>Phone: +91 98765 43210</p>
                     <p>Address: N-304, Ashiyana, Sector N, Lucknow, UP - 226012, India</p>
                   </div>
                   <div>
                     <p><strong>General Support:</strong></p>
-                    <p>Email: info@sciosprints.com</p>
+                    <p>Email: info@sciolabs.in</p>
                     <p>Live Chat: Available on website</p>
                   </div>
                 </div>

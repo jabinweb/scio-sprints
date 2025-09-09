@@ -17,6 +17,8 @@ interface Subject {
   isLocked: boolean;
   orderIndex: number;
   classId: number;
+  price?: number; // Price in paisa
+  currency?: string;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +31,8 @@ interface SubjectFormData {
   isLocked: boolean;
   orderIndex: number;
   classId: number;
+  price?: number; // Price in paisa
+  currency?: string;
 }
 
 interface ClassData {
@@ -184,6 +188,9 @@ export default function SubjectsPage() {
                       <div>
                         <CardTitle className="text-xl">{subject.name}</CardTitle>
                         <p className="text-sm text-muted-foreground">Order: {subject.orderIndex}</p>
+                        <p className="text-sm font-medium text-green-600">
+                          Price: ₹{subject.price ? (subject.price / 100).toFixed(2) : '0.00'}
+                        </p>
                       </div>
                     </div>
                     <Badge variant={subject.isLocked ? 'destructive' : 'default'}>

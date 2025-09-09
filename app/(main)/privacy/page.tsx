@@ -143,7 +143,7 @@ export default function PrivacyPolicy() {
               <div className="space-y-4 text-gray-700">
                 <p>If you have questions about this Privacy Policy or our data practices, please contact us:</p>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <p><strong>Email:</strong> info@sciosprints.com</p>
+                  <p><strong>Email:</strong> info@sciolabs.in</p>
                   <p><strong>Address:</strong> N-304, Ashiyana, Sector N, Lucknow, UP - 226012, India</p>
                   <p><strong>Phone:</strong> +91 98765 43210</p>
                 </div>

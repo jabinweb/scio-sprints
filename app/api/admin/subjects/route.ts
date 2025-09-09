@@ -1,22 +1,17 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get('classId');
     
-    let query = supabase.from('subjects').select('*');
-    
-    if (classId) {
-      query = query.eq('classId', parseInt(classId));
-    }
-    
-    const { data: subjects, error } = await query.order('orderIndex', { ascending: true });
+    const subjects = await prisma.subject.findMany({
+      where: classId ? { classId: parseInt(classId) } : {},
+      orderBy: { orderIndex: 'asc' }
+    });
 
-    if (error) throw error;
-
-    return NextResponse.json(subjects || []);
+    return NextResponse.json(subjects);
   } catch (error) {
     console.error('Error fetching subjects:', error);
     return NextResponse.json({ error: 'Failed to fetch subjects' }, { status: 500 });
@@ -25,24 +20,20 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { name, icon, color, isLocked, orderIndex, classId } = await request.json();
+    const { name, icon, color, isLocked, orderIndex, classId, price, currency } = await request.json();
     
-    const { data: newSubject, error } = await supabase
-      .from('subjects')
-      .insert({
+    const newSubject = await prisma.subject.create({
+      data: {
         name,
         icon,
         color,
         isLocked: isLocked ?? false,
         orderIndex,
         classId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
+        price: price || 29900, // Default ₹299 in paisa
+        currency: currency || 'INR'
+      }
+    });
 
     return NextResponse.json(newSubject);
   } catch (error) {
@@ -53,23 +44,20 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const { id, name, icon, color, isLocked, orderIndex } = await request.json();
+    const { id, name, icon, color, isLocked, orderIndex, price, currency } = await request.json();
     
-    const { data: updatedSubject, error } = await supabase
-      .from('subjects')
-      .update({
+    const updatedSubject = await prisma.subject.update({
+      where: { id },
+      data: {
         name,
         icon,
         color,
         isLocked,
         orderIndex,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
+        ...(price !== undefined && { price }),
+        ...(currency !== undefined && { currency })
+      }
+    });
 
     return NextResponse.json(updatedSubject);
   } catch (error) {
@@ -87,12 +75,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Subject ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from('subjects')
-      .delete()
-      .eq('id', subjectId);
-
-    if (error) throw error;
+    await prisma.subject.delete({
+      where: { id: subjectId }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

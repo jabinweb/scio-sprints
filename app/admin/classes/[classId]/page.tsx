@@ -16,6 +16,8 @@ interface Subject {
   isLocked: boolean;
   orderIndex: number;
   classId: number;
+  price?: number; // Price in paisa
+  currency?: string;
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +30,8 @@ interface SubjectFormData {
   isLocked: boolean;
   orderIndex: number;
   classId: number;
+  price?: number; // Price in paisa
+  currency?: string;
 }
 
 interface ClassItem {

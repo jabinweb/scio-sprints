@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
@@ -52,25 +53,22 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Class not found' }, { status: 404 });
       }
 
-      // Create class-specific subscription using existing subscriptions table
-      const { error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .insert({
-          id: crypto.randomUUID(),
-          userId,
-          classId: parseInt(classId), // Class-specific subscription
-          status: 'ACTIVE',
-          planType: 'class_access',
-          planName: `${classData.name} Access`,
-          amount: classData.price,
-          currency: 'INR',
-          startDate: new Date().toISOString(),
-          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year access
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      // Create class-specific subscription using Prisma
+      try {
+        await prisma.subscription.create({
+          data: {
+            userId,
+            classId: parseInt(classId),
+            status: 'ACTIVE',
+            planType: 'class_access',
+            planName: `${classData.name} Access`,
+            amount: classData.price,
+            currency: 'INR',
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year access
+          }
         });
-
-      if (subscriptionError) {
+      } catch (subscriptionError) {
         console.error('Error creating class subscription:', subscriptionError);
         return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });
       }

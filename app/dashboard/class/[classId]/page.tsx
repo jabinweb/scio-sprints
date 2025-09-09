@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BookOpen, Play, Clock, CheckCircle, Lock, Video, FileText, Headphones } from 'lucide-react';
+import { ArrowLeft, BookOpen, Play, Clock, CheckCircle, Lock, Video, FileText, Headphones, Settings } from 'lucide-react';
 import { useClassData, type DbTopic } from '@/hooks/useClassData';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
 import { useAuth } from '@/contexts/AuthContext';
+import { ClassSubscriptionManager } from '@/components/dashboard/ClassSubscriptionManager';
 
 const getTopicIcon = (contentType: string | undefined) => {
   switch (contentType) {
@@ -40,6 +41,20 @@ interface ChapterData {
   topics: DbTopic[];
 }
 
+interface SubjectAccessData {
+  id: string;
+  name: string;
+  hasAccess: boolean;
+  accessType: string;
+}
+
+interface ClassAccessResponse {
+  hasFullAccess: boolean;
+  accessType: string;
+  subjectAccess: SubjectAccessData[];
+  error?: string;
+}
+
 export default function ClassPage() {
   const params = useParams();
   const router = useRouter();
@@ -51,50 +66,41 @@ export default function ClassPage() {
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [accessMessage, setAccessMessage] = useState<string>('');
   const [accessType, setAccessType] = useState<string>('');
+  const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
+  const [subjectAccess, setSubjectAccess] = useState<Record<string, boolean>>({});
   
   const { currentClass, userProgress, loading, error, markTopicComplete } = useClassData(classId);
 
-  // Check if user has access to this specific class (school or subscription)
+  // Check if user has access to this specific class and subjects
   useEffect(() => {
     const checkClassAccess = async () => {
       if (!user?.id || !classId) return;
 
       try {
-        interface ClassAccess {
-          id: string;
-          accessType?: string;
-          schoolAccess?: boolean;
-          subscriptionAccess?: boolean;
-        }
-  
-        interface ClassAccessResponse {
-          accessibleClasses: ClassAccess[];
-          userGrade: number;
-          message?: string;
-        }
-  
-        const response = await fetch(`/api/classes/accessible?userId=${user.id}`);
+        // Use the new enhanced API endpoint
+        const response = await fetch(`/api/classes/${classId}/access?userId=${user.id}`);
         const data: ClassAccessResponse = await response.json();
-  
+
         if (response.ok) {
-          const classAccess = data.accessibleClasses.find((cls: ClassAccess) => cls.id.toString() === classId);
-          const hasAccessToClass = !!classAccess;
-          
-          setHasAccess(hasAccessToClass);
-          if (hasAccessToClass) {
-            setAccessType(classAccess.accessType || 'unknown');
-            setAccessMessage(classAccess.schoolAccess 
-              ? `School access granted for Grade ${data.userGrade}` 
-              : classAccess.subscriptionAccess 
-              ? 'Access via active subscription'
-              : 'Free access'
-            );
-          } else {
-            setAccessMessage(data.message || 'Access denied');
-          }
+          setHasAccess(data.hasFullAccess || data.subjectAccess.some((s: SubjectAccessData) => s.hasAccess));
+          setAccessType(data.accessType);
+          setAccessMessage(
+            data.hasFullAccess 
+              ? `Full access via ${data.accessType}`
+              : data.subjectAccess.some((s: SubjectAccessData) => s.hasAccess)
+              ? 'Partial access - some subjects available'
+              : 'No access to this class'
+          );
+
+          // Set subject-level access
+          const subjectAccessMap: Record<string, boolean> = {};
+          data.subjectAccess.forEach((subject: SubjectAccessData) => {
+            subjectAccessMap[subject.id] = subject.hasAccess;
+          });
+          setSubjectAccess(subjectAccessMap);
         } else {
           setHasAccess(false);
-          setAccessMessage('Access denied');
+          setAccessMessage(data.error || 'Access denied');
         }
       } catch (error) {
         console.error('Error checking class access:', error);
@@ -132,6 +138,15 @@ export default function ClassPage() {
   }
 
   const handleTopicClick = (topic: DbTopic) => {
+    // Check if user has access to this subject
+    const hasSubjectAccess = subjectAccess[selectedSubject] !== false;
+    
+    if (!hasSubjectAccess) {
+      // Show subscription manager instead of playing content
+      setShowSubscriptionManager(true);
+      return;
+    }
+
     // Convert DbTopic to the expected format with proper content structure
     const topicWithCompleted: DbTopic & { completed: boolean } = {
       ...topic,
@@ -240,6 +255,15 @@ export default function ClassPage() {
                 </div>
                 <div className="text-xs text-muted-foreground">Chapters</div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSubscriptionManager(!showSubscriptionManager)}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Manage Access
+              </Button>
             </div>
           </div>
           
@@ -255,6 +279,20 @@ export default function ClassPage() {
           </div>
         </div>
 
+        {/* Subscription Management Panel */}
+        {showSubscriptionManager && (
+          <div className="mb-6">
+            <ClassSubscriptionManager 
+              classId={parseInt(classId)}
+              onSubscribe={(type, options) => {
+                console.log('Subscription request:', type, options);
+                // TODO: Handle subscription logic
+                // This will integrate with your payment system
+              }}
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Subject Sidebar */}
           <div className="lg:col-span-1">
@@ -263,40 +301,55 @@ export default function ClassPage() {
                 <CardTitle className="text-lg">Subjects</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {currentClass.subjects.map((subject) => (
-                  <div
-                    key={subject.id}
-                    className={`p-3 rounded-xl cursor-pointer transition-all ${
-                      selectedSubject === subject.id 
-                        ? `bg-gradient-to-r ${subject.color} text-white shadow-lg` 
-                        : 'bg-gray-50 hover:bg-gray-100'
-                    } ${subject.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={() => !subject.isLocked && setSelectedSubject(subject.id)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{subject.icon}</span>
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{subject.name}</div>
-                        <div className={`text-xs ${selectedSubject === subject.id ? 'text-white/80' : 'text-muted-foreground'}`}>
-                          {subject.chapters.length} chapters
-                        </div>
-                      </div>
-                      {subject.isLocked ? (
-                        <Lock className="h-4 w-4" />
-                      ) : (
-                        <div className="text-right">
-                          <div className="text-xs font-medium">{getSubjectProgress(subject)}%</div>
-                          <div className="w-8 h-1 bg-white/30 rounded-full mt-1">
-                            <div 
-                              className="h-full bg-white rounded-full transition-all"
-                              style={{ width: `${getSubjectProgress(subject)}%` }}
-                            />
+                {currentClass.subjects.map((subject) => {
+                  const hasSubjectAccess = subjectAccess[subject.id] !== false; // Default to true if not explicitly denied
+                  const isAccessible = !subject.isLocked && hasSubjectAccess;
+                  
+                  return (
+                    <div
+                      key={subject.id}
+                      className={`p-3 rounded-xl transition-all ${
+                        selectedSubject === subject.id 
+                          ? `bg-gradient-to-r ${subject.color} text-white shadow-lg` 
+                          : 'bg-gray-50 hover:bg-gray-100'
+                      } ${!isAccessible ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      onClick={() => isAccessible && setSelectedSubject(subject.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{subject.icon}</span>
+                        <div className="flex-1">
+                          <div className="font-medium text-sm flex items-center gap-2">
+                            {subject.name}
+                            {!hasSubjectAccess && (
+                              <Lock className="h-3 w-3 text-red-500" />
+                            )}
+                          </div>
+                          <div className={`text-xs ${selectedSubject === subject.id ? 'text-white/80' : 'text-muted-foreground'}`}>
+                            {subject.chapters.length} chapters
+                            {!hasSubjectAccess && (
+                              <span className="text-red-500 ml-1">• No access</span>
+                            )}
                           </div>
                         </div>
-                      )}
+                        {subject.isLocked ? (
+                          <Lock className="h-4 w-4" />
+                        ) : hasSubjectAccess ? (
+                          <div className="text-right">
+                            <div className="text-xs font-medium">{getSubjectProgress(subject)}%</div>
+                            <div className="w-8 h-1 bg-white/30 rounded-full mt-1">
+                              <div 
+                                className="h-full bg-white rounded-full transition-all"
+                                style={{ width: `${getSubjectProgress(subject)}%` }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <Lock className="h-4 w-4 text-red-500" />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           </div>
@@ -352,16 +405,19 @@ export default function ClassPage() {
                             {chapter.topics.map((topic) => {
                               const isCompleted = userProgress.get(topic.id) || false;
                               const contentType = topic.content?.contentType;
+                              const hasSubjectAccess = subjectAccess[selectedSubject] !== false;
                               
                               return (
                                 <div
                                   key={topic.id}
-                                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all group ${
-                                    isCompleted 
-                                      ? 'border-green-200 bg-green-50 hover:bg-green-100' 
-                                      : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                                  className={`p-4 rounded-xl border-2 transition-all group ${
+                                    !hasSubjectAccess 
+                                      ? 'border-red-200 bg-red-50 opacity-60 cursor-not-allowed'
+                                      : isCompleted 
+                                      ? 'border-green-200 bg-green-50 hover:bg-green-100 cursor-pointer' 
+                                      : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md cursor-pointer'
                                   }`}
-                                  onClick={() => handleTopicClick(topic as DbTopic)}
+                                  onClick={() => hasSubjectAccess && handleTopicClick(topic as DbTopic)}
                                 >
                                   <div className="flex items-start justify-between mb-3">
                                     <div className="flex items-center gap-2">

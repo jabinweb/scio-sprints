@@ -19,6 +19,7 @@ const Navbar = () => {
   // Pages that need solid navbar background
   const solidNavbarPages = ['/support', '/privacy', '/terms', '/refund', '/dashboard', '/admin'];
   const needsSolidBackground = solidNavbarPages.some(page => pathname?.startsWith(page));
+  const isHomePage = pathname === '/';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,7 +30,8 @@ const Navbar = () => {
   }, []);
 
   const isScrolled = scrollPosition > 50;
-  const shouldShowSolidBackground = isScrolled || needsSolidBackground;
+  // Show solid background on specific pages OR when scrolled on any page
+  const shouldShowSolidBackground = needsSolidBackground || isScrolled;
 
   const scrollToSection = (sectionId: string) => {
     setIsOpen(false);
@@ -65,10 +67,15 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="sticky top-0 w-full z-50">
+    <nav className={cn(
+      "w-full z-50",
+      isHomePage ? "fixed top-0" : "sticky top-0"
+    )}>
       <div className={cn(
         "absolute inset-0 transition-all duration-300",
-        shouldShowSolidBackground ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-transparent"
+        shouldShowSolidBackground 
+          ? "bg-white/95 backdrop-blur-md shadow-sm" 
+          : "bg-gradient-to-b from-black/20 via-black/10 to-transparent"
       )} />
       <div className="container mx-auto px-6 relative">
         <div className="flex justify-between items-center h-16 sm:h-20">
