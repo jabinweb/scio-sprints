@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -193,5 +193,13 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <LoginForm />
+    </Suspense>
   );
 }
