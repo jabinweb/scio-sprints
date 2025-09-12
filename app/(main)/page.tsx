@@ -65,9 +65,9 @@ export default function Home() {
           />
         </section>
 
-        <section id="demo">
+        {/* <section id="demo">
           <DemoVideo />
-        </section>
+        </section> */}
 
         <TryGamesSection />
 

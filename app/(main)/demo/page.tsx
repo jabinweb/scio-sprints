@@ -30,25 +30,27 @@ export default function DemoPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Demo Banner */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white pt-28 pb-8">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-lg">
-              <Star className="h-5 w-5" />
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-12">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <Star className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-100">Interactive Demo - ScioSprints Learning Platform</h3>
+                <p className="text-sm text-blue-100">Experience our learning platform with sample content across all classes</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold">Interactive Demo - ScioSprints Learning Platform</h3>
-              <p className="text-sm text-blue-100">Experience our learning platform with sample content across all classes</p>
-            </div>
+            <Button 
+              variant="secondary" 
+              onClick={() => router.push('/')}
+              className="gap-2 w-fit"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Button>
           </div>
-          <Button 
-            variant="secondary" 
-            onClick={() => router.push('/')}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Button>
         </div>
       </div>
 
@@ -69,12 +71,12 @@ export default function DemoPage() {
           </div>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm">Available Classes</p>
-                  <p className="text-3xl font-bold">{Object.keys(classData).length}</p>
+                  <p className="text-3xl text-gray-200 font-bold">{Object.keys(classData).length}</p>
                 </div>
                 <BookOpen className="w-10 h-10 text-blue-200" />
               </div>
@@ -83,18 +85,18 @@ export default function DemoPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm">Total Subjects</p>
-                  <p className="text-3xl font-bold">
+                  <p className="text-3xl text-gray-200 font-bold">
                     {Object.values(classData).reduce((acc, cls) => acc + cls.subjects.length, 0)}
                   </p>
                 </div>
                 <Users className="w-10 h-10 text-green-200" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white sm:col-span-2 lg:col-span-1">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm">Demo Progress</p>
-                  <p className="text-3xl font-bold">
+                  <p className="text-3xl text-gray-200 font-bold">
                     {Math.round(Object.keys(classData).reduce((acc, key) => 
                       acc + calculateClassProgress(parseInt(key)), 0) / Object.keys(classData).length)}%
                   </p>

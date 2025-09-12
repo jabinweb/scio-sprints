@@ -5,12 +5,14 @@ export type Topic = {
   duration: string;
   completed: boolean;
   content: {
-    type: 'external_link' | 'video' | 'pdf' | 'text' | 'interactive_widget';
+    type: 'external_link' | 'video' | 'pdf' | 'text' | 'interactive_widget' | 'iframe';
     url?: string;
     videoUrl?: string;
     pdfUrl?: string;
     textContent?: string;
     widgetConfig?: Record<string, unknown>;
+    iframeUrl?: string;
+    iframeHtml?: string;
   };
 };
 
@@ -82,6 +84,30 @@ export const classData: Record<number, ClassInfo> = {
                 duration: '30 min', 
                 completed: false,
                 content: { type: 'external_link', url: 'https://www.example.com/practice' }
+              },
+              { 
+                id: 'c5-math-ch1-t5', 
+                name: 'Interactive Number Game', 
+                type: 'interactive', 
+                duration: '25 min', 
+                completed: false,
+                content: { 
+                  type: 'iframe', 
+                  iframeUrl: 'https://wordwall.net/embed/eea3c9af6e074a2799df04d5b7e2e61a?themeId=21&templateId=69&fontStackId=0',
+                  iframeHtml: '<iframe src="https://wordwall.net/embed/eea3c9af6e074a2799df04d5b7e2e61a?themeId=21&templateId=69&fontStackId=0" width="500" height="380" frameborder="0" allowfullscreen></iframe>'
+                }
+              },
+              { 
+                id: 'c5-math-ch1-t6', 
+                name: 'Blooket Math Quiz', 
+                type: 'interactive', 
+                duration: '20 min', 
+                completed: false,
+                content: { 
+                  type: 'iframe', 
+                  iframeUrl: 'https://www.blooket.com/play',
+                  iframeHtml: '<iframe src="https://www.blooket.com/play" width="800" height="600" frameborder="0" allowfullscreen></iframe>'
+                }
               }
             ]
           },

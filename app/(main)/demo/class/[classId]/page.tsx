@@ -9,6 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, BookOpen, Play, Clock, CheckCircle, Lock, Video, FileText, Headphones, Star, Trophy } from 'lucide-react';
 import { classData } from '@/data/classData';
 import type { Topic } from '@/data/classData';
+import { ContentPlayer } from '@/components/learning/ContentPlayer';
+import type { DbTopic } from '@/hooks/useClassData';
 
 const getTopicIcon = (contentType: string | undefined) => {
   switch (contentType) {
@@ -17,9 +19,29 @@ const getTopicIcon = (contentType: string | undefined) => {
     case 'pdf': return <FileText className="h-4 w-4" />;
     case 'text': return <FileText className="h-4 w-4" />;
     case 'interactive_widget': return <Play className="h-4 w-4" />;
+    case 'iframe': return <Play className="h-4 w-4" />;
     case 'audio': return <Headphones className="h-4 w-4" />;
     default: return <BookOpen className="h-4 w-4" />;
   }
+};
+
+// Convert demo Topic to DbTopic format for ContentPlayer
+const convertToDbTopic = (topic: Topic): DbTopic => {
+  return {
+    id: topic.id,
+    name: topic.name,
+    type: topic.type,
+    duration: topic.duration,
+    orderIndex: 0, // Not used in demo
+    content: {
+      contentType: topic.content.type,
+      url: topic.content.url,
+      videoUrl: topic.content.videoUrl,
+      pdfUrl: topic.content.pdfUrl,
+      textContent: topic.content.iframeHtml || topic.content.textContent,
+      widgetConfig: topic.content.widgetConfig,
+    }
+  };
 };
 
 export default function DemoClassPage() {
@@ -101,76 +123,111 @@ export default function DemoClassPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Demo Banner */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white pb-6 pt-28">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-lg">
-              <Star className="h-5 w-5" />
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-12">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <Star className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-200">Interactive Demo - {demoClass.name}</h3>
+                <p className="text-sm text-blue-100">Experience our learning platform with sample content</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold">Interactive Demo - {demoClass.name}</h3>
-              <p className="text-sm text-blue-100">Experience our learning platform with sample content</p>
-            </div>
+            <Button 
+              variant="secondary" 
+              onClick={() => router.push('/demo')}
+              className="gap-2 w-fit"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Classes
+            </Button>
           </div>
-          <Button 
-            variant="secondary" 
-            onClick={() => router.push('/demo')}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Classes
-          </Button>
         </div>
       </div>
 
-      <div className="p-4 md:p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Enhanced Header */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl md:text-3xl font-bold">{demoClass.name}</h1>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                    Demo Version
-                  </span>
-                </div>
-                <p className="text-muted-foreground">{demoClass.description}</p>
-                <p className="text-sm text-green-600 mt-1">Try our interactive learning experience!</p>
-              </div>
-              <div className="hidden md:flex items-center gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {demoClass.subjects.filter(s => !s.isLocked).length}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Subjects</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {demoClass.subjects.reduce((acc, s) => acc + s.chapters.length, 0)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Chapters</div>
-                </div>
-              </div>
+      {/* Enhanced Header */}
+      <div className="relative overflow-hidden bg-white border-b border-gray-200">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-indigo-600/5" />
+        <div className="relative max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center space-x-4 mb-6">
+            <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg">
+              <BookOpen className="w-8 h-8 text-white" />
             </div>
-            
-            {/* Overall Progress */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Demo Progress</span>
-                <span className="text-sm text-muted-foreground">
-                  {Math.round(demoClass.subjects.reduce((acc, s) => acc + getSubjectProgress(s.id), 0) / demoClass.subjects.length)}%
-                </span>
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  {demoClass.name}
+                </h1>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                  Demo Version
+                </Badge>
               </div>
-              <Progress value={Math.round(demoClass.subjects.reduce((acc, s) => acc + getSubjectProgress(s.id), 0) / demoClass.subjects.length)} className="h-2" />
+              <p className="text-gray-600">{demoClass.description}</p>
+              <p className="text-sm text-green-600 mt-1">Try our interactive learning experience!</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Subject Sidebar */}
-            <div className="lg:col-span-1">
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm">Subjects</p>
+                  <p className="text-3xl font-bold text-gray-200">{demoClass.subjects.filter(s => !s.isLocked).length}</p>
+                </div>
+                <BookOpen className="w-10 h-10 text-blue-200" />
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm">Chapters</p>
+                  <p className="text-3xl font-bold text-gray-200">
+                    {demoClass.subjects.reduce((acc, s) => acc + s.chapters.length, 0)}
+                  </p>
+                </div>
+                <Clock className="w-10 h-10 text-green-200" />
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm">Progress</p>
+                  <p className="text-3xl font-bold text-gray-200">
+                    {selectedSubject ? getSubjectProgress(selectedSubject) : 0}%
+                  </p>
+                </div>
+                <Trophy className="w-10 h-10 text-purple-200" />
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-100 text-sm">Completed</p>
+                  <p className="text-3xl font-bold text-gray-200">{completedTopics.size}</p>
+                </div>
+                <CheckCircle className="w-10 h-10 text-orange-200" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Subject Content</h2>
+          <p className="text-gray-600">
+            Explore the interactive learning materials and track your progress
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Subject Sidebar */}
+          <div className="lg:col-span-1">
               <Card className="sticky top-6">
                 <CardHeader>
                   <CardTitle className="text-lg">Subjects</CardTitle>
@@ -326,73 +383,19 @@ export default function DemoClassPage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Demo Content Player Modal */}
-      {isPlayerOpen && selectedTopic && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold">{selectedTopic.name}</h3>
-                  <p className="text-sm text-muted-foreground">Demo Content - {selectedTopic.duration}</p>
-                </div>
-                <Button variant="outline" onClick={handlePlayerClose}>
-                  Close
-                </Button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  {getTopicIcon(selectedTopic.content?.type)}
-                </div>
-                <h4 className="text-lg font-semibold mb-2">Interactive Content Preview</h4>
-                <p className="text-muted-foreground mb-4">
-                  This is a demo of our interactive learning content. In the full version, you would see:
-                </p>
-                <ul className="text-sm text-left max-w-md mx-auto space-y-2">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Interactive videos and animations
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Gamified exercises and quizzes
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Progress tracking and achievements
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Personalized learning paths
-                  </li>
-                </ul>
-                <div className="mt-6 space-y-3">
-                  <Button 
-                    onClick={() => {
-                      handleTopicComplete(selectedTopic.id);
-                      handlePlayerClose();
-                    }}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 mr-2"
-                  >
-                    Mark as Complete (Demo)
-                  </Button>
-                  <Button 
-                    onClick={() => router.push('/')}
-                    variant="outline"
-                    className="ml-2"
-                  >
-                    Get Full Access
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
+      {/* Demo Content Player */}
+      <ContentPlayer
+        topic={selectedTopic ? convertToDbTopic(selectedTopic) : null}
+        isOpen={isPlayerOpen}
+        onClose={handlePlayerClose}
+        onComplete={() => {
+          if (selectedTopic) {
+            handleTopicComplete(selectedTopic.id);
+            handlePlayerClose();
+          }
+        }}
+      />
 
       {/* Subject Completion Modal */}
       {showCompletionModal && (

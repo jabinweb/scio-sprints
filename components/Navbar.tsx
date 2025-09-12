@@ -30,8 +30,8 @@ const Navbar = () => {
   }, []);
 
   const isScrolled = scrollPosition > 50;
-  // Show solid background on specific pages OR when scrolled on any page
-  const shouldShowSolidBackground = needsSolidBackground || isScrolled;
+  // Show solid background on specific pages OR when scrolled on any page OR when NOT on homepage
+  const shouldShowSolidBackground = needsSolidBackground || isScrolled || !isHomePage;
 
   const scrollToSection = (sectionId: string) => {
     setIsOpen(false);
@@ -61,7 +61,7 @@ const Navbar = () => {
 
   const navLinks = [
     { label: 'Features', id: 'features' },
-    { label: 'Demo', id: 'demo' },
+    { label: 'Demo', id: 'games' },
     { label: 'Platforms', id: 'platforms' },
     { label: 'FAQ', id: 'faq' },
   ];
@@ -75,7 +75,7 @@ const Navbar = () => {
         "absolute inset-0 transition-all duration-300",
         shouldShowSolidBackground 
           ? "bg-white/95 backdrop-blur-md shadow-sm" 
-          : "bg-gradient-to-b from-black/20 via-black/10 to-transparent"
+          : "bg-transparent"
       )} />
       <div className="container mx-auto px-6 relative">
         <div className="flex justify-between items-center h-16 sm:h-20">
@@ -103,7 +103,7 @@ const Navbar = () => {
               </Button>
             ))}
             
-            {user ? (
+            {/* {user ? (
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -134,14 +134,14 @@ const Navbar = () => {
               </div>
             ) : (
               <LoginDialog />
-            )}
+            )} */}
             
             <Button 
               className={cn(
                 "rounded-full font-semibold px-6",
                 shouldShowSolidBackground
                   ? "bg-brand-blue text-white hover:bg-brand-blue-dark"
-                  : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
+                  : "bg-brand-blue text-white hover:bg-brand-blue-dark"
               )}
               onClick={() => scrollToSection('cta')}
             >
