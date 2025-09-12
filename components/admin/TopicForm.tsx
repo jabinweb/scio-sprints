@@ -118,6 +118,16 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation for iframe content
+    if (formData.content?.contentType === 'iframe') {
+      const iframeContent = formData.content?.textContent || '';
+      if (iframeContent && !iframeContent.includes('<iframe')) {
+        alert('Please enter valid iframe HTML code starting with <iframe');
+        return;
+      }
+    }
+    
     setLoading(true);
     try {
       await onSubmit(formData);
@@ -218,6 +228,7 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
                 <SelectItem value="pdf">PDF</SelectItem>
                 <SelectItem value="text">Text Content</SelectItem>
                 <SelectItem value="interactive_widget">Interactive Widget</SelectItem>
+                <SelectItem value="iframe">IFrame</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -276,6 +287,20 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
                 rows={4}
                 placeholder="Enter your text content here..."
               />
+            </div>
+          )}
+
+          {formData.content?.contentType === 'iframe' && (
+            <div>
+              <Label htmlFor="textContent">IFrame HTML</Label>
+              <Textarea
+                id="textContent"
+                value={formData.content?.textContent || ''}
+                onChange={(e) => updateContentData('textContent', e.target.value)}
+                rows={4}
+                placeholder='<iframe allow="fullscreen; autoplay" allowfullscreen width="795" height="690" frameborder="0" src="https://example.com/embed"></iframe>'
+              />
+              <p className="text-xs text-gray-500 mt-1">Paste the complete iframe HTML code here</p>
             </div>
           )}
 

@@ -9,7 +9,19 @@ const convertContentType = (type: string): string => {
     case 'pdf': return 'PDF';
     case 'text': return 'TEXT';
     case 'interactive_widget': return 'INTERACTIVE_WIDGET';
+    case 'iframe': return 'IFRAME';
     default: return 'EXTERNAL_LINK';
+  }
+};
+
+// Helper function to convert topic type to database enum
+const convertTopicType = (type: string): string => {
+  switch (type.toLowerCase()) {
+    case 'video': return 'VIDEO';
+    case 'interactive': return 'INTERACTIVE';
+    case 'exercise': return 'EXERCISE';
+    case 'audio': return 'AUDIO';
+    default: return 'VIDEO';
   }
 };
 
@@ -77,7 +89,7 @@ export async function POST(request: Request) {
       .insert({
         id: crypto.randomUUID(),
         name,
-        type,
+        type: convertTopicType(type), // Convert to proper enum
         duration,
         orderIndex: orderIndex || 0,
         chapterId,
@@ -132,7 +144,7 @@ export async function PUT(request: Request) {
       .from('topics')
       .update({
         name,
-        type,
+        type: convertTopicType(type), // Convert to proper enum
         duration,
         orderIndex,
         updated_at: new Date().toISOString(),

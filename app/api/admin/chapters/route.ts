@@ -27,9 +27,13 @@ export async function POST(request: Request) {
   try {
     const { name, orderIndex, subjectId } = await request.json();
     
+    // Generate a unique ID for the chapter
+    const chapterId = crypto.randomUUID();
+    
     const { data: newChapter, error } = await supabase
       .from('chapters')
       .insert({
+        id: chapterId,
         name,
         orderIndex,
         subjectId,

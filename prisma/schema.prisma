@@ -8,66 +8,65 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// Core Learning Models
 model Class {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String
-  isActive    Boolean   @default(true)
-  price       Int?      @default(29900) // Price in paisa, null means free
-  currency    String    @default("INR")
-  created_at   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  subjects    Subject[]
-  subscriptions Subscription[] // Updated relation
+  id            Int            @id @default(autoincrement())
+  name          String
+  description   String
+  isActive      Boolean        @default(true)
+  created_at    DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  currency      String         @default("INR")
+  price         Int?           @default(29900)
+  subjects      Subject[]
+  subscriptions Subscription[]
 
   @@map("classes")
 }
 
 model Subject {
-  id          String    @id @default(cuid())
-  name        String
-  icon        String
-  color       String
-  isLocked    Boolean   @default(false)
-  orderIndex  Int
-  price       Int?      @default(7500) // Price in paisa, default to ₹75 per subject
-  currency    String    @default("INR")
-  classId     Int
-  class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
-  chapters    Chapter[]
-  subscriptions Subscription[] // Subject-specific subscriptions
-  created_at   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id            String         @id @default(cuid())
+  name          String
+  icon          String
+  color         String
+  isLocked      Boolean        @default(false)
+  orderIndex    Int
+  classId       Int
+  created_at    DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  currency      String         @default("INR")
+  price         Int?           @default(7500)
+  chapters      Chapter[]
+  class         Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
 
   @@map("subjects")
 }
 
 model Chapter {
-  id          String   @id @default(cuid())
-  name        String
-  orderIndex  Int
-  subjectId   String
-  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  topics      Topic[]
-  created_at   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  name       String
+  orderIndex Int
+  subjectId  String
+  created_at DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topics     Topic[]
 
   @@map("chapters")
 }
 
 model Topic {
-  id          String      @id @default(cuid())
-  name        String
-  type        TopicType
-  duration    String
-  orderIndex  Int
-  chapterId   String
-  chapter     Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  content     TopicContent?
-  progress    UserTopicProgress[]
-  created_at   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  id         String              @id @default(cuid())
+  name       String
+  type       TopicType
+  duration   String
+  orderIndex Int
+  chapterId  String
+  created_at DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
+  content    TopicContent?
+  chapter    Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  progress   UserTopicProgress[]
 
   @@map("topics")
 }
@@ -75,172 +74,150 @@ model Topic {
 model TopicContent {
   id           String      @id @default(cuid())
   topicId      String      @unique
-  topic        Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
   contentType  ContentType
   url          String?
   videoUrl     String?
   pdfUrl       String?
   textContent  String?
   widgetConfig Json?
-  created_at    DateTime    @default(now()) @map("created_at")
+  created_at   DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
+  topic        Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
   @@map("topic_contents")
 }
 
-// User Management & Progress Tracking
 model User {
-  id           String        @id // Supabase UUID as string
-  email        String        @unique
-  displayName  String?       @map("display_name")
-  photoURL     String?       @map("photo_url")
-  role         UserRole      @default(USER)
-  isActive     Boolean       @default(true) @map("is_active")
-  lastLoginAt  DateTime?     @map("last_login_at")
-  created_at   DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  
-  // School relationship - match existing database structure
-  schoolId     String?       @map("school_id")
-  school       School?       @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-
-  // new student profile fields
-  grade        String?       @map("grade")
-  section      String?       @map("section")
-  rollNumber   String?       @map("roll_number")
-  phone        String?       
-  parentName   String?       @map("parent_name")
-  parentEmail  String?       @map("parent_email")
-  
-  // Relations
-  progress     UserTopicProgress[]
-  subscriptions Subscription[]
-  payments     Payment[]
-  activities   UserActivity[]
+  id            String              @id
+  email         String              @unique
+  displayName   String?             @map("display_name")
+  photoURL      String?             @map("photo_url")
+  role          UserRole            @default(USER)
+  isActive      Boolean             @default(true) @map("is_active")
+  lastLoginAt   DateTime?           @map("last_login_at")
+  created_at    DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+  schoolId      String?             @map("school_id")
+  grade         String?             @map("grade")
+  section       String?             @map("section")
+  rollNumber    String?             @map("roll_number")
+  phone         String?
+  parentName    String?             @map("parent_name")
+  parentEmail   String?             @map("parent_email")
   notifications Notification[]
+  payments      Payment[]
+  subscriptions Subscription[]
+  activities    UserActivity[]
+  progress      UserTopicProgress[]
+  school        School?             @relation(fields: [schoolId], references: [id])
 
   @@map("users")
 }
 
 model UserTopicProgress {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   topicId     String
-  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  completed   Boolean  @default(false)
+  completed   Boolean   @default(false)
   completedAt DateTime?
-  timeSpent   Int?     // in seconds
-  created_at   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  timeSpent   Int?
+  created_at  DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  topic       Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, topicId])
   @@map("user_topic_progress")
 }
 
-// Subscription & Payment Models
 model Subscription {
-  id          String             @id @default(cuid())
-  userId      String
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  classId     Int?               // NULL for global subscriptions, specific class ID for class subscriptions
-  class       Class?             @relation(fields: [classId], references: [id], onDelete: Cascade)
-  subjectId   String?            // NULL for class-wide, specific subject ID for subject-only subscriptions
-  subject     Subject?           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  status      SubscriptionStatus @default(INACTIVE)
-  planType    String             // "subject_access", "class_access", "premium", "annual", etc.
-  planName    String?
-  amount      Int?               // Amount paid in paisa (₹1 = 100 paisa)
-  currency    String             @default("INR")
-  startDate   DateTime           @default(now())
-  endDate     DateTime?
-  autoRenew   Boolean            @default(false)
-  
-  // Upgrade tracking
-  upgradedFromId String?          // Reference to the subscription this was upgraded from
-  upgradedFrom   Subscription?    @relation("SubscriptionUpgrade", fields: [upgradedFromId], references: [id])
-  upgradedTo     Subscription[]   @relation("SubscriptionUpgrade")
-  
-  created_at   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
+  id             String             @id @default(cuid())
+  userId         String
+  status         SubscriptionStatus @default(INACTIVE)
+  planType       String
+  planName       String?
+  amount         Int?
+  currency       String             @default("INR")
+  startDate      DateTime           @default(now())
+  endDate        DateTime?
+  autoRenew      Boolean            @default(false)
+  created_at     DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  classId        Int?
+  subjectId      String?
+  upgradedFromId String?
+  class          Class?             @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject        Subject?           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  upgradedFrom   Subscription?      @relation("SubscriptionUpgrade", fields: [upgradedFromId], references: [id])
+  upgradedTo     Subscription[]     @relation("SubscriptionUpgrade")
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // TODO: Add unique constraint after data cleanup
-  // @@unique([userId, classId, subjectId], name: "unique_user_subscription")
   @@map("subscriptions")
 }
 
 model Payment {
   id                String        @id @default(cuid())
   userId            String
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Razorpay Integration
   razorpayPaymentId String?       @unique
   razorpayOrderId   String?
   razorpaySignature String?
-  
-  // Payment Details
-  amount            Int           // Amount in paisa
+  amount            Int
   currency          String        @default("INR")
   status            PaymentStatus @default(PENDING)
-  paymentMethod     String?       // "card", "upi", "netbanking", etc.
+  paymentMethod     String?
   description       String?
-  
-  // Metadata
   failureReason     String?
   refundId          String?
   metadata          Json?
-  
-  created_at         DateTime      @default(now()) @map("created_at")
+  created_at        DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
 
-// Admin & Content Management
 model AdminSettings {
-  id              String   @id @default(cuid())
-  key             String   @unique
-  value           String
-  description     String?
-  category        String?  // "payment", "content", "features", etc.
-  dataType        String   @default("string") // "string", "number", "boolean", "json"
-  isPublic        Boolean  @default(false)
-  created_at       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  category    String?
+  dataType    String   @default("string")
+  isPublic    Boolean  @default(false)
+  created_at  DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("admin_settings")
 }
 
 model ContentPage {
-  id          String      @id @default(cuid())
-  title       String
-  content     String      // Rich text content
-  slug        String      @unique
-  pageType    ContentPageType
-  isPublished Boolean     @default(false)
-  metaTitle   String?
+  id              String          @id @default(cuid())
+  title           String
+  content         String
+  slug            String          @unique
+  pageType        ContentPageType
+  isPublished     Boolean         @default(false)
+  metaTitle       String?
   metaDescription String?
-  author      String?
-  tags        String[]    @default([])
-  created_at   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  author          String?
+  tags            String[]        @default([])
+  created_at      DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
 
   @@map("content_pages")
 }
 
-// Activity & Analytics
 model UserActivity {
   id          String       @id @default(cuid())
   userId      String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   action      ActivityType
   description String
-  metadata    Json?        // Additional data like topic_id, class_id, etc.
+  metadata    Json?
   ipAddress   String?
   userAgent   String?
   sessionId   String?
-  created_at   DateTime     @default(now()) @map("created_at")
+  created_at  DateTime     @default(now()) @map("created_at")
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, created_at])
   @@index([action, created_at])
@@ -248,33 +225,33 @@ model UserActivity {
 }
 
 model Notification {
-  id          String             @id @default(cuid())
-  userId      String?            // null for global notifications
-  user        User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String
-  message     String
-  type        NotificationType   @default(INFO)
-  priority    NotificationPriority @default(NORMAL)
-  isRead      Boolean            @default(false)
-  data        Json?              // Additional data for deep linking
-  expiresAt   DateTime?          // Auto-expire notifications
-  created_at   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
+  id         String               @id @default(cuid())
+  userId     String?
+  title      String
+  message    String
+  type       NotificationType     @default(INFO)
+  priority   NotificationPriority @default(NORMAL)
+  isRead     Boolean              @default(false)
+  data       Json?
+  expiresAt  DateTime?
+  created_at DateTime             @default(now()) @map("created_at")
+  updatedAt  DateTime             @updatedAt @map("updated_at")
+  user       User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead, created_at])
   @@map("notifications")
 }
 
 model Analytics {
-  id          String      @id @default(cuid())
-  eventType   String      // "page_view", "topic_start", "topic_complete", etc.
-  eventData   Json        // Event-specific data
-  userId      String?
-  sessionId   String?
-  ipAddress   String?
-  userAgent   String?
-  referrer    String?
-  created_at   DateTime    @default(now()) @map("created_at")
+  id         String   @id @default(cuid())
+  eventType  String
+  eventData  Json
+  userId     String?
+  sessionId  String?
+  ipAddress  String?
+  userAgent  String?
+  referrer   String?
+  created_at DateTime @default(now()) @map("created_at")
 
   @@index([eventType, created_at])
   @@index([userId, created_at])
@@ -282,23 +259,21 @@ model Analytics {
   @@map("analytics")
 }
 
-// Support for features like announcements, promotions
 model Announcement {
-  id          String      @id @default(cuid())
+  id          String           @id @default(cuid())
   title       String
   content     String
   type        AnnouncementType @default(INFO)
-  isActive    Boolean     @default(true)
-  targetUsers String[]    @default([]) // User roles or specific user IDs
+  isActive    Boolean          @default(true)
+  targetUsers String[]         @default([])
   startDate   DateTime?
   endDate     DateTime?
-  created_at   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  created_at  DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
 
   @@map("announcements")
 }
 
-// School Management - match existing database structure
 model School {
   id            String   @id @default(cuid())
   name          String
@@ -309,21 +284,15 @@ model School {
   logo          String?
   studentCount  Int      @default(0) @map("student_count")
   isActive      Boolean  @default(true) @map("is_active")
-  
-  // School admin/contact details
   principalName String?  @map("principal_name")
   contactPerson String?  @map("contact_person")
-  
-  // Relations
-  users         User[]   // Students and teachers belonging to this school
-  
   created_at    DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
+  users         User[]
 
   @@map("schools")
 }
 
-// Enums
 enum TopicType {
   VIDEO
   INTERACTIVE
@@ -337,6 +306,7 @@ enum ContentType {
   PDF
   TEXT
   INTERACTIVE_WIDGET
+  IFRAME
 }
 
 enum UserRole {
@@ -396,7 +366,6 @@ enum NotificationType {
   SUBSCRIPTION_REMINDER
   PAYMENT_REMINDER
 }
-
 
 enum NotificationPriority {
   LOW
