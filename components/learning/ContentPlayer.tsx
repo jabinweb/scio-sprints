@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Play, FileText, Monitor } from 'lucide-react';
@@ -13,12 +13,27 @@ interface ContentPlayerProps {
   onClose: () => void;
   onComplete: () => void;
   onNext?: () => void;
+  isCompleted?: boolean;
+  canProceedToNext?: boolean;
 }
 
-export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext }: ContentPlayerProps) {
+export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCompleted = false, canProceedToNext = true }: ContentPlayerProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [hasCompleted, setHasCompleted] = useState(false);
+
+  // Reset completion state when topic changes or dialog opens
+  useEffect(() => {
+    if (topic) {
+      setHasCompleted(isCompleted);
+    }
+  }, [topic, isCompleted]);
 
   if (!topic) return null;
+
+  const handleComplete = () => {
+    setHasCompleted(true);
+    onComplete();
+  };
 
   const handleContentAction = () => {
     setIsLoading(true);
@@ -98,11 +113,30 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext }: Co
           </div>
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button onClick={onComplete} size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1">
-              Complete
+            <Button 
+              onClick={handleComplete} 
+              size="sm" 
+              disabled={hasCompleted || isCompleted}
+              className={`gap-1 text-white text-xs px-3 py-1 ${
+                hasCompleted || isCompleted 
+                  ? 'bg-gray-600 cursor-not-allowed opacity-50' 
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              {hasCompleted || isCompleted ? 'Completed' : 'Complete'}
             </Button>
             {onNext && (
-              <Button onClick={onNext} size="sm" className="gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1">
+              <Button 
+                onClick={onNext} 
+                size="sm" 
+                disabled={!canProceedToNext || (!hasCompleted && !isCompleted)}
+                className={`gap-1 text-white text-xs px-3 py-1 ${
+                  !canProceedToNext || (!hasCompleted && !isCompleted)
+                    ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+                title={!canProceedToNext || (!hasCompleted && !isCompleted) ? 'Complete current topic to proceed' : 'Go to next topic'}
+              >
                 Next Topic
               </Button>
             )}

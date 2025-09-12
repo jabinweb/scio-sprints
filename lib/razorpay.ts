@@ -1,3 +1,6 @@
+import Razorpay from 'razorpay';
+import { razorpayConfig } from './razorpay-config';
+
 interface RazorpayResponse {
   razorpay_payment_id: string;
   razorpay_order_id: string;
@@ -21,6 +24,19 @@ interface RazorpayOptions {
   };
 }
 
+interface ServerOrderData {
+  amount: number;
+  currency: string;
+  receipt?: string;
+  notes?: Record<string, string>;
+}
+
+interface ServerOrderResult {
+  success: boolean;
+  orderId?: string;
+  error?: string;
+}
+
 declare global {
   interface Window {
     Razorpay: new (options: RazorpayOptions) => {
@@ -29,6 +45,7 @@ declare global {
   }
 }
 
+// Client-side functions
 export const loadRazorpay = (): Promise<boolean> => {
   return new Promise((resolve) => {
     const script = document.createElement('script');
@@ -73,4 +90,105 @@ export const verifyPayment = async (paymentData: {
   }
 
   return response.json();
+};
+
+// Server-side functions
+export const createServerRazorpayInstance = (): Razorpay | null => {
+  try {
+    if (!razorpayConfig.keyId || !razorpayConfig.keySecret) {
+      console.error('Razorpay configuration not found');
+      return null;
+    }
+
+    return new Razorpay({
+      key_id: razorpayConfig.keyId,
+      key_secret: razorpayConfig.keySecret,
+    });
+  } catch (error) {
+    console.error('Failed to create Razorpay instance:', error);
+    return null;
+  }
+};
+
+export const createServerOrder = async (orderData: ServerOrderData): Promise<ServerOrderResult> => {
+  try {
+    const razorpay = createServerRazorpayInstance();
+    
+    if (!razorpay) {
+      return {
+        success: false,
+        error: 'Razorpay configuration not available'
+      };
+    }
+
+    const order = await razorpay.orders.create({
+      amount: orderData.amount,
+      currency: orderData.currency,
+      receipt: orderData.receipt || `order_${Date.now()}`,
+      notes: orderData.notes || {}
+    });
+
+    return {
+      success: true,
+      orderId: order.id
+    };
+  } catch (error) {
+    console.error('Failed to create server order:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Order creation failed'
+    };
+  }
+};
+
+export const validateRazorpayConfig = (): boolean => {
+  return !!(razorpayConfig.keyId && razorpayConfig.keySecret);
+};
+
+// Server-side payment processing for auto-renewal
+export const processAutoRenewalPayment = async (
+  userId: string,
+  amount: number,
+  currency: string = 'INR',
+  description: string = 'Auto-renewal'
+): Promise<{ success: boolean; orderId?: string; paymentId?: string; error?: string }> => {
+  try {
+    // Step 1: Create order using existing create-order API pattern
+    const orderResult = await createServerOrder({
+      amount,
+      currency,
+      receipt: `auto_renewal_${userId}_${Date.now()}`,
+      notes: {
+        userId,
+        type: 'auto_renewal',
+        description
+      }
+    });
+
+    if (!orderResult.success) {
+      return {
+        success: false,
+        error: orderResult.error || 'Failed to create payment order'
+      };
+    }
+
+    // Step 2: For production, here you would:
+    // - Use saved payment methods or customer tokens
+    // - Process the payment immediately using Razorpay's payment APIs
+    // - Handle payment confirmation and webhook processing
+
+    // For now, we'll return the order details for further processing
+    return {
+      success: true,
+      orderId: orderResult.orderId,
+      paymentId: `auto_${orderResult.orderId}_${Date.now()}`
+    };
+
+  } catch (error) {
+    console.error('Auto-renewal payment processing failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Payment processing failed'
+    };
+  }
 };

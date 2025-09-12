@@ -4,8 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { LoadingScreen } from '@/components/ui/loading-screen';
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+// import { ChevronLeft } from "lucide-react";
 
 export default function ClassLayout({
   children,
@@ -83,7 +83,7 @@ export default function ClassLayout({
 
   return (
     <>
-      <div className="container p-4">
+      {/* <div className="container p-4">
         <Button 
           variant="ghost" 
           size="sm" 
@@ -93,7 +93,7 @@ export default function ClassLayout({
           <ChevronLeft className="h-4 w-4" />
           Back to Dashboard
         </Button>
-      </div>
+      </div> */}
       {children}
     </>
   );

@@ -6,6 +6,8 @@ interface SubjectAccess {
   name: string;
   hasAccess: boolean;
   accessType: 'school' | 'class_subscription' | 'subject_subscription' | 'none';
+  price?: number;
+  currency?: string;
   canUpgrade?: boolean;
 }
 
@@ -15,6 +17,8 @@ interface DbSubject {
   icon: string;
   color: string;
   orderIndex: number;
+  price: number;
+  currency: string;
 }
 
 export async function GET(
@@ -55,7 +59,9 @@ export async function GET(
           name,
           icon,
           color,
-          orderIndex
+          orderIndex,
+          price,
+          currency
         )
       `)
       .eq('id', parseInt(classId))
@@ -116,6 +122,8 @@ export async function GET(
         name: subject.name,
         hasAccess,
         accessType,
+        price: subject.price,
+        currency: subject.currency,
         canUpgrade: hasSubjectSubscription && !classSubscription // Can upgrade from subject to class
       };
     });

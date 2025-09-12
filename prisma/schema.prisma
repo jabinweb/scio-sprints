@@ -60,11 +60,11 @@ model Topic {
   name        String
   type        TopicType
   duration    String?
-  description String?
   orderIndex  Int
   chapterId   String
   created_at  DateTime            @default(now()) @map("created_at")
   updatedAt   DateTime            @updatedAt @map("updated_at")
+  description String?
   content     TopicContent?
   chapter     Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   progress    UserTopicProgress[]
@@ -105,12 +105,13 @@ model User {
   phone         String?
   parentName    String?             @map("parent_name")
   parentEmail   String?             @map("parent_email")
-  notifications Notification[]
-  payments      Payment[]
-  subscriptions Subscription[]
-  activities    UserActivity[]
-  progress      UserTopicProgress[]
-  school        School?             @relation(fields: [schoolId], references: [id])
+  notifications     Notification[]
+  notificationQueue NotificationQueue[]
+  payments          Payment[]
+  subscriptions     Subscription[]
+  activities        UserActivity[]
+  progress          UserTopicProgress[]
+  school            School?             @relation(fields: [schoolId], references: [id])
 
   @@map("users")
 }
@@ -243,6 +244,26 @@ model Notification {
   @@map("notifications")
 }
 
+model NotificationQueue {
+  id          String                     @id @default(cuid())
+  userId      String
+  type        NotificationQueueType
+  data        Json
+  status      NotificationQueueStatus    @default(PENDING)
+  scheduledFor DateTime
+  processedAt DateTime?
+  retryCount  Int                       @default(0)
+  maxRetries  Int                       @default(3)
+  error       String?
+  created_at  DateTime                  @default(now()) @map("created_at")
+  updatedAt   DateTime                  @updatedAt @map("updated_at")
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledFor])
+  @@index([userId, type])
+  @@map("notification_queue")
+}
+
 model Analytics {
   id         String   @id @default(cuid())
   eventType  String
@@ -323,6 +344,8 @@ enum SubscriptionStatus {
   CANCELLED
   EXPIRED
   TRIAL
+  GRACE_PERIOD
+  PENDING_RENEWAL
 }
 
 enum PaymentStatus {
@@ -373,6 +396,27 @@ enum NotificationPriority {
   NORMAL
   HIGH
   URGENT
+}
+
+enum NotificationQueueType {
+  expiry_warning
+  grace_period
+  expired
+  renewal_reminder
+  subscription_created
+  subscription_cancelled
+  subscription_renewed
+  payment_failed
+  auto_renewal_failed
+  auto_renewal_attempt
+}
+
+enum NotificationQueueStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  CANCELLED
 }
 
 enum AnnouncementType {

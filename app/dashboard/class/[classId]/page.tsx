@@ -4,25 +4,20 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BookOpen, Play, Clock, CheckCircle, Lock, Video, FileText, Headphones, Settings } from 'lucide-react';
+import { ArrowLeft, BookOpen, Lock, Settings } from 'lucide-react';
 import { useClassData, type DbTopic } from '@/hooks/useClassData';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
 import { useAuth } from '@/contexts/AuthContext';
 import { ClassSubscriptionManager } from '@/components/dashboard/ClassSubscriptionManager';
-
-const getTopicIcon = (contentType: string | undefined) => {
-  switch (contentType) {
-    case 'VIDEO': return <Video className="h-4 w-4" />;
-    case 'EXTERNAL_LINK': return <Play className="h-4 w-4" />;
-    case 'PDF': return <FileText className="h-4 w-4" />;
-    case 'TEXT': return <FileText className="h-4 w-4" />;
-    case 'INTRACTIVE_WIGET': return <Play className="h-4 w-4" />;
-    case 'AUDIO': return <Headphones className="h-4 w-4" />;
-    default: return <BookOpen className="h-4 w-4" />;
-  }
-};
+import { TopicItem } from '@/components/learning/TopicItem';
+import { 
+  isTopicEnabled, 
+  getNextTopic, 
+  isSubjectCompleted,
+  canNavigateToNext,
+  type SubjectProgression 
+} from '@/lib/topic-progression';
 
 interface SubjectData {
   id: string;
@@ -147,6 +142,39 @@ export default function ClassPage() {
       return;
     }
 
+    // Check if topic should be enabled (sequential unlock)
+    if (selectedSubjectData) {
+      const subjectProgress: SubjectProgression = {
+        id: selectedSubjectData.id,
+        name: selectedSubjectData.name,
+        chapters: selectedSubjectData.chapters.map(ch => ({
+          id: ch.id,
+          name: ch.name,
+          topics: ch.topics.map(t => ({
+            id: t.id,
+            name: t.name,
+            completed: userProgress.get(t.id) || false
+          }))
+        }))
+      };
+
+      // Create a Set from userProgress for compatibility with shared functions
+      const completedTopicsSet = new Set<string>();
+      userProgress.forEach((completed, topicId) => {
+        if (completed) completedTopicsSet.add(topicId);
+      });
+
+      const topicForProgression = {
+        id: topic.id,
+        name: topic.name,
+        completed: userProgress.get(topic.id) || false
+      };
+
+      if (!isTopicEnabled(topicForProgression, subjectProgress, completedTopicsSet)) {
+        return; // Don't open disabled topics
+      }
+    }
+
     // Convert DbTopic to the expected format with proper content structure
     const topicWithCompleted: DbTopic & { completed: boolean } = {
       ...topic,
@@ -167,8 +195,39 @@ export default function ClassPage() {
   const handleTopicComplete = async () => {
     if (selectedTopic) {
       await markTopicComplete(selectedTopic.id, true);
-      setIsPlayerOpen(false);
-      setSelectedTopic(null);
+      
+      // Check if subject is completed using shared utility
+      if (selectedSubjectData) {
+        const subjectProgress: SubjectProgression = {
+          id: selectedSubjectData.id,
+          name: selectedSubjectData.name,
+          chapters: selectedSubjectData.chapters.map(ch => ({
+            id: ch.id,
+            name: ch.name,
+            topics: ch.topics.map(t => ({
+              id: t.id,
+              name: t.name,
+              completed: userProgress.get(t.id) || false
+            }))
+          }))
+        };
+
+        // Create a Set from userProgress for compatibility with shared functions
+        const completedTopicsSet = new Set<string>();
+        userProgress.forEach((isCompleted, topicId) => {
+          if (isCompleted) completedTopicsSet.add(topicId);
+        });
+        completedTopicsSet.add(selectedTopic.id); // Add the just completed topic
+
+        if (isSubjectCompleted(subjectProgress, completedTopicsSet)) {
+          // Subject completed logic can be added here
+          console.log(`Subject ${selectedSubjectData.name} completed!`);
+        }
+      }
+      
+      // Don't close the player dialog here for consistency with demo
+      // setIsPlayerOpen(false);
+      // setSelectedTopic(null);
     }
   };
 
@@ -180,27 +239,62 @@ export default function ClassPage() {
   const handleNextTopic = () => {
     if (!selectedSubjectData || !selectedTopic) return;
     
-    // Get all topics from current subject
-    const allTopics = selectedSubjectData.chapters.flatMap((ch: ChapterData) => ch.topics);
-    const currentIndex = allTopics.findIndex((topic: DbTopic) => topic.id === selectedTopic.id);
+    // Create subject progression data for shared utility
+    const subjectProgress: SubjectProgression = {
+      id: selectedSubjectData.id,
+      name: selectedSubjectData.name,
+      chapters: selectedSubjectData.chapters.map(ch => ({
+        id: ch.id,
+        name: ch.name,
+        topics: ch.topics.map(t => ({
+          id: t.id,
+          name: t.name,
+          completed: userProgress.get(t.id) || false
+        }))
+      }))
+    };
+
+    const currentTopicForProgression = {
+      id: selectedTopic.id,
+      name: selectedTopic.name,
+      completed: selectedTopic.completed
+    };
+
+    // Create a Set from userProgress for compatibility with shared functions
+    const completedTopicsSet = new Set<string>();
+    userProgress.forEach((completed, topicId) => {
+      if (completed) completedTopicsSet.add(topicId);
+    });
+
+    // Check if we can navigate to next topic (current must be completed)
+    if (!canNavigateToNext(currentTopicForProgression, subjectProgress, completedTopicsSet)) {
+      console.log('Cannot navigate to next topic: current topic not completed');
+      return; // Don't proceed if current topic is not completed
+    }
+
+    const nextTopic = getNextTopic(currentTopicForProgression, subjectProgress);
     
-    // Find next topic
-    if (currentIndex >= 0 && currentIndex < allTopics.length - 1) {
-      const nextTopic = allTopics[currentIndex + 1];
-      // Convert to the expected format with completed status
-      const nextTopicWithCompleted: DbTopic & { completed: boolean } = {
-        ...nextTopic,
-        completed: userProgress.get(nextTopic.id) || false,
-        content: nextTopic.content ? {
-          contentType: nextTopic.content.contentType,
-          url: nextTopic.content.url,
-          videoUrl: nextTopic.content.videoUrl,
-          pdfUrl: nextTopic.content.pdfUrl,
-          textContent: nextTopic.content.textContent,
-          widgetConfig: nextTopic.content.widgetConfig
-        } : {}
-      };
-      setSelectedTopic(nextTopicWithCompleted);
+    if (nextTopic) {
+      // Find the full DbTopic object
+      const allTopics = selectedSubjectData.chapters.flatMap((ch: ChapterData) => ch.topics);
+      const fullNextTopic = allTopics.find((topic: DbTopic) => topic.id === nextTopic.id);
+      
+      if (fullNextTopic) {
+        // Convert to the expected format with completed status
+        const nextTopicWithCompleted: DbTopic & { completed: boolean } = {
+          ...fullNextTopic,
+          completed: userProgress.get(fullNextTopic.id) || false,
+          content: fullNextTopic.content ? {
+            contentType: fullNextTopic.content.contentType,
+            url: fullNextTopic.content.url,
+            videoUrl: fullNextTopic.content.videoUrl,
+            pdfUrl: fullNextTopic.content.pdfUrl,
+            textContent: fullNextTopic.content.textContent,
+            widgetConfig: fullNextTopic.content.widgetConfig
+          } : {}
+        };
+        setSelectedTopic(nextTopicWithCompleted);
+      }
     } else {
       // If no next topic, close the player
       handlePlayerClose();
@@ -240,9 +334,10 @@ export default function ClassPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Enhanced Header with Access Info */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Hero Header Section */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center gap-4 mb-4">
             <Button 
@@ -296,17 +391,12 @@ export default function ClassPage() {
               </Button>
             </div>
           </div>
-          
-          {/* Overall Progress */}
-          <div className="bg-gray-50 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Overall Progress</span>
-              <span className="text-sm text-muted-foreground">
-                {Math.round(currentClass.subjects.reduce((acc, s) => acc + getSubjectProgress(s), 0) / currentClass.subjects.length)}%
-              </span>
-            </div>
-            <Progress value={Math.round(currentClass.subjects.reduce((acc, s) => acc + getSubjectProgress(s), 0) / currentClass.subjects.length)} className="h-2" />
-          </div>
+        </div>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Subject Content</h2>
+          <p className="text-gray-600">
+            Explore the interactive learning materials and track your progress
+          </p>
         </div>
 
         {/* Subscription Management Panel */}
@@ -392,7 +482,7 @@ export default function ClassPage() {
                   <CardTitle className="flex items-center gap-3">
                     <span className="text-3xl">{selectedSubjectData.icon}</span>
                     <div>
-                      <h2 className="text-2xl">{selectedSubjectData.name}</h2>
+                      <h2 className="text-2xl text-white">{selectedSubjectData.name}</h2>
                       <p className="text-white/80">{selectedSubjectData.chapters.length} chapters to explore</p>
                     </div>
                     <div className="ml-auto text-right">
@@ -406,9 +496,9 @@ export default function ClassPage() {
                   {/* Chapter Grid */}
                   <div className="p-6 space-y-6">
                     {selectedSubjectData.chapters.map((chapter, chapterIndex) => {
-                      const chapterProgress = Math.round(
-                        (chapter.topics.filter(t => userProgress.get(t.id)).length / chapter.topics.length) * 100
-                      );
+                      const chapterProgress = chapter.topics.length > 0 
+                        ? Math.round((chapter.topics.filter(t => userProgress.get(t.id)).length / chapter.topics.length) * 100)
+                        : 0;
                       
                       return (
                         <div key={chapter.id} className="border border-gray-200 rounded-2xl overflow-hidden">
@@ -434,52 +524,46 @@ export default function ClassPage() {
                           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                             {chapter.topics.map((topic) => {
                               const isCompleted = userProgress.get(topic.id) || false;
-                              const contentType = topic.content?.contentType;
                               const hasSubjectAccess = subjectAccess[selectedSubject] !== false;
                               
+                              // Create subject progression data for topic enabling check
+                              const subjectProgress: SubjectProgression = {
+                                id: selectedSubjectData.id,
+                                name: selectedSubjectData.name,
+                                chapters: selectedSubjectData.chapters.map(ch => ({
+                                  id: ch.id,
+                                  name: ch.name,
+                                  topics: ch.topics.map(t => ({
+                                    id: t.id,
+                                    name: t.name,
+                                    completed: userProgress.get(t.id) || false
+                                  }))
+                                }))
+                              };
+
+                              // Create a Set from userProgress for compatibility with shared functions
+                              const completedTopicsSet = new Set<string>();
+                              userProgress.forEach((completed, topicId) => {
+                                if (completed) completedTopicsSet.add(topicId);
+                              });
+
+                              const topicForProgression = {
+                                id: topic.id,
+                                name: topic.name,
+                                completed: isCompleted
+                              };
+
+                              const isEnabled = isTopicEnabled(topicForProgression, subjectProgress, completedTopicsSet);
+                              
                               return (
-                                <div
+                                <TopicItem
                                   key={topic.id}
-                                  className={`p-4 rounded-xl border-2 transition-all group ${
-                                    !hasSubjectAccess 
-                                      ? 'border-red-200 bg-red-50 opacity-60 cursor-not-allowed'
-                                      : isCompleted 
-                                      ? 'border-green-200 bg-green-50 hover:bg-green-100 cursor-pointer' 
-                                      : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md cursor-pointer'
-                                  }`}
-                                  onClick={() => hasSubjectAccess && handleTopicClick(topic as DbTopic)}
-                                >
-                                  <div className="flex items-start justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                      <div className={`p-2 rounded-lg ${isCompleted ? 'bg-green-200' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
-                                        {getTopicIcon(contentType)}
-                                      </div>
-                                      <Badge variant={
-                                        contentType === 'video' ? 'default' : 
-                                        contentType === 'external_link' ? 'secondary' : 
-                                        contentType === 'interactive_widget' ? 'secondary' : 
-                                        'outline'
-                                      } className="text-xs">
-                                        {contentType || topic.type}
-                                      </Badge>
-                                    </div>
-                                    {isCompleted ? (
-                                      <CheckCircle className="h-5 w-5 text-green-600" />
-                                    ) : (
-                                      <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
-                                    )}
-                                  </div>
-                                  
-                                  <h4 className="font-medium text-sm mb-2 line-clamp-2">{topic.name}</h4>
-                                  
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                      <Clock className="h-3 w-3" />
-                                      <span>{topic.duration}</span>
-                                    </div>
-                                    <Play className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-                                  </div>
-                                </div>
+                                  topic={topic}
+                                  isCompleted={isCompleted}
+                                  hasAccess={hasSubjectAccess}
+                                  isEnabled={isEnabled}
+                                  onClick={handleTopicClick}
+                                />
                               );
                             })}
                           </div>
@@ -506,6 +590,35 @@ export default function ClassPage() {
         onClose={handlePlayerClose}
         onComplete={handleTopicComplete}
         onNext={handleNextTopic}
+        isCompleted={selectedTopic ? (userProgress.get(selectedTopic.id) || false) : false}
+        canProceedToNext={selectedTopic && selectedSubjectData ? (() => {
+          const subjectProgress: SubjectProgression = {
+            id: selectedSubjectData.id,
+            name: selectedSubjectData.name,
+            chapters: selectedSubjectData.chapters.map(ch => ({
+              id: ch.id,
+              name: ch.name,
+              topics: ch.topics.map(t => ({
+                id: t.id,
+                name: t.name,
+                completed: userProgress.get(t.id) || false
+              }))
+            }))
+          };
+
+          const currentTopicForProgression = {
+            id: selectedTopic.id,
+            name: selectedTopic.name,
+            completed: selectedTopic.completed
+          };
+
+          const completedTopicsSet = new Set<string>();
+          userProgress.forEach((completed, topicId) => {
+            if (completed) completedTopicsSet.add(topicId);
+          });
+
+          return canNavigateToNext(currentTopicForProgression, subjectProgress, completedTopicsSet);
+        })() : false}
       />
     </div>
   );

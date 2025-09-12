@@ -1,38 +1,124 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BookOpen, Play, Clock, CheckCircle, Lock, Video, FileText, Headphones, Star, Trophy } from 'lucide-react';
-import { classData } from '@/data/classData';
-import type { Topic } from '@/data/classData';
+import { ArrowLeft, BookOpen, Clock, CheckCircle, Lock, Star, Trophy } from 'lucide-react';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
 import type { DbTopic } from '@/hooks/useClassData';
+import { TopicItem } from '@/components/learning/TopicItem';
+import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
+import { 
+  isTopicEnabled, 
+  handleTopicCompletion, 
+  getNextTopic, 
+  isSubjectCompleted,
+  canNavigateToNext,
+  type SubjectProgression 
+} from '@/lib/topic-progression';
 
-const getTopicIcon = (contentType: string | undefined) => {
-  switch (contentType) {
-    case 'video': return <Video className="h-4 w-4" />;
-    case 'external_link': return <Play className="h-4 w-4" />;
-    case 'pdf': return <FileText className="h-4 w-4" />;
-    case 'text': return <FileText className="h-4 w-4" />;
-    case 'interactive_widget': return <Play className="h-4 w-4" />;
-    case 'iframe': return <Play className="h-4 w-4" />;
-    case 'audio': return <Headphones className="h-4 w-4" />;
-    default: return <BookOpen className="h-4 w-4" />;
-  }
+// Types for demo data (similar to static data but from API)
+
+export type DemoTopic = {
+  id: string;
+  name: string;
+  type: string;
+  duration: string;
+  description?: string;
+  completed: boolean;
+  content: {
+    type: string;
+    value: string;
+    url?: string;
+    videoUrl?: string;
+    pdfUrl?: string;
+    textContent?: string;
+    widgetConfig?: Record<string, unknown>;
+    iframeHtml?: string;
+  };
 };
 
-// Convert demo Topic to DbTopic format for ContentPlayer
-const convertToDbTopic = (topic: Topic): DbTopic => {
+type DemoChapter = {
+  id: string;
+  name: string;
+  topics: DemoTopic[];
+};
+
+type DemoSubject = {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  isLocked: boolean;
+  chapters: DemoChapter[];
+  price?: number; 
+};
+
+type DemoClass = {
+  id: number;
+  name: string;
+  description: string;
+  price?: number;
+  currency?: string;
+  subjects: DemoSubject[];
+};
+
+// Convert demo Topic to DbTopic format for TopicItem compatibility
+const convertTopicForItem = (topic: DemoTopic): DbTopic => {
+  // Map database topic types to expected enum values
+  const getTopicType = (type: string): 'video' | 'interactive' | 'exercise' | 'audio' => {
+    switch (type.toLowerCase()) {
+      case 'video': return 'video';
+      case 'interactive':
+      case 'interactive_widget': return 'interactive';
+      case 'exercise': return 'exercise';
+      case 'audio': return 'audio';
+      default: return 'interactive'; // Default fallback
+    }
+  };
+
   return {
     id: topic.id,
     name: topic.name,
-    type: topic.type,
+    type: getTopicType(topic.type),
     duration: topic.duration,
-    orderIndex: 0, // Not used in demo
+    description: topic.description,
+    orderIndex: 0,
+    content: {
+      contentType: topic.content.type,
+      url: topic.content.url,
+      videoUrl: topic.content.videoUrl,
+      pdfUrl: topic.content.pdfUrl,
+      textContent: topic.content.iframeHtml || topic.content.textContent,
+      widgetConfig: topic.content.widgetConfig,
+    }
+  };
+};
+
+// Convert demo Topic to DbTopic format for ContentPlayer
+const convertToDbTopic = (topic: DemoTopic): DbTopic => {
+  // Map database topic types to expected enum values
+  const getTopicType = (type: string): 'video' | 'interactive' | 'exercise' | 'audio' => {
+    switch (type.toLowerCase()) {
+      case 'video': return 'video';
+      case 'interactive':
+      case 'interactive_widget': return 'interactive';
+      case 'exercise': return 'exercise';
+      case 'audio': return 'audio';
+      default: return 'interactive'; // Default fallback
+    }
+  };
+
+  return {
+    id: topic.id,
+    name: topic.name,
+    type: getTopicType(topic.type),
+    duration: topic.duration,
+    description: topic.description,
+    orderIndex: 0,
     content: {
       contentType: topic.content.type,
       url: topic.content.url,
@@ -45,31 +131,93 @@ const convertToDbTopic = (topic: Topic): DbTopic => {
 };
 
 export default function DemoClassPage() {
-  const params = useParams();
   const router = useRouter();
-  const classId = parseInt(params.classId as string);
+  const params = useParams();
+  const classId = params.classId as string;
   const [selectedSubject, setSelectedSubject] = useState<string>('');
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<DemoTopic | null>(null);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completedSubjectName, setCompletedSubjectName] = useState<string>('');
+  const [demoClass, setDemoClass] = useState<DemoClass | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   
-  // Get class data
-  const demoClass = classData[classId as keyof typeof classData];
+  // Get selected subject data
   const selectedSubjectData = demoClass?.subjects.find(s => s.id === selectedSubject);
 
+  // Fetch demo data from API
   useEffect(() => {
-    // Auto-select first unlocked subject
-    if (demoClass) {
+    const fetchDemoData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await fetch(`/api/demo/classes?classId=${classId}`);
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch demo data');
+        }
+        
+        if (result.success && result.data) {
+          setDemoClass(result.data);
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (err) {
+        console.error('Error fetching demo data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load demo data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (classId) {
+      fetchDemoData();
+    }
+  }, [classId]);
+
+  useEffect(() => {
+    // Auto-select first unlocked subject when data is loaded
+    if (demoClass && !selectedSubject) {
       const firstUnlockedSubject = demoClass.subjects.find(s => !s.isLocked);
       if (firstUnlockedSubject) {
         setSelectedSubject(firstUnlockedSubject.id);
       }
     }
-  }, [demoClass]);
+  }, [demoClass, selectedSubject]);
 
-  const handleTopicClick = (topic: Topic) => {
+  const handleTopicClick = (topic: DemoTopic) => {
+    // Check if topic should be enabled (sequential unlock)
+    if (selectedSubjectData) {
+      const subjectProgress: SubjectProgression = {
+        id: selectedSubjectData.id,
+        name: selectedSubjectData.name,
+        chapters: selectedSubjectData.chapters.map(ch => ({
+          id: ch.id,
+          name: ch.name,
+          topics: ch.topics.map(t => ({
+            id: t.id,
+            name: t.name,
+            completed: t.completed
+          }))
+        }))
+      };
+
+      const topicForProgression = {
+        id: topic.id,
+        name: topic.name,
+        completed: topic.completed
+      };
+
+      if (!isTopicEnabled(topicForProgression, subjectProgress, completedTopics)) {
+        return; // Don't open disabled topics
+      }
+    }
+    
     setSelectedTopic(topic);
     setIsPlayerOpen(true);
   };
@@ -79,39 +227,120 @@ export default function DemoClassPage() {
     setSelectedTopic(null);
   };
 
-  const handleTopicComplete = (topicId: string) => {
-    const newCompletedTopics = new Set(completedTopics);
-    newCompletedTopics.add(topicId);
-    setCompletedTopics(newCompletedTopics);
+  const handleTopicComplete = () => {
+    if (selectedTopic) {
+      const newCompletedTopics = handleTopicCompletion(
+        selectedTopic.id, 
+        completedTopics, 
+        setCompletedTopics
+      );
 
-    // Check if subject is completed
-    if (selectedSubjectData) {
-      const allTopicIds = selectedSubjectData.chapters.flatMap(ch => ch.topics.map(t => t.id));
-      const completedCount = allTopicIds.filter(id => newCompletedTopics.has(id)).length;
-      
-      if (completedCount === allTopicIds.length) {
-        setCompletedSubjectName(selectedSubjectData.name);
-        setShowCompletionModal(true);
+      // Check if subject is completed using shared utility
+      if (selectedSubjectData) {
+        const subjectProgress: SubjectProgression = {
+          id: selectedSubjectData.id,
+          name: selectedSubjectData.name,
+          chapters: selectedSubjectData.chapters.map(ch => ({
+            id: ch.id,
+            name: ch.name,
+            topics: ch.topics.map(t => ({
+              id: t.id,
+              name: t.name,
+              completed: t.completed
+            }))
+          }))
+        };
+
+        if (isSubjectCompleted(subjectProgress, newCompletedTopics)) {
+          setCompletedSubjectName(selectedSubjectData.name);
+          setShowCompletionModal(true);
+        }
+      }
+    }
+    // Note: Don't close the player dialog here
+  };
+
+  const handleNextTopic = () => {
+    if (selectedSubjectData && selectedTopic) {
+      const subjectProgress: SubjectProgression = {
+        id: selectedSubjectData.id,
+        name: selectedSubjectData.name,
+        chapters: selectedSubjectData.chapters.map(ch => ({
+          id: ch.id,
+          name: ch.name,
+          topics: ch.topics.map(t => ({
+            id: t.id,
+            name: t.name,
+            completed: t.completed
+          }))
+        }))
+      };
+
+      const topicForProgression = {
+        id: selectedTopic.id,
+        name: selectedTopic.name,
+        completed: selectedTopic.completed
+      };
+
+      // Check if we can navigate to next topic (current must be completed)
+      if (!canNavigateToNext(topicForProgression, subjectProgress, completedTopics)) {
+        console.log('Cannot navigate to next topic: current topic not completed');
+        return; // Don't proceed if current topic is not completed
+      }
+
+      const nextTopic = getNextTopic(topicForProgression, subjectProgress);
+      if (nextTopic) {
+        // Find the full DemoTopic object
+        const fullNextTopic = selectedSubjectData.chapters
+          .flatMap(ch => ch.topics)
+          .find(t => t.id === nextTopic.id);
+        
+        if (fullNextTopic) {
+          setSelectedTopic(fullNextTopic);
+        }
+      } else {
+        // No more topics, close the player
+        handlePlayerClose();
       }
     }
   };
 
-  const handleNextTopic = () => {
-    if (!selectedSubjectData || !selectedTopic) return;
-    
-    // Get all topics from current subject
-    const allTopics = selectedSubjectData.chapters.flatMap(ch => ch.topics);
-    const currentIndex = allTopics.findIndex(topic => topic.id === selectedTopic.id);
-    
-    // Find next topic
-    if (currentIndex >= 0 && currentIndex < allTopics.length - 1) {
-      const nextTopic = allTopics[currentIndex + 1];
-      setSelectedTopic(nextTopic);
-    } else {
-      // If no next topic, close the player
-      handlePlayerClose();
-    }
+  const handlePaymentDialogClose = () => {
+    setShowPaymentDialog(false);
   };
+
+  const setShowSubscriptionDialog = () => {
+      setShowPaymentDialog(true);
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading Demo Content...</h2>
+          <p className="text-gray-500">Fetching real data from our database</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="text-center max-w-md">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Demo Unavailable</h2>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <Button onClick={() => router.push('/demo')}>
+            Back to Demo
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const getSubjectProgress = (subjectId: string) => {
     if (!demoClass) return 0;
@@ -128,9 +357,10 @@ export default function DemoClassPage() {
 
   if (!demoClass) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Class Not Found</h1>
+          <h1 className="text-2xl font-bold mb-2">Demo Content Not Available</h1>
+          <p className="text-gray-600 mb-4">We&apos;re unable to load demo content at this time.</p>
           <Button onClick={() => router.push('/demo')}>
             Back to Demo
           </Button>
@@ -152,6 +382,14 @@ export default function DemoClassPage() {
               <div>
                 <h3 className="font-semibold text-gray-200">Interactive Demo - {demoClass.name}</h3>
                 <p className="text-sm text-blue-100">Experience our learning platform with sample content</p>
+                {demoClass.price && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-blue-200">Price:</span>
+                    <span className="text-sm font-semibold text-white bg-white/20 px-2 py-0.5 rounded">
+                      {demoClass.currency === 'INR' ? '₹' : '$'}{(demoClass.price / 100).toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
             <Button 
@@ -336,51 +574,42 @@ export default function DemoClassPage() {
 
                             {/* Topics Grid */}
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {chapter.topics.map((topic: Topic) => {
-                                const isCompleted = topic.completed;
-                                const contentType = topic.content?.type;
+                              {chapter.topics.map((topic: DemoTopic) => {
+                                const isCompleted = topic.completed || completedTopics.has(topic.id);
+                                
+                                // Create subject progression data for topic enabling check
+                                const subjectProgress: SubjectProgression = {
+                                  id: selectedSubjectData.id,
+                                  name: selectedSubjectData.name,
+                                  chapters: selectedSubjectData.chapters.map(ch => ({
+                                    id: ch.id,
+                                    name: ch.name,
+                                    topics: ch.topics.map(t => ({
+                                      id: t.id,
+                                      name: t.name,
+                                      completed: t.completed
+                                    }))
+                                  }))
+                                };
+
+                                const topicForProgression = {
+                                  id: topic.id,
+                                  name: topic.name,
+                                  completed: topic.completed
+                                };
+
+                                const isEnabled = isTopicEnabled(topicForProgression, subjectProgress, completedTopics);
+                                const dbTopic = convertTopicForItem(topic);
                                 
                                 return (
-                                  <div
+                                  <TopicItem
                                     key={topic.id}
-                                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all group ${
-                                      isCompleted 
-                                        ? 'border-green-200 bg-green-50 hover:bg-green-100' 
-                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
-                                    }`}
+                                    topic={dbTopic}
+                                    isCompleted={isCompleted}
+                                    hasAccess={true} // Demo has full access
+                                    isEnabled={isEnabled}
                                     onClick={() => handleTopicClick(topic)}
-                                  >
-                                    <div className="flex items-start justify-between mb-3">
-                                      <div className="flex items-center gap-2">
-                                        <div className={`p-2 rounded-lg ${isCompleted ? 'bg-green-200' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
-                                          {getTopicIcon(contentType)}
-                                        </div>
-                                        <Badge variant={
-                                          contentType === 'video' ? 'default' : 
-                                          contentType === 'external_link' ? 'secondary' : 
-                                          contentType === 'interactive_widget' ? 'secondary' : 
-                                          'outline'
-                                        } className="text-xs">
-                                          {contentType || topic.type}
-                                        </Badge>
-                                      </div>
-                                      {isCompleted ? (
-                                        <CheckCircle className="h-5 w-5 text-green-600" />
-                                      ) : (
-                                        <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
-                                      )}
-                                    </div>
-                                    
-                                    <h4 className="font-medium text-sm mb-2 line-clamp-2">{topic.name}</h4>
-                                    
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                        <Clock className="h-3 w-3" />
-                                        <span>{topic.duration}</span>
-                                      </div>
-                                      <Play className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-                                    </div>
-                                  </div>
+                                  />
                                 );
                               })}
                             </div>
@@ -406,13 +635,32 @@ export default function DemoClassPage() {
         topic={selectedTopic ? convertToDbTopic(selectedTopic) : null}
         isOpen={isPlayerOpen}
         onClose={handlePlayerClose}
-        onComplete={() => {
-          if (selectedTopic) {
-            handleTopicComplete(selectedTopic.id);
-            handlePlayerClose();
-          }
-        }}
+        onComplete={handleTopicComplete}
         onNext={handleNextTopic}
+        isCompleted={selectedTopic ? (selectedTopic.completed || completedTopics.has(selectedTopic.id)) : false}
+        canProceedToNext={selectedTopic && selectedSubjectData ? (() => {
+          const subjectProgress: SubjectProgression = {
+            id: selectedSubjectData.id,
+            name: selectedSubjectData.name,
+            chapters: selectedSubjectData.chapters.map(ch => ({
+              id: ch.id,
+              name: ch.name,
+              topics: ch.topics.map(t => ({
+                id: t.id,
+                name: t.name,
+                completed: t.completed
+              }))
+            }))
+          };
+
+          const topicForProgression = {
+            id: selectedTopic.id,
+            name: selectedTopic.name,
+            completed: selectedTopic.completed
+          };
+
+          return canNavigateToNext(topicForProgression, subjectProgress, completedTopics);
+        })() : false}
       />
 
       {/* Subject Completion Modal */}
@@ -433,7 +681,7 @@ export default function DemoClassPage() {
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Trophy className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold mb-2">Congratulations!</h3>
+                <h3 className="text-2xl font-bold mb-2 text-white">Congratulations!</h3>
                 <p className="text-green-100 text-lg">
                   You completed {completedSubjectName}
                 </p>
@@ -478,7 +726,7 @@ export default function DemoClassPage() {
                   Continue Demo
                 </Button>
                 <Button 
-                  onClick={() => router.push('/')}
+                  onClick={() => setShowSubscriptionDialog()}
                   variant="outline"
                   className="w-full"
                 >
@@ -488,6 +736,34 @@ export default function DemoClassPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Subscription Dialog */}
+      {demoClass && (
+       <SubscriptionDialog
+          open={showPaymentDialog}
+          onClose={handlePaymentDialogClose}
+          classData={{
+            id: demoClass.id,
+            name: demoClass.name,
+            description: demoClass.description || '',
+            price: demoClass.price || 29900,
+            subjects: demoClass.subjects?.map(subject => ({
+              id: subject.id,
+              name: subject.name,
+              icon: subject.icon || '📚',
+              color: subject.color || 'from-blue-500 to-blue-600',
+              price: subject.price,
+              chapters: subject.chapters || []
+            })) || []
+          }}
+          onSubscribe={(type, options) => {
+            console.log('Subscription success:', type, options);
+            handlePaymentDialogClose();
+            // Reload the page to refresh access information
+            window.location.reload();
+          }}
+        />
       )}
     </div>
   );

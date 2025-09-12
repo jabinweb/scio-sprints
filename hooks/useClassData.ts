@@ -6,7 +6,8 @@ export interface DbTopic {
   id: string;
   name: string;
   type: 'video' | 'interactive' | 'exercise' | 'audio'; // This is the topic type enum
-  duration: string;
+  duration?: string;
+  description?: string;
   orderIndex: number;
   content: {
     contentType?: string; // This is the actual content type

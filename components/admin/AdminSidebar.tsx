@@ -23,6 +23,7 @@ const navigation = [
   { name: 'Classes', href: '/admin/classes', icon: GraduationCap },
   { name: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
   { name: 'Responses', href: '/admin/responses', icon: MessageSquare },
+  { name: 'Analytics', href: '/admin/analytics', icon: BookOpen },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 

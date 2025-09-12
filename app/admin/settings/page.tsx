@@ -9,7 +9,22 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, AlertCircle, RefreshCw, Key, Mail, Database } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Save, 
+  AlertCircle, 
+  RefreshCw, 
+  Mail, 
+  Settings as SettingsIcon,
+  Globe,
+  CreditCard,
+  Server,
+  Shield,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertTriangle
+} from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface AppSettings {
@@ -52,6 +67,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string>('');
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [showSecrets, setShowSecrets] = useState(false);
 
   // Enhanced admin check
   const isAdmin = user && userRole === 'ADMIN';
@@ -178,297 +194,516 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6 pt-16 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Settings</h1>
-            <p className="text-muted-foreground">Configure application settings and preferences</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto p-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg">
+                  <SettingsIcon className="h-6 w-6 text-white" />
+                </div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  System Settings
+                </h1>
+              </div>
+              <p className="text-lg text-gray-600 ml-11">
+                Configure your application settings and preferences
+              </p>
+            </div>
+            <Button 
+              onClick={handleSave} 
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-3 h-auto"
+            >
+              {loading ? (
+                <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-5 w-5 mr-2" />
+              )}
+              Save Changes
+            </Button>
           </div>
-          <Button onClick={handleSave} disabled={loading}>
-            {loading ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            Save Changes
-          </Button>
         </div>
 
+        {/* Status Alert */}
         {saveStatus && (
-          <div className={`mb-4 p-3 rounded-lg ${
+          <div className={`mb-6 p-4 rounded-xl border shadow-sm flex items-center gap-3 ${
             saveStatus.includes('Error') 
-              ? 'bg-red-100 text-red-800' 
-              : 'bg-green-100 text-green-800'
+              ? 'bg-red-50 border-red-200 text-red-800' 
+              : 'bg-green-50 border-green-200 text-green-800'
           }`}>
-            {saveStatus}
+            {saveStatus.includes('Error') ? (
+              <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+            ) : (
+              <CheckCircle className="h-5 w-5 flex-shrink-0" />
+            )}
+            <span className="font-medium">{saveStatus}</span>
           </div>
         )}
 
-        <Tabs defaultValue="general" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="payment">Payment</TabsTrigger>
-            <TabsTrigger value="email">Email</TabsTrigger>
-            <TabsTrigger value="system">System</TabsTrigger>
+        {/* Main Content */}
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-1">
+            <TabsTrigger 
+              value="general" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
+            >
+              <Globe className="h-4 w-4" />
+              General
+            </TabsTrigger>
+            <TabsTrigger 
+              value="payment" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
+            >
+              <CreditCard className="h-4 w-4" />
+              Payment
+            </TabsTrigger>
+            <TabsTrigger 
+              value="email" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </TabsTrigger>
+            <TabsTrigger 
+              value="system" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
+            >
+              <Server className="h-4 w-4" />
+              System
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
+          <TabsContent value="general" className="space-y-6">
+            <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <Globe className="h-6 w-6" />
                   General Settings
+                  <Badge className="bg-white/20 text-white border-white/20">Core</Badge>
                 </CardTitle>
+                <p className="text-blue-100 mt-2">Basic application configuration and branding</p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <form onSubmit={(e) => e.preventDefault()}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="siteName">Site Name</Label>
-                      <Input
-                        id="siteName"
-                        value={settings.siteName}
-                        onChange={(e) => handleInputChange('siteName', e.target.value)}
-                      />
+              <CardContent className="p-8 space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Site Information */}
+                  <div className="space-y-6">
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Site Information</h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="siteName" className="text-gray-700 font-medium">Site Name</Label>
+                          <Input
+                            id="siteName"
+                            value={settings.siteName}
+                            onChange={(e) => handleInputChange('siteName', e.target.value)}
+                            className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-sm"
+                            placeholder="Your site name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="siteDescription" className="text-gray-700 font-medium">Site Description</Label>
+                          <Textarea
+                            id="siteDescription"
+                            value={settings.siteDescription}
+                            onChange={(e) => handleInputChange('siteDescription', e.target.value)}
+                            rows={4}
+                            className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-sm resize-none"
+                            placeholder="Describe your platform..."
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="contactEmail">Contact Email</Label>
-                      <Input
-                        id="contactEmail"
-                        type="email"
-                        value={settings.contactEmail}
-                        onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="siteDescription">Site Description</Label>
-                    <Textarea
-                      id="siteDescription"
-                      value={settings.siteDescription}
-                      onChange={(e) => handleInputChange('siteDescription', e.target.value)}
-                      rows={3}
-                    />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="supportEmail">Support Email</Label>
-                      <Input
-                        id="supportEmail"
-                        type="email"
-                        value={settings.supportEmail}
-                        onChange={(e) => handleInputChange('supportEmail', e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="subscriptionPrice">Subscription Price (₹)</Label>
-                      <Input
-                        id="subscriptionPrice"
-                        type="number"
-                        value={settings.subscriptionPrice}
-                        onChange={(e) => handleInputChange('subscriptionPrice', e.target.value)}
-                      />
+                  {/* Contact Information */}
+                  <div className="space-y-6">
+                    <div className="border-l-4 border-green-500 pl-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="contactEmail" className="text-gray-700 font-medium">Contact Email</Label>
+                          <Input
+                            id="contactEmail"
+                            type="email"
+                            value={settings.contactEmail}
+                            onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                            className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
+                            placeholder="contact@example.com"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="supportEmail" className="text-gray-700 font-medium">Support Email</Label>
+                          <Input
+                            id="supportEmail"
+                            type="email"
+                            value={settings.supportEmail}
+                            onChange={(e) => handleInputChange('supportEmail', e.target.value)}
+                            className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
+                            placeholder="support@example.com"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="subscriptionPrice" className="text-gray-700 font-medium">Subscription Price</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">₹</span>
+                            <Input
+                              id="subscriptionPrice"
+                              type="number"
+                              value={settings.subscriptionPrice}
+                              onChange={(e) => handleInputChange('subscriptionPrice', e.target.value)}
+                              className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm pl-8"
+                              placeholder="299"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </form>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="payment">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Key className="h-5 w-5" />
+          <TabsContent value="payment" className="space-y-6">
+            <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-t-lg">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <CreditCard className="h-6 w-6" />
                   Payment Configuration
+                  <Badge className="bg-white/20 text-white border-white/20">Secure</Badge>
                 </CardTitle>
+                <p className="text-emerald-100 mt-2">Configure Razorpay payment gateway settings</p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <form onSubmit={(e) => e.preventDefault()}>
-                  <div>
-                    <Label>Payment Mode</Label>
-                    <RadioGroup
-                      value={settings.paymentMode}
-                      onValueChange={(value) => handleInputChange('paymentMode', value as 'test' | 'live')}
-                      className="flex gap-6 mt-2"
+              <CardContent className="p-8 space-y-8">
+                {/* Payment Mode Selection */}
+                <div className="border-l-4 border-emerald-500 pl-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Payment Mode</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSecrets(!showSecrets)}
+                      className="flex items-center gap-2"
                     >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="test" id="test" />
-                        <Label htmlFor="test">Test Mode</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="live" id="live" />
-                        <Label htmlFor="live">Live Mode</Label>
-                      </div>
-                    </RadioGroup>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Select test mode for development or live mode for production
-                    </p>
+                      {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showSecrets ? 'Hide' : 'Show'} Secrets
+                    </Button>
                   </div>
-
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium mb-3">Test Environment Keys</h4>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="razorpayTestKeyId">Test Key ID</Label>
-                        <Input
-                          id="razorpayTestKeyId"
-                          type="password"
-                          value={settings.razorpayTestKeyId}
-                          onChange={(e) => handleInputChange('razorpayTestKeyId', e.target.value)}
-                          placeholder="rzp_test_..."
-                          autoComplete="off"
-                        />
+                  <RadioGroup
+                    value={settings.paymentMode}
+                    onValueChange={(value) => handleInputChange('paymentMode', value as 'test' | 'live')}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  >
+                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <RadioGroupItem value="test" id="test" />
+                      <div className="flex-1">
+                        <Label htmlFor="test" className="font-medium cursor-pointer">Test Mode</Label>
+                        <p className="text-sm text-gray-600">For development and testing</p>
                       </div>
-                      <div>
-                        <Label htmlFor="razorpayTestKeySecret">Test Key Secret</Label>
-                        <Input
-                          id="razorpayTestKeySecret"
-                          type="password"
-                          value={settings.razorpayTestKeySecret}
-                          onChange={(e) => handleInputChange('razorpayTestKeySecret', e.target.value)}
-                          placeholder="Enter your test secret key"
-                          autoComplete="off"
-                        />
-                      </div>
+                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Safe</Badge>
                     </div>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium mb-3">Live Environment Keys</h4>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="razorpayKeyId">Live Key ID</Label>
-                        <Input
-                          id="razorpayKeyId"
-                          type="password"
-                          value={settings.razorpayKeyId}
-                          onChange={(e) => handleInputChange('razorpayKeyId', e.target.value)}
-                          placeholder="rzp_live_..."
-                          autoComplete="off"
-                        />
+                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <RadioGroupItem value="live" id="live" />
+                      <div className="flex-1">
+                        <Label htmlFor="live" className="font-medium cursor-pointer">Live Mode</Label>
+                        <p className="text-sm text-gray-600">For production payments</p>
                       </div>
-                      <div>
-                        <Label htmlFor="razorpayKeySecret">Live Key Secret</Label>
-                        <Input
-                          id="razorpayKeySecret"
-                          type="password"
-                          value={settings.razorpayKeySecret}
-                          onChange={(e) => handleInputChange('razorpayKeySecret', e.target.value)}
-                          placeholder="Enter your live secret key"
-                          autoComplete="off"
-                        />
-                      </div>
+                      <Badge variant="default" className="bg-red-100 text-red-800">Live</Badge>
                     </div>
-                  </div>
-                </form>
-
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-medium text-blue-800 mb-2">🔒 Security Note</h4>
-                  <p className="text-sm text-blue-700">
-                    All keys are encrypted and stored securely. Use test keys during development and switch to live keys only when ready for production.
-                  </p>
+                  </RadioGroup>
                 </div>
 
+                {/* API Keys */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Test Keys */}
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-yellow-500 pl-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        Test Credentials
+                        <Badge className="bg-yellow-100 text-yellow-800">Development</Badge>
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="razorpayTestKeyId" className="text-gray-700 font-medium">Test Key ID</Label>
+                          <Input
+                            id="razorpayTestKeyId"
+                            value={settings.razorpayTestKeyId}
+                            onChange={(e) => handleInputChange('razorpayTestKeyId', e.target.value)}
+                            className="border-gray-200 focus:border-yellow-500 focus:ring-yellow-500 bg-white shadow-sm font-mono text-sm"
+                            placeholder="rzp_test_..."
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="razorpayTestKeySecret" className="text-gray-700 font-medium">Test Key Secret</Label>
+                          <Input
+                            id="razorpayTestKeySecret"
+                            type={showSecrets ? "text" : "password"}
+                            value={settings.razorpayTestKeySecret}
+                            onChange={(e) => handleInputChange('razorpayTestKeySecret', e.target.value)}
+                            className="border-gray-200 focus:border-yellow-500 focus:ring-yellow-500 bg-white shadow-sm font-mono text-sm"
+                            placeholder={showSecrets ? "Your test secret key" : "••••••••••••••••"}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live Keys */}
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-red-500 pl-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        Live Credentials
+                        <Badge className="bg-red-100 text-red-800">Production</Badge>
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="razorpayKeyId" className="text-gray-700 font-medium">Live Key ID</Label>
+                          <Input
+                            id="razorpayKeyId"
+                            value={settings.razorpayKeyId}
+                            onChange={(e) => handleInputChange('razorpayKeyId', e.target.value)}
+                            className="border-gray-200 focus:border-red-500 focus:ring-red-500 bg-white shadow-sm font-mono text-sm"
+                            placeholder="rzp_live_..."
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="razorpayKeySecret" className="text-gray-700 font-medium">Live Key Secret</Label>
+                          <Input
+                            id="razorpayKeySecret"
+                            type={showSecrets ? "text" : "password"}
+                            value={settings.razorpayKeySecret}
+                            onChange={(e) => handleInputChange('razorpayKeySecret', e.target.value)}
+                            className="border-gray-200 focus:border-red-500 focus:ring-red-500 bg-white shadow-sm font-mono text-sm"
+                            placeholder={showSecrets ? "Your live secret key" : "••••••••••••••••"}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Current Mode Status */}
+                <div className={`p-6 rounded-xl border-2 ${
+                  settings.paymentMode === 'test' 
+                    ? 'bg-yellow-50 border-yellow-200' 
+                    : 'bg-red-50 border-red-200'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${
+                      settings.paymentMode === 'test' ? 'bg-yellow-200' : 'bg-red-200'
+                    }`}>
+                      <CreditCard className={`h-5 w-5 ${
+                        settings.paymentMode === 'test' ? 'text-yellow-700' : 'text-red-700'
+                      }`} />
+                    </div>
+                    <div>
+                      <h4 className={`font-semibold ${
+                        settings.paymentMode === 'test' ? 'text-yellow-800' : 'text-red-800'
+                      }`}>
+                        Current Mode: {settings.paymentMode.toUpperCase()}
+                      </h4>
+                      <p className={`text-sm ${
+                        settings.paymentMode === 'test' ? 'text-yellow-700' : 'text-red-700'
+                      }`}>
+                        {settings.paymentMode === 'test' 
+                          ? 'Test mode is active - no real payments will be processed' 
+                          : 'Live mode is active - real payments will be processed'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Warning */}
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <h4 className="font-medium text-amber-800 mb-2">⚡ Current Mode: {settings.paymentMode.toUpperCase()}</h4>
-                  <p className="text-sm text-amber-700">
-                    {settings.paymentMode === 'test' 
-                      ? 'Test mode is active - no real payments will be processed' 
-                      : 'Live mode is active - real payments will be processed'}
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <Shield className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-amber-800 mb-2">Security Notice</h4>
+                      <p className="text-sm text-amber-700">
+                        Keep your API keys secure. Never share them in client-side code or public repositories.
+                        Use test keys for development and live keys only in production.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="email">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
+          <TabsContent value="email" className="space-y-6">
+            <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <Mail className="h-6 w-6" />
                   Email Configuration
+                  <Badge className="bg-white/20 text-white border-white/20">SMTP</Badge>
                 </CardTitle>
+                <p className="text-purple-100 mt-2">Configure email notifications and SMTP settings</p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <form onSubmit={(e) => e.preventDefault()}>
-                  <div className="flex items-center justify-between">
+              <CardContent className="p-8 space-y-8">
+                {/* Email Toggle */}
+                <div className="border-l-4 border-purple-500 pl-6">
+                  <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
                     <div>
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Send automated emails for form submissions and updates
+                      <h3 className="text-lg font-semibold text-gray-900">Email Notifications</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Send automated emails for subscriptions, payments, and updates
                       </p>
                     </div>
                     <Switch
                       checked={settings.emailNotifications}
                       onCheckedChange={(checked) => handleInputChange('emailNotifications', checked)}
+                      className="data-[state=checked]:bg-purple-600"
                     />
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="smtpHost">SMTP Host</Label>
+                {/* SMTP Configuration */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-indigo-500 pl-4">
+                    SMTP Server Configuration
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="smtpHost" className="text-gray-700 font-medium">SMTP Host</Label>
                       <Input
                         id="smtpHost"
                         value={settings.smtpHost}
                         onChange={(e) => handleInputChange('smtpHost', e.target.value)}
+                        className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-white shadow-sm"
                         placeholder="smtp.gmail.com"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="smtpPort">SMTP Port</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtpPort" className="text-gray-700 font-medium">SMTP Port</Label>
                       <Input
                         id="smtpPort"
                         value={settings.smtpPort}
                         onChange={(e) => handleInputChange('smtpPort', e.target.value)}
+                        className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-white shadow-sm"
                         placeholder="587"
                       />
                     </div>
                   </div>
-
-                  <div>
-                    <Label htmlFor="smtpUser">SMTP Username</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="smtpUser" className="text-gray-700 font-medium">SMTP Username</Label>
                     <Input
                       id="smtpUser"
                       value={settings.smtpUser}
                       onChange={(e) => handleInputChange('smtpUser', e.target.value)}
+                      className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-white shadow-sm"
                       placeholder="your-email@gmail.com"
                     />
                   </div>
-                </form>
+                </div>
+
+                {/* Email Configuration Tips */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-800 mb-2">Email Setup Tips</h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• Gmail: Use smtp.gmail.com with port 587 and app password</li>
+                        <li>• Outlook: Use smtp-mail.outlook.com with port 587</li>
+                        <li>• Enable &quot;Less secure app access&quot; for older email providers</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="system">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
+          <TabsContent value="system" className="space-y-6">
+            <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-t-lg">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <Server className="h-6 w-6" />
+                  System Settings
+                  <Badge className="bg-white/20 text-white border-white/20">Advanced</Badge>
+                </CardTitle>
+                <p className="text-gray-200 mt-2">System-wide configuration and maintenance options</p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <form onSubmit={(e) => e.preventDefault()}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Maintenance Mode</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Temporarily disable public access to the application
-                      </p>
+              <CardContent className="p-8 space-y-8">
+                {/* Maintenance Mode */}
+                <div className="border-l-4 border-gray-500 pl-6">
+                  <div className="p-6 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Maintenance Mode</h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Temporarily disable public access to show maintenance page
+                        </p>
+                      </div>
+                      <Switch
+                        checked={settings.maintenanceMode}
+                        onCheckedChange={(checked) => handleInputChange('maintenanceMode', checked)}
+                        className="data-[state=checked]:bg-gray-700"
+                      />
                     </div>
-                    <Switch
-                      checked={settings.maintenanceMode}
-                      onCheckedChange={(checked) => handleInputChange('maintenanceMode', checked)}
-                    />
+                    
+                    {/* Maintenance Mode Warning */}
+                    <div className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                      settings.maintenanceMode 
+                        ? 'bg-red-50 border-red-200' 
+                        : 'bg-yellow-50 border-yellow-200'
+                    }`}>
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
+                          settings.maintenanceMode ? 'text-red-600' : 'text-yellow-600'
+                        }`} />
+                        <div>
+                          <h4 className={`font-medium mb-2 ${
+                            settings.maintenanceMode ? 'text-red-800' : 'text-yellow-800'
+                          }`}>
+                            {settings.maintenanceMode ? '🚧 Maintenance Mode Active' : '⚠️ Maintenance Mode Warning'}
+                          </h4>
+                          <p className={`text-sm ${
+                            settings.maintenanceMode ? 'text-red-700' : 'text-yellow-700'
+                          }`}>
+                            {settings.maintenanceMode 
+                              ? 'Your site is currently in maintenance mode. Only admin users can access the application.'
+                              : 'Enabling maintenance mode will show a maintenance page to all non-admin users. Use this during updates or system maintenance.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </form>
+                </div>
 
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h4 className="font-medium text-yellow-800 mb-2">⚠️ Warning</h4>
-                  <p className="text-sm text-yellow-700">
-                    Enabling maintenance mode will show a maintenance page to all non-admin users.
-                  </p>
+                {/* System Status */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <div>
+                        <h4 className="font-medium text-green-800">Database</h4>
+                        <p className="text-sm text-green-700">Connected</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <h4 className="font-medium text-blue-800">API</h4>
+                        <p className="text-sm text-blue-700">Operational</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-purple-600" />
+                      <div>
+                        <h4 className="font-medium text-purple-800">Storage</h4>
+                        <p className="text-sm text-purple-700">Available</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -6,12 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Lock, Star, ArrowRight, Zap, Gift } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { SubscriptionDialog } from './SubscriptionDialog';
 
 interface SubjectAccess {
   id: string;
   name: string;
   hasAccess: boolean;
   accessType: 'school' | 'class_subscription' | 'subject_subscription' | 'none';
+  price?: number;
+  currency?: string;
   canUpgrade?: boolean;
 }
 
@@ -51,6 +54,8 @@ export const ClassSubscriptionManager: React.FC<ClassSubscriptionManagerProps> =
   const [accessData, setAccessData] = useState<ClassAccessData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAccessData = async () => {
@@ -77,21 +82,60 @@ export const ClassSubscriptionManager: React.FC<ClassSubscriptionManagerProps> =
   }, [user?.id, classId]);
 
   const handleSubjectSubscribe = (subjectId: string) => {
-    onSubscribe?.('subject', { subjectId, classId });
+    setSelectedSubjectId(subjectId);
+    setShowSubscriptionDialog(true);
   };
 
   const handleClassSubscribe = () => {
-    onSubscribe?.('class', { classId });
+    setSelectedSubjectId(null); // Reset subject selection for class subscription
+    setShowSubscriptionDialog(true);
   };
 
   const handleUpgradeToClass = () => {
-    if (accessData?.upgradeOptions) {
-      onSubscribe?.('upgrade', {
-        fromSubjects: accessData.upgradeOptions.currentSubjects,
-        toClassId: classId,
-        savings: accessData.upgradeOptions.potentialSavings
-      });
+    setSelectedSubjectId(null); // Reset subject selection for upgrade
+    setShowSubscriptionDialog(true);
+  };
+
+  // Transform access data to SubscriptionDialog format
+  const getClassDataForDialog = () => {
+    if (!accessData) return null;
+    
+    return {
+      id: classId,
+      name: accessData.className,
+      description: `Complete access to ${accessData.className} with all subjects`,
+      price: accessData.classPrice, // Already in paisa
+      subjects: accessData.subjectAccess.map(subject => ({
+        id: subject.id,
+        name: subject.name,
+        icon: '📚', // Default icon
+        color: 'from-blue-500 to-indigo-600', // Default color
+        price: subject.price || 7500, // Use actual subject price in paisa, default to 7500 if not set
+        isSubscribed: subject.hasAccess, // Mark if user already has access
+        subscriptionType: subject.hasAccess && subject.accessType !== 'none' ? subject.accessType : undefined, // How they have access
+        chapters: [] // We don't need chapter details for subscription
+      }))
+    };
+  };
+
+  const handleSubscriptionDialogClose = () => {
+    setShowSubscriptionDialog(false);
+    setSelectedSubjectId(null);
+  };
+
+  const handleSubscriptionDialogSubscribe = (type: 'class' | 'subject', options: { classId?: number; subjectId?: string; amount: number }) => {
+    // Close the dialog
+    setShowSubscriptionDialog(false);
+    
+    // Call the original onSubscribe callback with appropriate options
+    if (type === 'class') {
+      onSubscribe?.('class', { classId: options.classId || classId });
+    } else if (type === 'subject' && selectedSubjectId) {
+      onSubscribe?.('subject', { subjectId: selectedSubjectId, classId });
     }
+    
+    // Reset state
+    setSelectedSubjectId(null);
   };
 
   if (loading) {
@@ -137,7 +181,6 @@ export const ClassSubscriptionManager: React.FC<ClassSubscriptionManagerProps> =
 
   const subjectsWithAccess = accessData.subjectAccess.filter(s => s.hasAccess);
   const subjectsWithoutAccess = accessData.subjectAccess.filter(s => !s.hasAccess);
-  const subjectPrice = Math.ceil(accessData.classPrice / accessData.subjectAccess.length / 100);
 
   return (
     <div className="space-y-6">
@@ -205,7 +248,7 @@ export const ClassSubscriptionManager: React.FC<ClassSubscriptionManagerProps> =
                   ₹{accessData.classPrice / 100}
                 </span>
                 <p className="text-sm text-blue-600">
-                  vs ₹{subjectPrice * accessData.subjectAccess.length} individual
+                  vs ₹{subjectsWithoutAccess.reduce((total, subject) => total + ((subject.price || 7500) / 100), 0)} individual
                 </p>
               </div>
             </div>
@@ -257,7 +300,7 @@ export const ClassSubscriptionManager: React.FC<ClassSubscriptionManagerProps> =
                       <Lock className="h-4 w-4 text-gray-400" />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold">₹{subjectPrice}</span>
+                      <span className="text-lg font-bold">₹{(subject.price || 7500) / 100}</span>
                       <Button 
                         size="sm"
                         onClick={() => handleSubjectSubscribe(subject.id)}
@@ -272,6 +315,16 @@ export const ClassSubscriptionManager: React.FC<ClassSubscriptionManagerProps> =
             </div>
           </CardContent>
         </Card>
+      )}
+      
+      {/* Subscription Dialog */}
+      {showSubscriptionDialog && getClassDataForDialog() && (
+        <SubscriptionDialog
+          open={showSubscriptionDialog}
+          onClose={handleSubscriptionDialogClose}
+          classData={getClassDataForDialog()!}
+          onSubscribe={handleSubscriptionDialogSubscribe}
+        />
       )}
     </div>
   );

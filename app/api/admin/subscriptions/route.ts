@@ -7,7 +7,9 @@ export async function GET() {
       .from('subscriptions')
       .select(`
         *,
-        user:users(email, display_name)
+        user:users(email, display_name),
+        class:classes(id, name),
+        subject:subjects(id, name)
       `)
       .order('created_at', { ascending: false });
 

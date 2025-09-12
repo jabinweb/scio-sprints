@@ -19,6 +19,16 @@ interface Subscription {
   amount: number;
   status: string;
   created_at: string;
+  planType: string;
+  planName?: string;
+  class?: {
+    id: number;
+    name: string;
+  } | null;
+  subject?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 interface RegisteredUser {
@@ -160,7 +170,10 @@ export default function SubscriptionsPage() {
         user?.displayName?.toLowerCase().includes(searchLower) ||
         user?.email?.toLowerCase().includes(searchLower) ||
         subscription.status.toLowerCase().includes(searchLower) ||
-        subscription.paymentId.toLowerCase().includes(searchLower)
+        subscription.paymentId.toLowerCase().includes(searchLower) ||
+        subscription.class?.name?.toLowerCase().includes(searchLower) ||
+        subscription.subject?.name?.toLowerCase().includes(searchLower) ||
+        subscription.planName?.toLowerCase().includes(searchLower)
       );
     });
   }, [subscriptions, searchTerm, registeredUsers]);
@@ -228,7 +241,7 @@ export default function SubscriptionsPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search by user name, email, status, or payment ID..."
+                placeholder="Search by user name, email, status, class, subject, or payment ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 h-10"
@@ -339,6 +352,37 @@ export default function SubscriptionsPage() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Class/Subject Information */}
+                  <div className="space-y-2">
+                    {subscription.class && (
+                      <div className="flex items-center gap-2 p-2 bg-indigo-50 rounded-lg">
+                        <div className="w-3 h-3 bg-indigo-600 rounded-full"></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-indigo-600 font-medium">Class Subscription</div>
+                          <div className="font-semibold text-gray-900 text-sm line-clamp-1">{subscription.class.name}</div>
+                        </div>
+                      </div>
+                    )}
+                    {subscription.subject && (
+                      <div className="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg">
+                        <div className="w-3 h-3 bg-emerald-600 rounded-full"></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-emerald-600 font-medium">Subject Subscription</div>
+                          <div className="font-semibold text-gray-900 text-sm line-clamp-1">{subscription.subject.name}</div>
+                        </div>
+                      </div>
+                    )}
+                    {subscription.planName && !subscription.class && !subscription.subject && (
+                      <div className="flex items-center gap-2 p-2 bg-orange-50 rounded-lg">
+                        <div className="w-3 h-3 bg-orange-600 rounded-full"></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-orange-600 font-medium">Plan</div>
+                          <div className="font-semibold text-gray-900 text-sm line-clamp-1">{subscription.planName}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <Separator />

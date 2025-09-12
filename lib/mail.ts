@@ -1,28 +1,67 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
+// Alternative configuration for Hostinger - try SSL on port 465
+const alternativeTransporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false, // TLS
+  port: 465, // SSL port
+  secure: true, // Use SSL
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
   tls: {
-    // Hostinger specific settings
-    rejectUnauthorized: true,
-    minVersion: "TLSv1.2"
+    rejectUnauthorized: false,
   }
 });
 
-// Test email connection on server start
-transporter.verify(function (error) {
-  if (error) {
-    console.log("SMTP connection error:", error);
-  } else {
-    console.log("SMTP server is ready to send emails");
-  }
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: false, // Use STARTTLS (false for port 587, true for port 465)
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  tls: {
+    // Hostinger specific settings - more permissive
+    rejectUnauthorized: false,
+    ciphers: 'SSLv3'
+  },
+  // Additional settings for better authentication
+  requireTLS: true,
+  connectionTimeout: 60000,
+  greetingTimeout: 30000,
+  socketTimeout: 60000,
+  authMethod: 'PLAIN', // Explicitly use PLAIN auth
+  debug: false, // Disable debug for cleaner logs
+  logger: false // Disable logging
 });
+
+// Test email connection on server start
+async function testEmailConnection() {
+  try {
+    // First try the main transporter (port 587 with STARTTLS)
+    await transporter.verify();
+    console.log("SMTP server is ready to send emails (port 587)");
+    return transporter;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log("Port 587 failed, trying port 465...", errorMessage);
+    
+    try {
+      // Try alternative transporter (port 465 with SSL)
+      await alternativeTransporter.verify();
+      console.log("SMTP server is ready to send emails (port 465)");
+      return alternativeTransporter;
+    } catch (altError) {
+      const altErrorMessage = altError instanceof Error ? altError.message : String(altError);
+      console.log("Both configurations failed:", altErrorMessage);
+      throw altError;
+    }
+  }
+}
+
+testEmailConnection().catch(console.error);
 
 export async function sendDemoEmail(data: {
   name: string;
@@ -44,42 +83,33 @@ export async function sendDemoEmail(data: {
     messageId: 'demo-disabled',
     response: 'Email sending disabled'
   });
+}
 
-  // Keep the original mail template for future use:
-  /*
-  const demoUrl = `${process.env.NEXT_PUBLIC_DEMO_URL}`;
+export async function sendEmail(options: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}) {
+  try {
+    const mailOptions = {
+      from: `${process.env.SMTP_FROM_NAME || 'ScioLabs Team'} <${process.env.SMTP_FROM || 'noreply@sciolabs.in'}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text || options.html.replace(/<[^>]*>/g, '') // Strip HTML for text version
+    };
 
-  const htmlContent = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #4B9DCE;">Welcome to ScioLabs! 🚀</h1>
-      <p>Hi ${data.name},</p>
-      <p>Thank you for your interest in ScioLabs! Here's your demo access link:</p>
-      <p style="margin: 20px 0;">
-        <a href="${demoUrl}" 
-           style="background-color: #4B9DCE; color: white; padding: 12px 24px; 
-                  text-decoration: none; border-radius: 50px; display: inline-block;">
-          Access Demo
-        </a>
-      </p>
-      <p>Your details:</p>
-      <ul>
-        <li>School/Institution: ${data.school}</li>
-        <li>Role: ${data.role}</li>
-      </ul>
-      <p>If you have any questions, feel free to reply to this email.</p>
-      <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;" />
-      <p style="color: #666; font-size: 14px;">
-        Best regards,<br />
-        The ScioLabs Team
-      </p>
-    </div>
-  `;
-
-  return transporter.sendMail({
-    from: `"ScioLabs Team" <${process.env.SMTP_FROM}>`,
-    to: data.email,
-    subject: "Welcome to ScioLabs Demo! 🎮",
-    html: htmlContent,
-  });
-  */
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', {
+      messageId: info.messageId,
+      to: options.to,
+      subject: options.subject
+    });
+    
+    return info;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
 }
