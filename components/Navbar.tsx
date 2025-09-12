@@ -103,7 +103,7 @@ const Navbar = () => {
               </Button>
             ))}
             
-            {/* {user ? (
+            {user ? (
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -134,7 +134,7 @@ const Navbar = () => {
               </div>
             ) : (
               <LoginDialog />
-            )} */}
+            )}
             
             <Button 
               className={cn(

@@ -70,12 +70,12 @@ const Footer = () => {
                   +91 98765 43210
                 </a>
               </li>
-              {/* <li className="flex items-center gap-3">
+              <li className="flex items-center gap-3">
                 <Globe className="w-5 h-5 text-blue-400 flex-shrink-0" />
                 <a href="https://www.sciosprints.com" className="text-slate-200 hover:text-blue-300 transition-colors">
                   www.sciosprints.com
                 </a>
-              </li> */}
+              </li>
             </ul>
           </div>
         </div>
