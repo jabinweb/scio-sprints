@@ -177,6 +177,36 @@ export default function ClassPage() {
     setSelectedTopic(null);
   };
 
+  const handleNextTopic = () => {
+    if (!selectedSubjectData || !selectedTopic) return;
+    
+    // Get all topics from current subject
+    const allTopics = selectedSubjectData.chapters.flatMap((ch: ChapterData) => ch.topics);
+    const currentIndex = allTopics.findIndex((topic: DbTopic) => topic.id === selectedTopic.id);
+    
+    // Find next topic
+    if (currentIndex >= 0 && currentIndex < allTopics.length - 1) {
+      const nextTopic = allTopics[currentIndex + 1];
+      // Convert to the expected format with completed status
+      const nextTopicWithCompleted: DbTopic & { completed: boolean } = {
+        ...nextTopic,
+        completed: userProgress.get(nextTopic.id) || false,
+        content: nextTopic.content ? {
+          contentType: nextTopic.content.contentType,
+          url: nextTopic.content.url,
+          videoUrl: nextTopic.content.videoUrl,
+          pdfUrl: nextTopic.content.pdfUrl,
+          textContent: nextTopic.content.textContent,
+          widgetConfig: nextTopic.content.widgetConfig
+        } : {}
+      };
+      setSelectedTopic(nextTopicWithCompleted);
+    } else {
+      // If no next topic, close the player
+      handlePlayerClose();
+    }
+  };
+
   const getSubjectProgress = (subject: SubjectData) => {
     const allTopics = subject.chapters.flatMap((ch: ChapterData) => ch.topics);
     const completedCount = allTopics.filter((topic: DbTopic) => userProgress.get(topic.id)).length;
@@ -475,6 +505,7 @@ export default function ClassPage() {
         isOpen={isPlayerOpen}
         onClose={handlePlayerClose}
         onComplete={handleTopicComplete}
+        onNext={handleNextTopic}
       />
     </div>
   );

@@ -96,6 +96,23 @@ export default function DemoClassPage() {
     }
   };
 
+  const handleNextTopic = () => {
+    if (!selectedSubjectData || !selectedTopic) return;
+    
+    // Get all topics from current subject
+    const allTopics = selectedSubjectData.chapters.flatMap(ch => ch.topics);
+    const currentIndex = allTopics.findIndex(topic => topic.id === selectedTopic.id);
+    
+    // Find next topic
+    if (currentIndex >= 0 && currentIndex < allTopics.length - 1) {
+      const nextTopic = allTopics[currentIndex + 1];
+      setSelectedTopic(nextTopic);
+    } else {
+      // If no next topic, close the player
+      handlePlayerClose();
+    }
+  };
+
   const getSubjectProgress = (subjectId: string) => {
     if (!demoClass) return 0;
     const subject = demoClass.subjects.find(s => s.id === subjectId);
@@ -395,6 +412,7 @@ export default function DemoClassPage() {
             handlePlayerClose();
           }
         }}
+        onNext={handleNextTopic}
       />
 
       {/* Subject Completion Modal */}

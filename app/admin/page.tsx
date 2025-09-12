@@ -167,17 +167,8 @@ export default function AdminPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Authentication Required</h1>
-          <p className="text-muted-foreground">Please sign in to access the admin panel.</p>
-        </div>
-      </div>
-    );
-  }
-
+  // User authentication is now handled by the layout
+  // Only check for admin role here
   if (userRole !== 'ADMIN') {
     return (
       <div className="min-h-screen flex items-center justify-center">

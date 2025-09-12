@@ -4,8 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { LoadingScreen } from '@/components/ui/loading-screen';
-import { supabase } from '@/lib/supabase';
-import { LoginDialog } from '@/components/auth/login-dialog';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 
@@ -18,62 +16,68 @@ export default function ClassLayout({
   const params = useParams();
   const router = useRouter();
   const classId = params.classId as string;
-  const [checkingSubscription, setCheckingSubscription] = useState(true);
-  const [hasSubscription, setHasSubscription] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    if (!loading && user && classId) {
-      const checkSubscription = async () => {
-        try {
-          // Check for active subscription with valid end date
-          const { data: subscription, error } = await supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('userId', user.id)
-            .eq('classId', parseInt(classId))
-            .eq('status', 'ACTIVE')
-            .gte('endDate', new Date().toISOString())
-            .maybeSingle();
+    if (!loading && !user) {
+      // Redirect to login page with class redirect
+      router.push(`/auth/login?redirect=/dashboard/class/${classId}`);
+      return;
+    }
 
-          if (error) {
-            console.error('Error checking subscription:', error);
-            setHasSubscription(false);
-          } else {
-            const hasActiveSubscription = !!subscription;
-            setHasSubscription(hasActiveSubscription);
+    if (!loading && user && classId) {
+      const checkAccess = async () => {
+        try {
+          // Use the same access API as the main class page
+          const response = await fetch(`/api/classes/${classId}/access?userId=${user.id}`);
+          const data = await response.json();
+
+          if (response.ok) {
+            const hasAnyAccess = data.hasFullAccess || data.subjectAccess.some((s: { hasAccess: boolean }) => s.hasAccess);
+            setHasAccess(hasAnyAccess);
             
-            // If no subscription, redirect back to dashboard
-            if (!hasActiveSubscription) {
+            // Only redirect if user has absolutely no access
+            if (!hasAnyAccess) {
+              console.log('No access to class, redirecting to dashboard');
               setTimeout(() => {
                 router.push('/dashboard');
               }, 100);
             }
+          } else {
+            console.error('Error checking access:', data.error);
+            setHasAccess(false);
+            // Don't auto-redirect on API errors, let the main page handle it
           }
         } catch (error) {
-          console.error('Unexpected error checking subscription:', error);
-          setHasSubscription(false);
-          router.push('/dashboard');
+          console.error('Unexpected error checking access:', error);
+          setHasAccess(false);
+          // Don't auto-redirect on network errors, let the main page handle it
         } finally {
-          setCheckingSubscription(false);
+          setCheckingAccess(false);
         }
       };
 
-      checkSubscription();
+      checkAccess();
+    } else if (!loading && !user) {
+      // Reset states when user logs out
+      setCheckingAccess(false);
+      setHasAccess(false);
     } else if (!loading) {
-      setCheckingSubscription(false);
+      setCheckingAccess(false);
     }
   }, [user, loading, classId, router]);
 
-  if (loading || checkingSubscription) {
+  if (loading || checkingAccess) {
     return <LoadingScreen />;
   }
 
   if (!user) {
-    return <LoginDialog defaultOpen onClose={() => {}} />;
+    return <LoadingScreen />; // Show loading while redirecting to login
   }
 
-  // If no subscription, show loading while redirecting
-  if (!hasSubscription) {
+  // If no access, show loading while redirecting
+  if (!hasAccess) {
     return <LoadingScreen />;
   }
 

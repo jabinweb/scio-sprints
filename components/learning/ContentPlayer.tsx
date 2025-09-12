@@ -12,9 +12,10 @@ interface ContentPlayerProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
+  onNext?: () => void;
 }
 
-export function ContentPlayer({ topic, isOpen, onClose, onComplete }: ContentPlayerProps) {
+export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext }: ContentPlayerProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   if (!topic) return null;
@@ -97,11 +98,16 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete }: ContentPla
           </div>
           {/* Action Buttons */}
           <div className="flex gap-2">
+            <Button onClick={onComplete} size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1">
+              Complete
+            </Button>
+            {onNext && (
+              <Button onClick={onNext} size="sm" className="gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1">
+                Next Topic
+              </Button>
+            )}
             <Button variant="outline" onClick={onClose} size="sm" className="border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white text-xs px-3 py-1">
               Close
-            </Button>
-            <Button onClick={onComplete} size="sm" className="gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1">
-              Complete
             </Button>
           </div>
         </div>

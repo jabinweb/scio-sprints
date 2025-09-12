@@ -2,10 +2,10 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingScreen } from '@/components/ui/loading-screen';
-import { LoginDialog } from '@/components/auth/login-dialog';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function DashboardLayout({
   children,
@@ -15,12 +15,19 @@ export default function DashboardLayout({
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    if (!loading && !user) {
+      // Redirect to login page with dashboard redirect
+      router.push('/auth/login?redirect=/dashboard');
+    }
+  }, [user, loading, router]);
+
   if (loading) {
     return <LoadingScreen />;
   }
 
   if (!user) {
-    return <LoginDialog defaultOpen onClose={() => {}} />;
+    return <LoadingScreen />; // Show loading while redirecting
   }
 
   return (
