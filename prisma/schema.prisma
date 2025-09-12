@@ -56,17 +56,18 @@ model Chapter {
 }
 
 model Topic {
-  id         String              @id @default(cuid())
-  name       String
-  type       TopicType
-  duration   String
-  orderIndex Int
-  chapterId  String
-  created_at DateTime            @default(now()) @map("created_at")
-  updatedAt  DateTime            @updatedAt @map("updated_at")
-  content    TopicContent?
-  chapter    Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  progress   UserTopicProgress[]
+  id          String              @id @default(cuid())
+  name        String
+  type        TopicType
+  duration    String?
+  description String?
+  orderIndex  Int
+  chapterId   String
+  created_at  DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  content     TopicContent?
+  chapter     Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  progress    UserTopicProgress[]
 
   @@map("topics")
 }

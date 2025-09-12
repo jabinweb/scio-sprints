@@ -21,7 +21,8 @@ interface TopicFormData {
   id?: string;
   name: string;
   type: string;
-  duration: string;
+  duration?: string;
+  description?: string;
   orderIndex: number;
   chapterId: string;
   content?: TopicContentData;
@@ -41,6 +42,7 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
     name: '',
     type: 'video',
     duration: '',
+    description: '',
     orderIndex: 0,
     chapterId,
     content: {
@@ -103,6 +105,7 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
         name: '',
         type: 'video',
         duration: '',
+        description: '',
         orderIndex: 0,
         chapterId,
         content: {
@@ -189,15 +192,25 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
             </div>
           </div>
 
+          <div>
+            <Label htmlFor="description">Short Description (Optional)</Label>
+            <Textarea
+              id="description"
+              value={formData.description || ''}
+              onChange={(e) => updateFormData('description', e.target.value)}
+              placeholder="Brief description of what this topic covers..."
+              rows={3}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="duration">Duration</Label>
+              <Label htmlFor="duration">Duration (Optional)</Label>
               <Input
                 id="duration"
-                value={formData.duration}
+                value={formData.duration || ''}
                 onChange={(e) => updateFormData('duration', e.target.value)}
                 placeholder="e.g., 15 min"
-                required
               />
             </div>
 
