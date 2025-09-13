@@ -89,8 +89,11 @@ model TopicContent {
 }
 
 model User {
-  id            String              @id
-  email         String              @unique
+  id            String              @id @default(cuid())
+  name          String?
+  email         String?             @unique
+  emailVerified DateTime?           @map("email_verified")
+  image         String?
   displayName   String?             @map("display_name")
   photoURL      String?             @map("photo_url")
   role          UserRole            @default(USER)
@@ -105,6 +108,12 @@ model User {
   phone         String?
   parentName    String?             @map("parent_name")
   parentEmail   String?             @map("parent_email")
+  
+  // NextAuth.js relations
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Existing relations
   notifications     Notification[]
   notificationQueue NotificationQueue[]
   payments          Payment[]
@@ -114,6 +123,46 @@ model User {
   school            School?             @relation(fields: [schoolId], references: [id])
 
   @@map("users")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+ 
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@map("sessions")
+}
+ 
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@unique([identifier, token])
+  @@map("verificationtokens")
 }
 
 model UserTopicProgress {
@@ -425,4 +474,17 @@ enum AnnouncementType {
   MAINTENANCE
   PROMOTION
   WARNING
+}
+
+model TopicDifficultyRating {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  topicId    String   @map("topic_id")
+  classId    Int      @map("class_id")
+  rating     Int      // 1-5 stars
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, topicId])
+  @@map("topic_difficulty_ratings")
 }

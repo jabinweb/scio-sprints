@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +46,10 @@ interface AppSettings {
 }
 
 export default function SettingsPage() {
-  const { user, userRole, loading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const authLoading = status === 'loading';
   const [settings, setSettings] = useState<AppSettings>({
     siteName: 'ScioLabs',
     siteDescription: 'Interactive Learning Platform',

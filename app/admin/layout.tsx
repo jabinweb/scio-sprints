@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { useRouter } from 'next/navigation';
@@ -11,15 +11,17 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const loading = status === 'loading';
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (status === 'unauthenticated') {
       // Redirect to login page with admin redirect
       router.push('/auth/login?redirect=/admin');
     }
-  }, [user, loading, router]);
+  }, [status, router]);
 
   if (loading) {
     return <LoadingScreen />;

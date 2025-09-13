@@ -1,20 +1,15 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const subjectId = searchParams.get('subjectId');
     
-    let query = supabase.from('chapters').select('*');
-    
-    if (subjectId) {
-      query = query.eq('subjectId', subjectId);
-    }
-    
-    const { data: chapters, error } = await query.order('orderIndex', { ascending: true });
-
-    if (error) throw error;
+    const chapters = await prisma.chapter.findMany({
+      where: subjectId ? { subjectId } : {},
+      orderBy: { orderIndex: 'asc' }
+    });
 
     return NextResponse.json(chapters || []);
   } catch (error) {
@@ -30,20 +25,16 @@ export async function POST(request: Request) {
     // Generate a unique ID for the chapter
     const chapterId = crypto.randomUUID();
     
-    const { data: newChapter, error } = await supabase
-      .from('chapters')
-      .insert({
+    const newChapter = await prisma.chapter.create({
+      data: {
         id: chapterId,
         name,
         orderIndex,
         subjectId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
+        created_at: new Date(),
+        updatedAt: new Date(),
+      }
+    });
 
     return NextResponse.json(newChapter);
   } catch (error) {
@@ -56,18 +47,14 @@ export async function PUT(request: Request) {
   try {
     const { id, name, orderIndex } = await request.json();
     
-    const { data: updatedChapter, error } = await supabase
-      .from('chapters')
-      .update({
+    const updatedChapter = await prisma.chapter.update({
+      where: { id },
+      data: {
         name,
         orderIndex,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
+        updatedAt: new Date(),
+      }
+    });
 
     return NextResponse.json(updatedChapter);
   } catch (error) {
@@ -85,12 +72,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Chapter ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from('chapters')
-      .delete()
-      .eq('id', chapterId);
-
-    if (error) throw error;
+    await prisma.chapter.delete({
+      where: { id: chapterId }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,20 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
+import { prisma } from '@/lib/prisma';
 
-// Create a server‐side client with service role key only if env vars exist
-let supabaseAdmin: ReturnType<typeof createClient> | null = null;
-
-try {
-  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    supabaseAdmin = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
-  }
-} catch (error) {
-  console.error('Failed to create admin client:', error);
-}
+// Note: This bulk upload functionality has been simplified for NextAuth.js compatibility
+// Users must now sign in through OAuth providers (Google) before they can be managed
+// This endpoint now only updates existing user profiles, not create new auth accounts
 
 interface ProcessResult {
   success: boolean;
@@ -92,114 +81,39 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // Check if user already exists in database first (simpler approach)
-        const { data: existingDbUser } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', studentData.email.toLowerCase())
-          .maybeSingle();
+        // Check if user already exists in database (NextAuth.js manages auth, we only update profiles)
+        const existingUser = await prisma.user.findUnique({
+          where: { email: studentData.email.toLowerCase() },
+          select: { id: true }
+        });
 
-        let userId = existingDbUser?.id;
-        let isNewUser = false;
-
-        if (!existingDbUser) {
-          // Generate a simple UUID for new user
-          userId = crypto.randomUUID();
-          isNewUser = true;
-
-          // Only try auth creation if admin client is available
-          if (supabaseAdmin) {
-            try {
-              const { data: newUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-                email: studentData.email,
-                password: generateRandomPassword(),
-                user_metadata: {
-                  full_name: studentData.name,
-                  grade: studentData.grade || '',
-                  section: studentData.section || '',
-                  roll_number: studentData.roll_number || '',
-                  phone: studentData.phone || '',
-                  parent_name: studentData.parent_name || '',
-                  parent_email: studentData.parent_email || '',
-                  school_id: schoolId,
-                },
-                email_confirm: true,
-              });
-
-              if (!authError && newUser.user) {
-                userId = newUser.user.id;
-              }
-            } catch (authError) {
-              console.warn('Auth user creation failed, continuing with generated ID:', authError);
-              // Continue with generated UUID
-            }
-          }
+        if (!existingUser) {
+          result.errors.push({
+            row: i + 1,
+            error: 'User must sign in with Google OAuth first before profile can be updated',
+            data: studentData
+          });
+          continue;
         }
 
-        // Create or update user record in database
-        const userRecord = {
-          id: userId,
-          email: studentData.email,
-          display_name: studentData.name,
-          role: 'USER',
-          school_id: schoolId,
-          
-          // new fields from CSV
-          grade: studentData.grade || null,
-          section: studentData.section || null,
-          roll_number: studentData.roll_number || null,
-          phone: studentData.phone || null,
-          parent_name: studentData.parent_name || null,
-          parent_email: studentData.parent_email || null,
-
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        if (isNewUser) {
-          const { error: dbError } = await supabase
-            .from('users')
-            .insert(userRecord);
-
-          if (dbError) {
-            result.errors.push({
-              row: i + 1,
-              error: `Database insert failed: ${dbError.message}`,
-              data: studentData
-            });
-            continue;
+        // Update existing user record with CSV data
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            name: studentData.name,
+            schoolId: schoolId,
+            
+            // Update profile fields from CSV
+            grade: studentData.grade || null,
+            section: studentData.section || null,
+            rollNumber: studentData.roll_number || null,
+            phone: studentData.phone || null,
+            parentName: studentData.parent_name || null,
+            parentEmail: studentData.parent_email || null,
           }
-          result.created++;
-        } else {
-          const { error: dbError } = await supabase
-            .from('users')
-            .update({
-              display_name: studentData.name,
-              school_id: schoolId,
-              
-              // update new fields
-              grade: studentData.grade || null,
-              section: studentData.section || null,
-              roll_number: studentData.roll_number || null,
-              phone: studentData.phone || null,
-              parent_name: studentData.parent_name || null,
-              parent_email: studentData.parent_email || null,
-
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', userId);
-
-          if (dbError) {
-            result.errors.push({
-              row: i + 1,
-              error: `Database update failed: ${dbError.message}`,
-              data: studentData
-            });
-            continue;
-          }
-          result.updated++;
-        }
+        });
+        
+        result.updated++;
 
       } catch (error) {
         result.errors.push({
@@ -212,16 +126,18 @@ export async function POST(request: Request) {
 
     // Update school student count
     try {
-      const { data: schoolUsers } = await supabase
-        .from('users')
-        .select('id')
-        .eq('school_id', schoolId)
-        .eq('role', 'USER');
+      const schoolUsers = await prisma.user.findMany({
+        where: {
+          schoolId: schoolId,
+          role: 'USER'
+        },
+        select: { id: true }
+      });
 
-      await supabase
-        .from('schools')
-        .update({ student_count: schoolUsers?.length || 0 })
-        .eq('id', schoolId);
+      await prisma.school.update({
+        where: { id: schoolId },
+        data: { studentCount: schoolUsers.length }
+      });
     } catch (error) {
       console.error('Error updating school student count:', error);
     }
@@ -237,13 +153,4 @@ export async function POST(request: Request) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-}
-
-function generateRandomPassword(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let password = '';
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
 }

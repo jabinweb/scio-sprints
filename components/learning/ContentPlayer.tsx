@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Play, FileText, Monitor } from 'lucide-react';
+import { ExternalLink, Play, FileText, Monitor, Star } from 'lucide-react';
 import { type DbTopic } from '@/hooks/useClassData';
 
 
@@ -15,27 +15,75 @@ interface ContentPlayerProps {
   onNext?: () => void;
   isCompleted?: boolean;
   canProceedToNext?: boolean;
+  onDifficultyRate?: (topicId: string, rating: number) => void;
 }
 
-export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCompleted = false, canProceedToNext = true }: ContentPlayerProps) {
+export function ContentPlayer({ 
+  topic, 
+  isOpen, 
+  onClose, 
+  onComplete, 
+  onNext, 
+  isCompleted = false, 
+  canProceedToNext = true,
+  onDifficultyRate 
+}: ContentPlayerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [difficultyRating, setDifficultyRating] = useState<number>(0);
+  const [hasRated, setHasRated] = useState(false);
 
-  // Reset completion state when topic changes or dialog opens
+  // Only reset state when topic actually changes (by ID), not when completion status changes
   useEffect(() => {
-    if (topic) {
-      setHasCompleted(isCompleted);
-    }
-  }, [topic, isCompleted]);
+    console.log('Topic changed:', topic?.name);
+    setHasCompleted(isCompleted);
+    setShowRating(false);
+    setDifficultyRating(0);
+    setHasRated(isCompleted); // If already completed, mark as rated
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topic?.id]); // Intentionally only depend on topic ID to avoid resetting on completion changes
 
   if (!topic) return null;
 
   const handleComplete = () => {
-    setHasCompleted(true);
-    onComplete();
+    if (!hasCompleted && !isCompleted) {
+      console.log('Completing topic:', topic?.name);
+      setHasCompleted(true);
+      onComplete();
+      // Show rating dialog after completion, but only if not already rated
+      if (!hasRated) {
+        console.log('Showing rating dialog...');
+        // Use setTimeout to ensure the completion state is set first
+        setTimeout(() => {
+          setShowRating(true);
+          console.log('Rating dialog should be visible now');
+        }, 100);
+      }
+    }
+  };
+
+  const handleDifficultyRate = (rating: number) => {
+    console.log('Rating selected:', rating);
+    setDifficultyRating(rating);
+    setHasRated(true);
+    setShowRating(false);
+    
+    // Call the optional callback to save rating
+    if (onDifficultyRate && topic) {
+      onDifficultyRate(topic.id, rating);
+    }
+  };
+
+  const handleSkipRating = () => {
+    console.log('Rating skipped');
+    setShowRating(false);
+    setHasRated(true);
   };
 
   const handleContentAction = () => {
+    if (!topic?.content) return;
+    
     setIsLoading(true);
     
     switch (topic.content.contentType?.toLowerCase()) {
@@ -74,6 +122,8 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCo
   };
 
   const getContentIcon = () => {
+    if (!topic?.content) return <Play className="h-5 w-5" />;
+    
     const contentType = topic.content.contentType?.toLowerCase();
     switch (contentType) {
       case 'external_link': return <ExternalLink className="h-5 w-5" />;
@@ -87,6 +137,8 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCo
   };
 
   const getActionText = () => {
+    if (!topic?.content) return 'Start Learning';
+    
     const contentType = topic.content.contentType?.toLowerCase();
     switch (contentType) {
       case 'external_link': return 'Open Link';
@@ -149,11 +201,11 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCo
         <div className="flex-1 min-h-0">
           {/* Content Display Area - Maximum space */}
           <div className="h-full bg-gray-900 overflow-hidden flex items-center justify-center">
-            {topic.content.contentType?.toLowerCase() === 'text' && topic.content.textContent ? (
+            {topic?.content?.contentType?.toLowerCase() === 'text' && topic.content.textContent ? (
               <div className="prose prose-invert max-w-4xl h-full overflow-auto p-4">
                 <p className="text-gray-200">{topic.content.textContent}</p>
               </div>
-            ) : topic.content.contentType?.toLowerCase() === 'video' && topic.content.videoUrl ? (
+            ) : topic?.content?.contentType?.toLowerCase() === 'video' && topic.content.videoUrl ? (
               <div className="w-full h-full max-w-full bg-black overflow-hidden flex items-center justify-center">
                 {/* Handle different video URL formats */}
                 {topic.content.videoUrl.includes('youtube.com') || topic.content.videoUrl.includes('youtu.be') ? (
@@ -183,7 +235,7 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCo
                   </video>
                 )}
               </div>
-            ) : topic.content.contentType?.toLowerCase() === 'pdf' && topic.content.pdfUrl ? (
+            ) : topic?.content?.contentType?.toLowerCase() === 'pdf' && topic.content.pdfUrl ? (
               <div className="w-full h-full bg-white overflow-hidden">
                 <iframe 
                   src={topic.content.pdfUrl}
@@ -191,7 +243,7 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCo
                   title="PDF Viewer"
                 />
               </div>
-            ) : topic.content.contentType?.toLowerCase() === 'interactive_widget' ? (
+            ) : topic?.content?.contentType?.toLowerCase() === 'interactive_widget' ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <div className="mb-4 p-4 bg-gray-800 rounded-full">
                   <Monitor className="h-8 w-8 text-blue-400" />
@@ -200,13 +252,13 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCo
                 <p className="text-gray-400 mb-4">
                   This content will load an interactive learning experience.
                 </p>
-                {topic.content.widgetConfig && (
+                {topic.content?.widgetConfig && (
                   <pre className="text-xs bg-gray-800 text-green-400 p-2 rounded max-w-md overflow-auto">
                     {JSON.stringify(topic.content.widgetConfig, null, 2)}
                   </pre>
                 )}
               </div>
-            ) : topic.content.contentType?.toLowerCase() === 'iframe' && topic.content.textContent ? (
+            ) : topic?.content?.contentType?.toLowerCase() === 'iframe' && topic.content.textContent ? (
               <div className="w-full h-full bg-gray-900 overflow-hidden flex items-center justify-center">
                 <div 
                   dangerouslySetInnerHTML={{ __html: topic.content.textContent }}
@@ -219,9 +271,9 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCo
                 <div className="mb-4 p-4 bg-gray-800 rounded-full">
                   {getContentIcon()}
                 </div>
-                <h3 className="text-lg font-medium mb-2 text-white">{topic.name}</h3>
+                <h3 className="text-lg font-medium mb-2 text-white">{topic?.name}</h3>
                 <p className="text-gray-400 mb-4">
-                  Duration: {topic.duration} • Type: {topic.content.contentType || 'content'}
+                  Duration: {topic?.duration} • Type: {topic?.content?.contentType || 'content'}
                 </p>
                 <Button 
                   onClick={handleContentAction}
@@ -235,6 +287,73 @@ export function ContentPlayer({ topic, isOpen, onClose, onComplete, onNext, isCo
             )}
           </div>
         </div>
+
+        {/* Difficulty Rating Overlay */}
+        {showRating && !hasRated && (
+          <div 
+            className="absolute inset-0 bg-black/70 flex items-center justify-center z-50"
+            onClick={(e) => e.stopPropagation()} // Prevent accidental closing
+          >
+            <div 
+              className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl"
+              onClick={(e) => e.stopPropagation()} // Prevent event bubbling
+            >
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">How was this topic?</h3>
+                <p className="text-gray-600">Rate the difficulty level to help other students</p>
+              </div>
+              
+              <div className="flex justify-center gap-2 mb-6">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button
+                    key={rating}
+                    onClick={() => handleDifficultyRate(rating)}
+                    className="group transition-all duration-200 hover:scale-110"
+                    title={`${rating} star${rating > 1 ? 's' : ''} - ${
+                      rating === 1 ? 'Very Easy' :
+                      rating === 2 ? 'Easy' :
+                      rating === 3 ? 'Medium' :
+                      rating === 4 ? 'Hard' : 'Very Hard'
+                    }`}
+                  >
+                    <Star 
+                      className={`h-10 w-10 transition-colors duration-200 ${
+                        difficultyRating >= rating 
+                          ? 'text-yellow-400 fill-yellow-400' 
+                          : 'text-gray-300 hover:text-yellow-300'
+                      }`} 
+                    />
+                  </button>
+                ))}
+              </div>
+              
+              <div className="text-sm text-gray-500 mb-6">
+                <div className="flex justify-between text-xs">
+                  <span>Very Easy</span>
+                  <span>Very Hard</span>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={handleSkipRating}
+                  variant="outline"
+                  className="text-gray-600 border-gray-300 hover:bg-gray-50"
+                >
+                  Skip
+                </Button>
+                {difficultyRating > 0 && (
+                  <Button
+                    onClick={() => handleDifficultyRate(difficultyRating)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Submit Rating
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

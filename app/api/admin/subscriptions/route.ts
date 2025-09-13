@@ -1,26 +1,42 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const { data: subscriptions, error } = await supabase
-      .from('subscriptions')
-      .select(`
-        *,
-        user:users(email, display_name),
-        class:classes(id, name),
-        subject:subjects(id, name)
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
+    const subscriptions = await prisma.subscription.findMany({
+      include: {
+        user: {
+          select: {
+            email: true,
+            name: true
+          }
+        },
+        class: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        subject: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    });
 
     // Transform the data to match expected format
-    const transformedSubscriptions = (subscriptions || []).map(sub => ({
+    const transformedSubscriptions = subscriptions.map(sub => ({
       ...sub,
-      amount: sub.amount || 0, // Keep amount as-is, don't divide by 100
+      amount: sub.amount || 0,
       paymentId: sub.id, // Use subscription ID as payment ID for now
       created_at: sub.created_at, // Map for frontend compatibility
+      user: {
+        email: sub.user?.email,
+        display_name: sub.user?.name
+      }
     }));
 
     return NextResponse.json(transformedSubscriptions);
@@ -38,15 +54,13 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Subscription ID and status are required' }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from('subscriptions')
-      .update({ 
+    await prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: { 
         status,
-        updatedAt: new Date().toISOString()
-      })
-      .eq('id', subscriptionId);
-
-    if (error) throw error;
+        updatedAt: new Date()
+      }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -64,12 +78,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Subscription ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from('subscriptions')
-      .delete()
-      .eq('id', subscriptionId);
-
-    if (error) throw error;
+    await prisma.subscription.delete({
+      where: { id: subscriptionId }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

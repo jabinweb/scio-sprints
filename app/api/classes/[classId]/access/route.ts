@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 interface SubjectAccess {
   id: string;
@@ -17,7 +17,7 @@ interface DbSubject {
   icon: string;
   color: string;
   orderIndex: number;
-  price: number;
+  price: number | null;
   currency: string;
 }
 
@@ -35,82 +35,81 @@ export async function GET(
     }
 
     // Get user details with school information
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select(`
-        *,
-        school:schools(*)
-      `)
-      .eq('id', userId)
-      .single();
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        school: true
+      }
+    });
 
-    if (userError) {
-      console.error('Error fetching user:', userError);
+    if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get class with subjects
-    const { data: classData, error: classError } = await supabase
-      .from('classes')
-      .select(`
-        *,
-        subjects:subjects(
-          id,
-          name,
-          icon,
-          color,
-          orderIndex,
-          price,
-          currency
-        )
-      `)
-      .eq('id', parseInt(classId))
-      .eq('isActive', true)
-      .single();
+    const classData = await prisma.class.findUnique({
+      where: { 
+        id: parseInt(classId),
+        isActive: true
+      },
+      include: {
+        subjects: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+            color: true,
+            orderIndex: true,
+            price: true,
+            currency: true
+          }
+        }
+      }
+    });
 
-    if (classError || !classData) {
+    if (!classData) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
 
     // Check user's subscriptions
-    const { data: subscriptions, error: subsError } = await supabase
-      .from('subscriptions')
-      .select(`
-        classId,
-        subjectId,
-        planType,
-        status,
-        endDate
-      `)
-      .eq('userId', userId)
-      .eq('status', 'ACTIVE')
-      .gte('endDate', new Date().toISOString());
-
-    if (subsError) {
-      console.error('Error fetching subscriptions:', subsError);
-    }
+    const subscriptions = await prisma.subscription.findMany({
+      where: {
+        userId: userId,
+        status: 'ACTIVE',
+        endDate: {
+          gte: new Date()
+        }
+      },
+      select: {
+        classId: true,
+        subjectId: true,
+        planType: true,
+        status: true,
+        endDate: true
+      }
+    });
 
     // Check for class-wide subscription
-    const classSubscription = subscriptions?.find(s => 
+    const classSubscription = subscriptions?.find((s) => 
       s.classId === parseInt(classId) && !s.subjectId
     );
 
     // Check for subject-specific subscriptions
     const subjectSubscriptions = new Map(
-      subscriptions?.filter(s => s.subjectId).map(s => [s.subjectId, s]) || []
+      subscriptions?.filter((s) => s.subjectId).map((s) => [s.subjectId, s]) || []
     );
 
     // Check school access
     const gradeToClassMap: Record<string, number[]> = {
       '5': [5], '6': [6], '7': [7], '8': [8], '9': [9], '10': [10]
     };
-    const hasSchoolAccess = user.school?.is_active && user.grade && 
+    const hasSchoolAccess = user.school?.isActive && user.grade && 
       (gradeToClassMap[user.grade] || []).includes(parseInt(classId));
 
     // Build subject access information
     const subjectAccess: SubjectAccess[] = classData.subjects.map((subject: DbSubject) => {
       const hasSubjectSubscription = subjectSubscriptions.has(subject.id);
-      const hasAccess = hasSchoolAccess || classSubscription || hasSubjectSubscription;
+      const hasAccess = hasSchoolAccess || !!classSubscription || hasSubjectSubscription;
       
       let accessType: SubjectAccess['accessType'] = 'none';
       if (hasSchoolAccess) accessType = 'school';
@@ -122,7 +121,7 @@ export async function GET(
         name: subject.name,
         hasAccess,
         accessType,
-        price: subject.price,
+        price: subject.price || undefined,
         currency: subject.currency,
         canUpgrade: hasSubjectSubscription && !classSubscription // Can upgrade from subject to class
       };
@@ -136,7 +135,7 @@ export async function GET(
       accessType: hasSchoolAccess ? 'school' : classSubscription ? 'class_subscription' : 'partial',
       subjectAccess,
       canUpgradeToClass: subjectSubscriptions.size > 0 && !classSubscription,
-      upgradeOptions: subjectSubscriptions.size > 0 && !classSubscription ? {
+      upgradeOptions: subjectSubscriptions.size > 0 && !classSubscription && classData.price ? {
         currentSubjects: Array.from(subjectSubscriptions.keys()),
         classPrice: classData.price,
         potentialSavings: (subjectSubscriptions.size * Math.ceil(classData.price / classData.subjects.length)) - classData.price

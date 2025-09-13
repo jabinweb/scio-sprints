@@ -1,93 +1,35 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-
-interface DatabaseSubscription {
-  id: string;
-  status: string;
-  amount?: number;
-  planType: string;
-  startDate: string;
-  endDate?: string;
-  created_at: string;
-  userId: string;
-}
-
-interface DatabasePayment {
-  id: string;
-  amount: number;
-  status: string;
-  created_at: string;
-  userId: string;
-}
-
-interface DatabaseUser {
-  id: string;
-  email: string;
-  display_name: string | null;
-  photo_url: string | null; // Add photo URL field
-  created_at: string;
-  last_login_at: string | null;
-  role: string;
-  is_active: boolean;
-}
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Get ALL users first
-    const { data: allUsers, error: usersError } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (usersError) throw usersError;
-
-    // Get all subscriptions separately using snake_case column names (actual database columns)
-    const { data: allSubscriptions, error: subscriptionsError } = await supabase
-      .from('subscriptions')
-      .select(`
-        id,
-        status,
-        amount,
-        planType,
-        startDate,
-        endDate,
-        created_at,
-        userId
-      `);
-
-    if (subscriptionsError) throw subscriptionsError;
-
-    // Get all payments separately using snake_case column names
-    const { data: allPayments, error: paymentsError } = await supabase
-      .from('payments')
-      .select(`
-        id,
-        amount,
-        status,
-        created_at,
-        userId
-      `);
-
-    if (paymentsError) throw paymentsError;
+    // Get all users with their subscriptions and payments
+    const users = await prisma.user.findMany({
+      include: {
+        subscriptions: {
+          orderBy: { created_at: 'desc' }
+        },
+        payments: {
+          orderBy: { created_at: 'desc' }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    });
 
     // Transform data to match expected format
-    const usersWithSubscriptions = (allUsers || []).map((user: DatabaseUser) => {
-      // Find user's subscriptions
-      const userSubscriptions = (allSubscriptions || []).filter((sub: DatabaseSubscription) => sub.userId === user.id);
-      const activeSubscription = userSubscriptions.find((sub: DatabaseSubscription) => sub.status === 'ACTIVE');
-      
-      // Find user's payments
-      const userPayments = (allPayments || []).filter((payment: DatabasePayment) => payment.userId === user.id);
+    const usersWithSubscriptions = users.map((user) => {
+      const activeSubscription = user.subscriptions.find(sub => sub.status === 'ACTIVE');
+      const completedPayments = user.payments.filter(payment => payment.status === 'COMPLETED');
       
       return {
         uid: user.id,
         email: user.email,
-        displayName: user.display_name,
-        photoUrl: user.photo_url, // Include photo URL
+        displayName: user.name,
+        photoUrl: user.image,
         creationTime: user.created_at,
-        lastSignInTime: user.last_login_at,
-        role: user.role,
-        isActive: user.is_active,
+        lastSignInTime: user.updatedAt, // Using updatedAt as proxy for last login
+        role: user.role || 'USER',
+        isActive: true, // NextAuth users are active by default
         subscription: activeSubscription ? {
           id: activeSubscription.id,
           status: activeSubscription.status,
@@ -98,9 +40,8 @@ export async function GET() {
           created_at: activeSubscription.created_at
         } : null,
         hasActiveSubscription: !!activeSubscription,
-        totalPayments: userPayments.length,
-        totalAmountPaid: userPayments.reduce((sum: number, payment: DatabasePayment) => 
-          payment.status === 'COMPLETED' ? sum + payment.amount : sum, 0) || 0
+        totalPayments: user.payments.length,
+        totalAmountPaid: completedPayments.reduce((sum: number, payment: { amount: number; status: string }) => sum + payment.amount, 0)
       };
     });
 
@@ -120,13 +61,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Delete user and cascade will handle related records
-    const { error: deleteError } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', userId);
-
-    if (deleteError) throw deleteError;
+    // Delete user (cascade will handle related records)
+    await prisma.user.delete({
+      where: { id: userId }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -137,57 +75,32 @@ export async function DELETE(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { email, displayName, password, role, isActive } = await request.json();
+    const { email, displayName, role } = await request.json();
     
-    if (!email || !displayName || !password) {
-      return NextResponse.json({ error: 'Email, display name, and password are required' }, { status: 400 });
+    if (!email || !displayName) {
+      return NextResponse.json({ error: 'Email and display name are required' }, { status: 400 });
     }
 
-    // Create user in Supabase Auth
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      user_metadata: {
-        full_name: displayName,
-      },
-      email_confirm: true, // Skip email confirmation for admin-created users
-    });
-
-    if (authError) {
-      return NextResponse.json({ error: authError.message }, { status: 400 });
-    }
-
-    // Create user record in our database
-    const { error: dbError } = await supabase
-      .from('users')
-      .insert({
-        id: authUser.user.id,
+    // Create user record in database
+    // Note: With NextAuth, users are typically created during OAuth flow
+    // This endpoint creates a user manually for admin purposes
+    const user = await prisma.user.create({
+      data: {
         email: email,
-        display_name: displayName,
+        name: displayName,
         role: role || 'USER',
-        is_active: isActive !== undefined ? isActive : true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-
-    if (dbError) {
-      // If database insert fails, we should clean up the auth user
-      console.error('Error creating user in database:', dbError);
-      
-      // Try to delete the auth user
-      await supabase.auth.admin.deleteUser(authUser.user.id);
-      
-      return NextResponse.json({ error: 'Failed to create user record' }, { status: 500 });
-    }
+        emailVerified: new Date(), // Mark as verified for admin-created users
+      }
+    });
 
     return NextResponse.json({ 
       success: true, 
       user: {
-        id: authUser.user.id,
-        email: authUser.user.email,
-        displayName: displayName,
-        role: role || 'USER',
-        isActive: isActive !== undefined ? isActive : true,
+        id: user.id,
+        email: user.email,
+        displayName: user.name,
+        role: user.role,
+        isActive: true,
       }
     });
   } catch (error) {
@@ -198,42 +111,21 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { userId, displayName, role, isActive } = await request.json();
+    const { userId, displayName, role } = await request.json();
     
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const updateData: Record<string, string | boolean> = {};
-
+    const updateData: { name?: string; role?: 'USER' | 'ADMIN' } = {};
+    if (displayName !== undefined) updateData.name = displayName;
     if (role !== undefined) updateData.role = role;
-    if (isActive !== undefined) updateData.is_active = isActive;
-    updateData.updated_at = new Date().toISOString();
 
-    // Update user in our database
-    const { error: dbError } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', userId);
-
-    if (dbError) {
-      console.error('Error updating user in database:', dbError);
-      return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
-    }
-
-    // Update user metadata in Supabase Auth if displayName changed
-    if (displayName !== undefined) {
-      try {
-        await supabase.auth.admin.updateUserById(userId, {
-          user_metadata: {
-            full_name: displayName,
-          }
-        });
-      } catch (authError) {
-        console.error('Error updating auth user metadata:', authError);
-        // Don't fail the entire operation if auth update fails
-      }
-    }
+    // Update user in database
+    await prisma.user.update({
+      where: { id: userId },
+      data: updateData
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

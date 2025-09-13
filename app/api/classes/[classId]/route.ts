@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 // Next.js 15: params is a Promise and must be awaited
 export async function GET(
@@ -9,25 +9,30 @@ export async function GET(
   const { classId } = await params;
 
   try {
-    const { data: classData, error } = await supabase
-      .from('classes')
-      .select(`
-        *,
-        subjects:subjects(
-          *,
-          chapters:chapters(
-            *,
-            topics:topics(
-              *,
-              content:topic_contents(*)
-            )
-          )
-        )
-      `)
-      .eq('id', classId)
-      .single();
+    const classData = await prisma.class.findUnique({
+      where: {
+        id: parseInt(classId)
+      },
+      include: {
+        subjects: {
+          include: {
+            chapters: {
+              include: {
+                topics: {
+                  include: {
+                    content: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
 
-    if (error) throw error;
+    if (!classData) {
+      return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+    }
 
     return NextResponse.json(classData);
   } catch (error) {

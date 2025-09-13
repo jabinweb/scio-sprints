@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Montserrat } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { SessionProvider } from 'next-auth/react';
 import { ConnectionStatus } from '@/components/ui/ConnectionStatus';
 
 const inter = Inter({ 
@@ -58,10 +58,10 @@ export default function RootLayout({
           strategy="beforeInteractive"
         />
         <main className="min-h-screen">
-          <AuthProvider>
+          <SessionProvider>
             {children}
             <ConnectionStatus />
-          </AuthProvider>
+          </SessionProvider>
         </main>
       </body>
     </html>

@@ -1,10 +1,12 @@
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from 'next-auth/react';
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 
 export default function Dashboard() {
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const loading = status === 'loading';
 
   if (loading) {
     return (

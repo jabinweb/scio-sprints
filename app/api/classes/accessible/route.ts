@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 interface Subject {
   id: string;
@@ -16,61 +16,61 @@ export async function GET(request: Request) {
     }
 
     // Get user details with school information
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select(`
-        *,
-        school:schools(*)
-      `)
-      .eq('id', userId)
-      .single();
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        school: true
+      }
+    });
 
-    if (userError) {
-      console.error('Error fetching user:', userError);
+    if (!user) {
+      console.error('User not found');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get all active classes
-    const { data: allClasses, error: classError } = await supabase
-      .from('classes')
-      .select(`
-        *,
-        subjects:subjects(
-          *,
-          chapters:chapters(
-            *,
-            topics:topics(
-              *,
-              content:topic_contents(*)
-            )
-          )
-        )
-      `)
-      .eq('isActive', true)
-      .order('id', { ascending: true });
+    const allClasses = await prisma.class.findMany({
+      where: { isActive: true },
+      include: {
+        subjects: {
+          include: {
+            chapters: {
+              include: {
+                topics: {
+                  include: {
+                    content: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { id: 'asc' }
+    });
 
-    if (classError) {
-      console.error('Error fetching classes:', classError);
+    if (!allClasses) {
+      console.error('Error fetching classes');
       return NextResponse.json({ error: 'Failed to fetch classes' }, { status: 500 });
     }
 
     // Check user's paid subscriptions (both class-wide and subject-specific)
-    const { data: subscriptions, error: subsError } = await supabase
-      .from('subscriptions')
-      .select(`
-        classId,
-        subjectId,
-        planType,
-        status,
-        endDate
-      `)
-      .eq('userId', userId)
-      .eq('status', 'ACTIVE')
-      .gte('endDate', new Date().toISOString());
-
-    if (subsError) {
-      console.error('Error fetching subscriptions:', subsError);
-    }
+    const subscriptions = await prisma.subscription.findMany({
+      where: {
+        userId: userId,
+        status: 'ACTIVE',
+        endDate: {
+          gte: new Date()
+        }
+      },
+      select: {
+        classId: true,
+        subjectId: true,
+        planType: true,
+        status: true,
+        endDate: true
+      }
+    });
 
     // Separate class-wide and subject-specific subscriptions
     const classSubscriptions = new Set(
@@ -98,7 +98,7 @@ export async function GET(request: Request) {
     let accessType: 'subscription' | 'school' | 'free' | 'none' = 'none';
 
     // School-based access logic
-    if (user.school && user.school.is_active && user.grade) {
+    if (user.school && user.school.isActive && user.grade) {
       const schoolAccessClassIds = gradeToClassMap[user.grade] || [];
       
       if (schoolAccessClassIds.length > 0) {
@@ -120,7 +120,7 @@ export async function GET(request: Request) {
     // If no school or subscription access, show message for discovery
     if (accessType === 'none') {
       if (user.school) {
-        if (!user.school.is_active) {
+        if (!user.school.isActive) {
           accessMessage = 'Your school account is currently inactive. You can still subscribe to individual classes.';
         } else if (!user.grade) {
           accessMessage = 'No grade assigned. Contact your school administrator or subscribe to individual classes.';
@@ -134,7 +134,7 @@ export async function GET(request: Request) {
 
     // Add access metadata to each class
     const classesWithAccess = accessibleClasses.map(cls => {
-      const hasSchoolAccess = user.school?.is_active && user.grade && 
+      const hasSchoolAccess = user.school?.isActive && user.grade && 
         (gradeToClassMap[user.grade] || []).includes(cls.id);
       const hasClassSubscription = classSubscriptions.has(cls.id);
       
@@ -167,7 +167,7 @@ export async function GET(request: Request) {
       accessibleClasses: classesWithAccess,
       userGrade: user.grade,
       schoolName: user.school?.name,
-      schoolActive: user.school?.is_active,
+      schoolActive: user.school?.isActive,
       accessType,
       message: accessMessage
     });

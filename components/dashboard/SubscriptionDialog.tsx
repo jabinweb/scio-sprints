@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle, Star, Zap, BookOpen } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -76,13 +76,22 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   classData,
   onSubscribe
 }) => {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set());
   
   // Check if user has class subscription (all subjects subscribed via class_subscription)
   const hasClassSubscription = classData.subjects.every(subject => 
     subject.isSubscribed && subject.subscriptionType === 'class_subscription'
   );
+  
+  // Check if user has any subject subscriptions (for upgrade scenario)
+  const hasSubjectSubscriptions = classData.subjects.some(subject => 
+    subject.isSubscribed && subject.subscriptionType === 'subject_subscription'
+  );
+  
+  // Check if this is an upgrade scenario (has some subject subscriptions but not full class)
+  const isUpgradeScenario = hasSubjectSubscriptions && !hasClassSubscription;
   
   // Get unsubscribed subjects for individual subscription tab
   const unsubscribedSubjects = classData.subjects.filter(subject => !subject.isSubscribed);
@@ -167,7 +176,7 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           }
         },
         prefill: {
-          name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+          name: user.name || user.email?.split('@')[0] || '',
           email: user.email || ''
         },
         theme: { color: '#3B82F6' }
@@ -176,6 +185,30 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       razorpay.open();
     } catch (error) {
       console.error('Payment error:', error);
+      
+      // Handle specific error cases
+      if (error instanceof Error) {
+        if (error.message.includes('Already subscribed')) {
+          // Show a more helpful message to the user
+          const message = `You already have an active subscription to this class! 
+          
+If you're still seeing limited access, please:
+1. Refresh the page to update your access status
+2. Log out and log back in
+3. Contact support if the issue persists
+
+Would you like to refresh the page now?`;
+          
+          if (confirm(message)) {
+            window.location.reload();
+          }
+          onClose();
+        } else {
+          alert(`Payment error: ${error.message}`);
+        }
+      } else {
+        alert('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -234,7 +267,7 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           }
         },
         prefill: {
-          name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+          name: user.name || user.email?.split('@')[0] || '',
           email: user.email || ''
         },
         theme: { color: '#8B5CF6' }
@@ -323,10 +356,23 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-2">
                       <Star className="h-5 w-5 text-blue-600" />
-                      Complete Class Access
+                      {isUpgradeScenario ? 'Upgrade to Full Access' : 'Complete Class Access'}
                     </span>
-                    <Badge className="bg-blue-600 text-white">Best Value</Badge>
+                    <Badge className="bg-blue-600 text-white">
+                      {isUpgradeScenario ? 'Upgrade' : 'Best Value'}
+                    </Badge>
                   </CardTitle>
+                  {isUpgradeScenario && (
+                    <div className="text-sm text-blue-600 bg-blue-100 rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        <span>
+                          You have {subscribedSubjects.length} of {classData.subjects.length} subjects. 
+                          Upgrade to get full access to all subjects!
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center">
@@ -376,7 +422,12 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     disabled={isProcessing}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-3"
                   >
-                    {isProcessing ? 'Processing...' : `Subscribe for ₹${classPrice}`}
+                    {isProcessing 
+                      ? 'Processing...' 
+                      : isUpgradeScenario 
+                        ? `Upgrade to Full Access - ₹${classPrice}` 
+                        : `Subscribe for ₹${classPrice}`
+                    }
                   </Button>
                 </CardContent>
               </Card>

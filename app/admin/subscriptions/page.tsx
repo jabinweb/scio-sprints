@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +43,10 @@ interface RegisteredUser {
 }
 
 export default function SubscriptionsPage() {
-  const { user, userRole, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const loading = status === 'loading';
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
   const [dataLoading, setDataLoading] = useState(true);

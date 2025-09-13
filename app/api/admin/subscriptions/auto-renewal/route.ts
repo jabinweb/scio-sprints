@@ -263,14 +263,13 @@ export async function GET(request: NextRequest) {
   
   try {
     const { searchParams } = new URL(request.url);
-    const cronSecret = searchParams.get('secret');
     const dryRun = searchParams.get('dryRun') === 'true';
     const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 1000); // Max 1000 at once
     
     // Use centralized admin/cron authentication
-    const authResult = await verifyAdminOrCron(request, cronSecret);
+    const isAuthorized = await verifyAdminOrCron(request);
     
-    if (!authResult.isAuthorized) {
+    if (!isAuthorized) {
       console.warn('Unauthorized auto-renewal attempt', {
         ip: request.headers.get('x-forwarded-for') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown'

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession, signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,25 +18,25 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail, loading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user && !authLoading) {
+    if (status === 'authenticated') {
       router.push(redirect);
     }
-  }, [user, authLoading, router, redirect]);
+  }, [status, router, redirect]);
 
   // Show loading while checking auth state
-  if (authLoading) {
+  if (status === 'loading') {
     return <LoadingScreen />;
   }
 
   // Don't render login form if user is already authenticated
-  if (user) {
+  if (status === 'authenticated') {
     return <LoadingScreen />;
   }
 
@@ -44,8 +44,7 @@ function LoginForm() {
     try {
       setLoading(true);
       setError(null);
-      await signInWithGoogle();
-      // Redirect will be handled by useEffect
+      await signIn('google', { callbackUrl: redirect });
     } catch (error) {
       console.error('Google sign in error:', error);
       setError('Failed to sign in with Google');
@@ -60,15 +59,12 @@ function LoginForm() {
       setLoading(true);
       setError(null);
 
-      if (isSignUp) {
-        await signUpWithEmail(email, password);
-      } else {
-        await signInWithEmail(email, password);
-      }
-      // Redirect will be handled by useEffect
+      // Note: NextAuth.js doesn't support email/password signup by default
+      // You would need to implement this with credentials provider or use a different approach
+      setError('Email/password authentication not yet implemented with NextAuth.js');
     } catch (error) {
       console.error('Email auth error:', error);
-      setError(isSignUp ? 'Failed to create account' : 'Invalid email or password');
+      setError('Authentication failed');
     } finally {
       setLoading(false);
     }

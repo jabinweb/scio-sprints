@@ -21,7 +21,7 @@ interface TopicFormData {
   id?: string;
   name: string;
   type: string;
-  duration?: string;
+  duration: string;
   description?: string;
   orderIndex: number;
   chapterId: string;

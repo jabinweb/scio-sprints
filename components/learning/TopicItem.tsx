@@ -1,6 +1,6 @@
 'use client';
 
-import { Play, Clock, CheckCircle, Video, FileText, Headphones, BookOpen } from 'lucide-react';
+import { Play, Clock, CheckCircle, Video, FileText, Headphones, BookOpen, Star } from 'lucide-react';
 import { type DbTopic } from '@/hooks/useClassData';
 
 const getTopicIcon = (contentType: string | undefined) => {
@@ -20,10 +20,20 @@ interface TopicItemProps {
   isCompleted: boolean;
   hasAccess: boolean;
   isEnabled?: boolean;
+  difficultyRating?: number;
+  totalRatings?: number;
   onClick: (topic: DbTopic) => void;
 }
 
-export function TopicItem({ topic, isCompleted, hasAccess, isEnabled = true, onClick }: TopicItemProps) {
+export function TopicItem({ 
+  topic, 
+  isCompleted, 
+  hasAccess, 
+  isEnabled = true, 
+  difficultyRating,
+  totalRatings,
+  onClick 
+}: TopicItemProps) {
   const contentType = topic.content?.contentType;
   const canClick = hasAccess && isEnabled;
 
@@ -65,7 +75,31 @@ export function TopicItem({ topic, isCompleted, hasAccess, isEnabled = true, onC
           <Clock className="h-3 w-3" />
           <span>{topic.duration}</span>
         </div>
-        <Play className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+        <div className="flex items-center gap-2">
+          {/* Difficulty Rating Display */}
+          {difficultyRating && totalRatings && totalRatings > 0 && (
+            <div 
+              className="flex items-center gap-1 text-xs"
+              title={`Difficulty: ${difficultyRating}/5 stars (${totalRatings} rating${totalRatings > 1 ? 's' : ''})`}
+            >
+              <Star className={`h-3 w-3 ${
+                difficultyRating >= 4 ? 'text-red-500 fill-red-500' :
+                difficultyRating >= 3 ? 'text-yellow-500 fill-yellow-500' :
+                'text-green-500 fill-green-500'
+              }`} />
+              <span className={`font-medium ${
+                difficultyRating >= 4 ? 'text-red-600' :
+                difficultyRating >= 3 ? 'text-yellow-600' :
+                'text-green-600'
+              }`}>
+                {difficultyRating >= 4 ? 'Hard' :
+                 difficultyRating >= 3 ? 'Medium' :
+                 'Easy'}
+              </span>
+            </div>
+          )}
+          <Play className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+        </div>
       </div>
     </div>
   );

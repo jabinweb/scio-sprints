@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CreditCard, UserCheck, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,11 @@ interface TopicFormData {
 }
 
 export default function AdminPage() {
-  const { user, userRole, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  // Note: We'll need to get userRole from session.user or database
+  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const loading = status === 'loading';
   const [signups, setSignups] = useState<Signup[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);

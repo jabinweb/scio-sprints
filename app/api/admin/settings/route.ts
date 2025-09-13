@@ -1,28 +1,18 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
     // Try to fetch settings with a simpler query first
-    const { data: settings, error } = await supabase
-      .from('admin_settings')
-      .select('key, value')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching settings from database:', error);
-      
-      // Return default settings if database query fails
-      return NextResponse.json({
-        siteName: 'Learning Platform',
-        subscriptionPrice: '299',
-        paymentMode: 'test',
-        razorpayKeyId: '',
-        razorpayTestKeyId: '',
-        razorpayKeySecret: '',
-        razorpayTestKeySecret: ''
-      });
-    }
+    const settings = await prisma.adminSettings.findMany({
+      select: {
+        key: true,
+        value: true
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
 
     // Transform to key-value object
     const settingsObj = (settings || []).reduce((acc: Record<string, string>, setting: { key: string; value: string }) => {
@@ -64,49 +54,32 @@ export async function PUT(request: Request) {
     for (const [key, value] of Object.entries(updates)) {
       try {
         // First, check if the setting exists
-        const { data: existing, error: checkError } = await supabase
-          .from('admin_settings')
-          .select('id')
-          .eq('key', key)
-          .maybeSingle();
-
-        if (checkError) {
-          console.error(`Error checking setting ${key}:`, checkError);
-          continue;
-        }
+        const existing = await prisma.adminSettings.findUnique({
+          where: { key },
+          select: { id: true }
+        });
 
         if (existing) {
           // Update existing setting
-          const { error: updateError } = await supabase
-            .from('admin_settings')
-            .update({
+          await prisma.adminSettings.update({
+            where: { key },
+            data: {
               value: String(value),
-              updated_at: new Date().toISOString()
-            })
-            .eq('key', key);
-
-          if (updateError) {
-            console.error(`Error updating setting ${key}:`, updateError);
-          }
+              updatedAt: new Date()
+            }
+          });
         } else {
-          // Insert new setting with generated ID
-          const { error: insertError } = await supabase
-            .from('admin_settings')
-            .insert({
-              id: crypto.randomUUID(), // Generate UUID for new records
+          // Insert new setting
+          await prisma.adminSettings.create({
+            data: {
               key,
               value: String(value),
               description: `Setting for ${key}`,
               category: getSettingCategory(key),
               dataType: 'string',
-              isPublic: false,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-
-          if (insertError) {
-            console.error(`Error inserting setting ${key}:`, insertError);
-          }
+              isPublic: false
+            }
+          });
         }
       } catch (settingError) {
         console.error(`Unexpected error processing setting ${key}:`, settingError);

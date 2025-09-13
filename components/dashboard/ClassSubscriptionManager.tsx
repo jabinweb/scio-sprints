@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Lock, Star, ArrowRight, Zap, Gift } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { SubscriptionDialog } from './SubscriptionDialog';
 
 interface SubjectAccess {
@@ -50,7 +50,8 @@ export const ClassSubscriptionManager: React.FC<ClassSubscriptionManagerProps> =
   classId,
   onSubscribe
 }) => {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const [accessData, setAccessData] = useState<ClassAccessData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -1,25 +1,34 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const { data: classes, error } = await supabase
-      .from('classes')
-      .select(`
-        *,
-        subjects:subjects(id, name),
-        subscriptions:subscriptions!classId(
-          id,
-          status,
-          user:users(email, display_name)
-        )
-      `)
-      .order('id', { ascending: true });
-
-    if (error) throw error;
+    const classes = await prisma.class.findMany({
+      include: {
+        subjects: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        subscriptions: {
+          include: {
+            user: {
+              select: {
+                email: true,
+                name: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        id: 'asc'
+      }
+    });
 
     // Transform the data to ensure price is properly formatted
-    const transformedClasses = (classes || []).map(cls => ({
+    const transformedClasses = classes.map(cls => ({
       ...cls,
       price: cls.price || 29900, // Ensure price is set (in paisa)
     }));
@@ -39,21 +48,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
     }
 
-    const { data: newClass, error } = await supabase
-      .from('classes')
-      .insert({
+    const newClass = await prisma.class.create({
+      data: {
         name,
         description,
         isActive: isActive !== undefined ? isActive : true,
         price: price ? parseInt(price) * 100 : 29900, // Convert to paisa
         currency: 'INR',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
+        created_at: new Date(),
+        updatedAt: new Date(),
+      }
+    });
 
     return NextResponse.json({ success: true, class: newClass });
   } catch (error) {
@@ -70,9 +75,9 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Class ID is required' }, { status: 400 });
     }
 
-    // Use a specific type for updateData instead of any
+    // Build update data object
     const updateData: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
+      updatedAt: new Date(),
     };
 
     if (name !== undefined) updateData.name = name;
@@ -80,12 +85,10 @@ export async function PUT(request: Request) {
     if (isActive !== undefined) updateData.isActive = isActive;
     if (price !== undefined) updateData.price = parseInt(price) * 100; // Convert to paisa
 
-    const { error } = await supabase
-      .from('classes')
-      .update(updateData)
-      .eq('id', id);
-
-    if (error) throw error;
+    await prisma.class.update({
+      where: { id },
+      data: updateData
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -103,12 +106,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Class ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from('classes')
-      .delete()
-      .eq('id', parseInt(classId));
-
-    if (error) throw error;
+    await prisma.class.delete({
+      where: { id: parseInt(classId) }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

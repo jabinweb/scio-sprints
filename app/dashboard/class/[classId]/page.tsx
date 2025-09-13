@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, BookOpen, Lock, Settings } from 'lucide-react';
 import { useClassData, type DbTopic } from '@/hooks/useClassData';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { ClassSubscriptionManager } from '@/components/dashboard/ClassSubscriptionManager';
 import { TopicItem } from '@/components/learning/TopicItem';
 import { 
@@ -54,7 +54,8 @@ export default function ClassPage() {
   const params = useParams();
   const router = useRouter();
   const classId = params.classId as string;
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedTopic, setSelectedTopic] = useState<DbTopic & { completed: boolean } | null>(null);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
@@ -62,6 +63,7 @@ export default function ClassPage() {
   const [subjectAccess, setSubjectAccess] = useState<Record<string, boolean>>({});
   const [accessType, setAccessType] = useState<string>('');
   const [accessMessage, setAccessMessage] = useState<string>('');
+  const [topicRatings, setTopicRatings] = useState<Record<string, { averageRating: number; totalRatings: number }>>({});
   
   const { currentClass, userProgress, loading, error, markTopicComplete } = useClassData(classId);
 
@@ -98,6 +100,33 @@ export default function ClassPage() {
 
     getSubjectAccess();
   }, [user?.id, classId]);
+
+  // Fetch topic difficulty ratings for the class
+  useEffect(() => {
+    const fetchTopicRatings = async () => {
+      if (!classId) return;
+
+      try {
+        const response = await fetch(`/api/user/topic-ratings?classId=${classId}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Convert array to object with topicId as key
+          const ratingsMap = data.ratings.reduce((acc: Record<string, { averageRating: number; totalRatings: number }>, rating: { topicId: string; averageRating: number; totalRatings: number }) => {
+            acc[rating.topicId] = {
+              averageRating: rating.averageRating,
+              totalRatings: rating.totalRatings
+            };
+            return acc;
+          }, {});
+          setTopicRatings(ratingsMap);
+        }
+      } catch (error) {
+        console.error('Error fetching topic ratings:', error);
+      }
+    };
+
+    fetchTopicRatings();
+  }, [classId]);
 
   useEffect(() => {
     // Auto-select first unlocked subject
@@ -185,7 +214,7 @@ export default function ClassPage() {
         pdfUrl: topic.content.pdfUrl,
         textContent: topic.content.textContent,
         widgetConfig: topic.content.widgetConfig
-      } : {}
+      } : undefined
     };
     setSelectedTopic(topicWithCompleted);
     setIsPlayerOpen(true);
@@ -290,7 +319,7 @@ export default function ClassPage() {
             pdfUrl: fullNextTopic.content.pdfUrl,
             textContent: fullNextTopic.content.textContent,
             widgetConfig: fullNextTopic.content.widgetConfig
-          } : {}
+          } : undefined
         };
         setSelectedTopic(nextTopicWithCompleted);
       }
@@ -304,6 +333,48 @@ export default function ClassPage() {
     const allTopics = subject.chapters.flatMap((ch: ChapterData) => ch.topics);
     const completedCount = allTopics.filter((topic: DbTopic) => userProgress.get(topic.id)).length;
     return allTopics.length > 0 ? Math.round((completedCount / allTopics.length) * 100) : 0;
+  };
+
+  const handleDifficultyRate = async (topicId: string, rating: number) => {
+    if (!user?.id) return;
+    
+    try {
+      // Save the difficulty rating to the backend
+      const response = await fetch('/api/user/topic-ratings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          topicId,
+          rating,
+          classId: parseInt(classId)
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`Difficulty rating saved: Topic ${topicId} rated ${rating} stars`);
+        
+        // Refresh topic ratings to show updated average
+        const ratingsResponse = await fetch(`/api/user/topic-ratings?classId=${classId}`);
+        if (ratingsResponse.ok) {
+          const data = await ratingsResponse.json();
+          const ratingsMap = data.ratings.reduce((acc: Record<string, { averageRating: number; totalRatings: number }>, ratingData: { topicId: string; averageRating: number; totalRatings: number }) => {
+            acc[ratingData.topicId] = {
+              averageRating: ratingData.averageRating,
+              totalRatings: ratingData.totalRatings
+            };
+            return acc;
+          }, {});
+          setTopicRatings(ratingsMap);
+        }
+      } else {
+        console.error('Failed to save difficulty rating');
+      }
+    } catch (error) {
+      console.error('Error saving difficulty rating:', error);
+    }
   };
 
   const selectedSubjectData = currentClass.subjects.find(s => s.id === selectedSubject);
@@ -530,6 +601,9 @@ export default function ClassPage() {
 
                               const isEnabled = isTopicEnabled(topicForProgression, subjectProgress, completedTopicsSet);
                               
+                              // Get difficulty rating for this topic
+                              const topicRating = topicRatings[topic.id];
+                              
                               return (
                                 <TopicItem
                                   key={topic.id}
@@ -537,6 +611,8 @@ export default function ClassPage() {
                                   isCompleted={isCompleted}
                                   hasAccess={hasSubjectAccess}
                                   isEnabled={isEnabled}
+                                  difficultyRating={topicRating?.averageRating}
+                                  totalRatings={topicRating?.totalRatings}
                                   onClick={handleTopicClick}
                                 />
                               );
@@ -565,6 +641,7 @@ export default function ClassPage() {
         onClose={handlePlayerClose}
         onComplete={handleTopicComplete}
         onNext={handleNextTopic}
+        onDifficultyRate={handleDifficultyRate}
         isCompleted={selectedTopic ? (userProgress.get(selectedTopic.id) || false) : false}
         canProceedToNext={selectedTopic && selectedSubjectData ? (() => {
           const subjectProgress: SubjectProgression = {

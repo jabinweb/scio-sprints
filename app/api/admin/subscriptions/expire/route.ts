@@ -18,7 +18,7 @@ interface SubscriptionWithRelations {
   } | null;
   user: {
     id: string;
-    email: string;
+    email: string | null;
     displayName: string | null;
   };
 }
@@ -33,14 +33,10 @@ interface ExpiryResult {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify admin access or use cron secret
-    const { searchParams } = new URL(request.url);
-    const cronSecret = searchParams.get('secret');
-    
     // Use centralized admin/cron authentication
-    const authResult = await verifyAdminOrCron(request, cronSecret);
+    const isAuthorized = await verifyAdminOrCron(request);
     
-    if (!authResult.isAuthorized) {
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Unauthorized: Admin access or valid cron secret required' },
         { status: 401 }
@@ -162,6 +158,12 @@ export async function POST(request: NextRequest) {
 
 async function scheduleNotification(subscription: SubscriptionWithRelations, type: NotificationQueueType, daysUntilExpiry?: number) {
   try {
+    // Skip notification if user has no email
+    if (!subscription.user.email) {
+      console.log(`Skipping notification for user ${subscription.userId} - no email address`);
+      return;
+    }
+
     // Create notification record for processing
     await prisma.notificationQueue.create({
       data: {
@@ -174,7 +176,7 @@ async function scheduleNotification(subscription: SubscriptionWithRelations, typ
           endDate: subscription.endDate,
           daysUntilExpiry: daysUntilExpiry,
           userEmail: subscription.user.email,
-          userName: subscription.user.displayName || subscription.user.email?.split('@')[0]
+          userName: subscription.user.displayName || subscription.user.email.split('@')[0]
         },
         status: 'PENDING',
         scheduledFor: new Date()

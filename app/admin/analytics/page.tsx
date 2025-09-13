@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,7 +60,10 @@ interface AnalyticsData {
 }
 
 export default function SubscriptionAnalyticsPage() {
-  const { user, userRole, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const loading = status === 'loading';
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

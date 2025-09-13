@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +44,10 @@ interface ClassData {
 export default function SubjectsPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, userRole, loading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const authLoading = status === 'loading';
   const classId = parseInt(params.classId as string);
   
   const [subjects, setSubjects] = useState<Subject[]>([]);

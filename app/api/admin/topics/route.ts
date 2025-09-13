@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 // Helper function to convert content type to database enum
-const convertContentType = (type: string): string => {
+const convertContentType = (type: string): 'EXTERNAL_LINK' | 'VIDEO' | 'PDF' | 'TEXT' | 'INTERACTIVE_WIDGET' | 'IFRAME' => {
   switch (type.toLowerCase()) {
     case 'external_link': return 'EXTERNAL_LINK';
     case 'video': return 'VIDEO';
@@ -15,7 +15,7 @@ const convertContentType = (type: string): string => {
 };
 
 // Helper function to convert topic type to database enum
-const convertTopicType = (type: string): string => {
+const convertTopicType = (type: string): 'VIDEO' | 'INTERACTIVE' | 'EXERCISE' | 'AUDIO' => {
   switch (type.toLowerCase()) {
     case 'video': return 'VIDEO';
     case 'interactive': return 'INTERACTIVE';
@@ -30,21 +30,16 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const chapterId = searchParams.get('chapterId');
     
-    let query = supabase.from('topics').select(`
-      *,
-      content:topic_contents(*)
-    `);
-    
-    if (chapterId) {
-      query = query.eq('chapterId', chapterId);
-    }
-    
-    const { data: topics, error } = await query.order('orderIndex', { ascending: true });
-
-    if (error) throw error;
+    const topics = await prisma.topic.findMany({
+      where: chapterId ? { chapterId } : {},
+      include: {
+        content: true
+      },
+      orderBy: { orderIndex: 'asc' }
+    });
 
     // Transform the response to ensure content is properly structured
-    const transformedTopics = (topics || []).map(topic => {
+    const transformedTopics = topics.map(topic => {
       let content = undefined;
       
       if (topic.content && Array.isArray(topic.content) && topic.content.length > 0) {
@@ -84,41 +79,37 @@ export async function POST(request: Request) {
     }
 
     // Create topic
-    const { data: topic, error: topicError } = await supabase
-      .from('topics')
-      .insert({
+    const topic = await prisma.topic.create({
+      data: {
         id: crypto.randomUUID(),
         name,
         type: convertTopicType(type), // Convert to proper enum
         duration,
         orderIndex: orderIndex || 0,
         chapterId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (topicError) throw topicError;
+        created_at: new Date(),
+        updatedAt: new Date(),
+      }
+    });
 
     // Create content if provided
     if (content && topic) {
-      const { error: contentError } = await supabase
-        .from('topic_contents')
-        .insert({
-          id: crypto.randomUUID(),
-          topicId: topic.id,
-          contentType: convertContentType(content.contentType), // Convert to proper enum
-          url: content.url || null,
-          videoUrl: content.videoUrl || null,
-          pdfUrl: content.pdfUrl || null,
-          textContent: content.textContent || null,
-          widgetConfig: content.widgetConfig || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      try {
+        await prisma.topicContent.create({
+          data: {
+            id: crypto.randomUUID(),
+            topicId: topic.id,
+            contentType: convertContentType(content.contentType), // Convert to proper enum
+            url: content.url || null,
+            videoUrl: content.videoUrl || null,
+            pdfUrl: content.pdfUrl || null,
+            textContent: content.textContent || null,
+            widgetConfig: content.widgetConfig || null,
+            created_at: new Date(),
+            updatedAt: new Date(),
+          }
         });
-
-      if (contentError) {
+      } catch (contentError) {
         console.error('Error creating topic content:', contentError);
         // Don't throw here, topic is already created
       }
@@ -140,56 +131,43 @@ export async function PUT(request: Request) {
     }
 
     // Update topic
-    const { error: topicError } = await supabase
-      .from('topics')
-      .update({
+    await prisma.topic.update({
+      where: { id },
+      data: {
         name,
         type: convertTopicType(type), // Convert to proper enum
         duration,
         orderIndex,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id);
-
-    if (topicError) throw topicError;
+        updatedAt: new Date(),
+      }
+    });
 
     // Handle content update with proper enum conversion
     if (content) {
       // First check if content exists
-      const { data: existingContent, error: checkError } = await supabase
-        .from('topic_contents')
-        .select('id')
-        .eq('topicId', id)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking existing content:', checkError);
-      }
+      const existingContent = await prisma.topicContent.findFirst({
+        where: { topicId: id },
+        select: { id: true }
+      });
 
       if (existingContent) {
         // Update existing content with proper enum conversion
-        const { error: contentError } = await supabase
-          .from('topic_contents')
-          .update({
+        await prisma.topicContent.update({
+          where: { id: existingContent.id },
+          data: {
             contentType: convertContentType(content.contentType), // Convert to proper enum
             url: content.url || null,
             videoUrl: content.videoUrl || null,
             pdfUrl: content.pdfUrl || null,
             textContent: content.textContent || null,
             widgetConfig: content.widgetConfig || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('topicId', id);
-
-        if (contentError) {
-          console.error('Error updating topic content:', contentError);
-          throw contentError;
-        }
+            updatedAt: new Date(),
+          }
+        });
       } else {
         // Create new content with generated ID and proper enum
-        const { error: contentError } = await supabase
-          .from('topic_contents')
-          .insert({
+        await prisma.topicContent.create({
+          data: {
             id: crypto.randomUUID(),
             topicId: id,
             contentType: convertContentType(content.contentType), // Convert to proper enum
@@ -198,14 +176,10 @@ export async function PUT(request: Request) {
             pdfUrl: content.pdfUrl || null,
             textContent: content.textContent || null,
             widgetConfig: content.widgetConfig || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-        if (contentError) {
-          console.error('Error creating topic content:', contentError);
-          throw contentError;
-        }
+            created_at: new Date(),
+            updatedAt: new Date(),
+          }
+        });
       }
     }
 
@@ -225,12 +199,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Topic ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from('topics')
-      .delete()
-      .eq('id', topicId);
-
-    if (error) throw error;
+    await prisma.topic.delete({
+      where: { id: topicId }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

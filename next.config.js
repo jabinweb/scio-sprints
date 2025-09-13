@@ -32,18 +32,11 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
-    // Handle Supabase realtime warnings
+  webpack: (config) => {
+    // Handle critical dependency warnings
     config.ignoreWarnings = [
-      { module: /node_modules\/@supabase\/realtime-js/ },
       { message: /Critical dependency: the request of a dependency is an expression/ },
     ];
-
-    // Externalize realtime-js for server-side to avoid bundling issues
-    if (isServer) {
-      config.externals = config.externals || [];
-      config.externals.push('@supabase/realtime-js');
-    }
 
     return config;
   },

@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
     const { amount } = await req.json();
 
     // Fetch payment settings from database
-    const { data: settings, error: settingsError } = await supabase
-      .from('admin_settings')
-      .select('key, value')
-      .in('key', ['paymentMode', 'razorpayTestKeyId', 'razorpayKeyId', 'razorpayTestKeySecret', 'razorpayKeySecret']);
+    const settings = await prisma.adminSettings.findMany({
+      where: {
+        key: {
+          in: ['paymentMode', 'razorpayTestKeyId', 'razorpayKeyId', 'razorpayTestKeySecret', 'razorpayKeySecret']
+        }
+      },
+      select: {
+        key: true,
+        value: true
+      }
+    });
 
-    if (settingsError) {
-      console.error('Error fetching settings:', settingsError);
+    if (!settings.length) {
+      console.error('Error fetching settings: No settings found');
       return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
     }
 

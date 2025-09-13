@@ -1,11 +1,12 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
 
   return (
     <nav className="bg-white border-b">
@@ -26,7 +27,7 @@ export function Navbar() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => logout()}
+                onClick={() => signOut({ callbackUrl: '/' })}
               >
                 Logout
               </Button>

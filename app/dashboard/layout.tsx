@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
@@ -13,15 +13,17 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const loading = status === 'loading';
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (status === 'unauthenticated') {
       // Redirect to login page with dashboard redirect
       router.push('/auth/login?redirect=/dashboard');
     }
-  }, [user, loading, router]);
+  }, [status, router]);
 
   if (loading) {
     return <LoadingScreen />;

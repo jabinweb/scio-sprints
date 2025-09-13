@@ -1,68 +1,92 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+'use client';
 
-export interface DbTopic {
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+
+// Types
+export interface UserProfile {
   id: string;
-  name: string;
-  type: 'video' | 'interactive' | 'exercise' | 'audio'; // This is the topic type enum
-  duration?: string;
-  description?: string;
-  orderIndex: number;
-  content: {
-    contentType?: string; // This is the actual content type
-    url?: string;
-    videoUrl?: string;
-    pdfUrl?: string;
-    textContent?: string;
-    widgetConfig?: Record<string, unknown>;
+  grade?: string;
+  school?: {
+    name: string;
+    isActive: boolean;
   };
 }
 
-export interface DbChapter {
-  id: string;
-  name: string;
-  orderIndex: number;
-  topics: DbTopic[];
+export interface TopicContent {
+  contentType: string;
+  url?: string;
+  videoUrl?: string;
+  pdfUrl?: string;
+  textContent?: string;
+  widgetConfig?: Record<string, unknown>;
 }
 
-export interface DbSubject {
-  id: string;
+export interface Topic {
+  id: string; // Changed to string for consistency
+  name: string;
+  type: string;
+  duration: string | null;
+  description?: string | null;
+  orderIndex: number;
+  content?: TopicContent;
+}
+
+export interface Chapter {
+  id: string; // Changed to string for consistency
+  name: string;
+  orderIndex: number;
+  topics: Topic[];
+}
+
+export interface Subject {
+  id: string; // Changed to string for consistency
   name: string;
   icon: string;
   color: string;
   isLocked: boolean;
   orderIndex: number;
-  chapters: DbChapter[];
+  chapters: Chapter[];
 }
 
-export interface DbClass {
+export interface Class {
   id: number;
   name: string;
   description: string;
-  subjects: DbSubject[];
   isActive: boolean;
-  price?: number;
-  accessLevel?: 'school' | 'subscribed' | 'both' | 'none';
-  accessMessage?: string;
+  price: number;
+  subjects: Subject[];
+  // API-added properties for access control
+  accessType?: 'school' | 'subscription' | 'none';
   schoolAccess?: boolean;
   subscriptionAccess?: boolean;
-  hasAnyAccess?: boolean;
-  // Legacy fields
-  accessType?: string;
+  subjectAccess?: Record<string, {
+    hasAccess: boolean;
+    accessType: 'school' | 'class_subscription' | 'subject_subscription' | 'none';
+  }>;
+  hasPartialAccess?: boolean;
 }
 
+// Legacy type aliases for backward compatibility
+export type DbTopic = Topic;
+export type DbChapter = Chapter;
+export type DbSubject = Subject;
+export type DbClass = Class;
+
 export function useClassData(classId?: string) {
-  const { user } = useAuth();
-  const [classes, setClasses] = useState<DbClass[]>([]);
-  const [currentClass, setCurrentClass] = useState<DbClass | null>(null);
+  const { data: session } = useSession();
+  const user = session?.user;
+  
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [currentClass, setCurrentClass] = useState<Class | null>(null);
   const [userProgress, setUserProgress] = useState<Map<string, boolean>>(new Map());
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [accessMessage, setAccessMessage] = useState<string>('');
-  const [accessType, setAccessType] = useState<'subscription' | 'school' | 'free' | 'none'>('none');
+  const [accessType, setAccessType] = useState<'full' | 'demo' | 'none' | 'school' | 'subscription' | 'free'>('none');
 
-  // Fetch accessible classes for the user (including school access)
+  // Fetch accessible classes for the user
   useEffect(() => {
     const fetchAccessibleClasses = async () => {
       if (!user?.id) {
@@ -71,27 +95,29 @@ export function useClassData(classId?: string) {
       }
 
       try {
-        console.log('Fetching classes for user:', user.id);
-        const response = await fetch(`/api/classes/accessible?userId=${user.id}`);
+        console.log('Fetching dashboard data for user:', user.id);
+        
+        const response = await fetch('/api/dashboard');
         const data = await response.json();
 
-        console.log('Classes API response:', data);
+        console.log('Dashboard API response:', data);
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch accessible classes');
+          throw new Error(data.error || 'Failed to fetch dashboard data');
         }
 
-        // Set the raw data first
-        setClasses(data.accessibleClasses || []);
-        setAccessMessage(data.message || '');
+        // Set the data from API response
+        setClasses(data.classes || []);
+        setUserProfile(data.userProfile || null);
+        setAccessMessage(data.accessMessage || '');
         setAccessType(data.accessType || 'none');
 
-        console.log('Set classes:', data.accessibleClasses?.length || 0);
+        console.log('Set classes:', data.classes?.length || 0);
         console.log('Access type:', data.accessType);
-        console.log('Access message:', data.message);
+        console.log('Access message:', data.accessMessage);
 
       } catch (err) {
-        console.error('Error fetching classes:', err);
+        console.error('Error fetching dashboard data:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
         setClasses([]);
       } finally {
@@ -102,81 +128,42 @@ export function useClassData(classId?: string) {
     fetchAccessibleClasses();
   }, [user?.id]);
 
-  // Fetch specific class
+  // Fetch specific class data
   useEffect(() => {
     if (!classId) return;
 
     const fetchClass = async () => {
       try {
         setLoading(true);
-        const { data: classData, error } = await supabase
-          .from('classes')
-          .select(`
-            *,
-            subjects:subjects(
-              *,
-              chapters:chapters(
-                *,
-                topics:topics(
-                  *,
-                  content:topic_contents(*)
-                )
-              )
-            )
-          `)
-          .eq('id', parseInt(classId))
-          .eq('isActive', true)
-          .single();
+        
+        const response = await fetch(`/api/classes/${classId}`);
+        const data = await response.json();
 
-        if (error) throw error;
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch class data');
+        }
 
-        // Transform data structure
-        const transformedClass = {
-          id: classData.id,
-          name: classData.name,
-          description: classData.description,
-          isActive: classData.isActive,
-          price: classData.price, // Keep price as number from database
-          subjects: classData.subjects
-            .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
-            .map((subject: any) => ({
-              id: subject.id,
-              name: subject.name,
-              icon: subject.icon,
-              color: subject.color,
-              isLocked: subject.isLocked,
-              orderIndex: subject.orderIndex,
-              chapters: subject.chapters
-                .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
-                .map((chapter: any) => ({
-                  id: chapter.id,
-                  name: chapter.name,
-                  orderIndex: chapter.orderIndex,
-                  topics: chapter.topics
-                    .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
-                    .map((topic: any) => ({
-                      id: topic.id,
-                      name: topic.name,
-                      type: topic.type, // Keep the topic type as is
-                      duration: topic.duration,
-                      orderIndex: topic.orderIndex,
-                      content: topic.content?.[0] ? {
-                        contentType: topic.content[0].contentType, // Use the actual content type
-                        url: topic.content[0].url,
-                        videoUrl: topic.content[0].videoUrl,
-                        pdfUrl: topic.content[0].pdfUrl,
-                        textContent: topic.content[0].textContent,
-                        widgetConfig: topic.content[0].widgetConfig,
-                      } : {
-                        contentType: 'text', // Default content type
-                      }
-                    }))
-                }))
+        // Transform data to ensure ID consistency (convert numbers to strings)
+        const transformedClass: Class = {
+          ...data,
+          subjects: data.subjects.map((subject: Record<string, unknown>) => ({
+            ...subject,
+            id: String(subject.id),
+            chapters: (subject.chapters as Record<string, unknown>[]).map((chapter: Record<string, unknown>) => ({
+              ...chapter,
+              id: String(chapter.id),
+              topics: (chapter.topics as Record<string, unknown>[]).map((topic: Record<string, unknown>) => ({
+                ...topic,
+                id: String(topic.id),
+              }))
             }))
+          })) as Subject[]
         };
 
         setCurrentClass(transformedClass);
+        
       } catch (err) {
+        console.error('Error fetching class:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
@@ -192,21 +179,23 @@ export function useClassData(classId?: string) {
 
     const fetchProgress = async () => {
       try {
-        const { data: progress, error } = await supabase
-          .from('user_topic_progress')
-          .select('topicId, completed')
-          .eq('userId', user.id);
+        const response = await fetch(`/api/user/progress?userId=${user.id}`);
+        const data = await response.json();
 
-        if (error) {
-          console.error('Error fetching progress:', error);
+        if (!response.ok) {
+          console.error('Error fetching progress:', data.error);
           return;
         }
 
+        // Convert progress object to Map
         const progressMap = new Map();
-        progress?.forEach((item) => {
-          progressMap.set(item.topicId, item.completed);
+        Object.entries(data.progress || {}).forEach(([topicId, progressData]) => {
+          const progress = progressData as { completed: boolean; completedAt: Date | null; timeSpent: number | null };
+          progressMap.set(topicId, progress.completed);
         });
+        
         setUserProgress(progressMap);
+        
       } catch (err) {
         console.error('Error fetching progress:', err);
       }
@@ -215,61 +204,32 @@ export function useClassData(classId?: string) {
     fetchProgress();
   }, [user?.id]);
 
+  // Mark topic as complete/incomplete
   const markTopicComplete = async (topicId: string, completed: boolean = true) => {
     if (!user?.id) return;
 
     try {
-      // Simple insert/update approach without upsert
-      const { data: existing, error: checkError } = await supabase
-        .from('user_topic_progress')
-        .select('id')
-        .eq('userId', user.id)
-        .eq('topicId', topicId)
-        .maybeSingle();
+      const response = await fetch('/api/user/topic-progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topicId,
+          completed,
+        }),
+      });
 
-      if (checkError) {
-        console.error('Error checking existing progress:', checkError);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Error updating progress:', data.error);
         return;
       }
 
-      if (existing) {
-        // Update existing record
-        const { error } = await supabase
-          .from('user_topic_progress')
-          .update({
-            completed,
-            completedAt: completed ? new Date().toISOString() : null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('userId', user.id)
-          .eq('topicId', topicId);
-
-        if (error) {
-          console.error('Error updating progress:', error);
-          return;
-        }
-      } else {
-        // Insert new record with generated ID
-        const { error } = await supabase
-          .from('user_topic_progress')
-          .insert({
-            id: crypto.randomUUID(), // Generate UUID for new records
-            userId: user.id,
-            topicId: topicId,
-            completed,
-            completedAt: completed ? new Date().toISOString() : null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-        if (error) {
-          console.error('Error inserting progress:', error);
-          return;
-        }
-      }
-      
-      // Update local state only if database operation succeeded
+      // Update local state only if API call succeeded
       setUserProgress(prev => new Map(prev.set(topicId, completed)));
+      
     } catch (err) {
       console.error('Error updating progress:', err);
     }
@@ -279,6 +239,7 @@ export function useClassData(classId?: string) {
     classes,
     currentClass,
     userProgress,
+    userProfile,
     loading,
     error,
     accessMessage,

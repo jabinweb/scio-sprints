@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 
@@ -28,13 +27,20 @@ export async function POST(request: Request) {
     }
 
     // Get Razorpay settings
-    const { data: settings, error: settingsError } = await supabase
-      .from('admin_settings')
-      .select('key, value')
-      .in('key', ['paymentMode', 'razorpayTestKeySecret', 'razorpayKeySecret']);
+    const settings = await prisma.adminSettings.findMany({
+      where: {
+        key: {
+          in: ['paymentMode', 'razorpayTestKeySecret', 'razorpayKeySecret']
+        }
+      },
+      select: {
+        key: true,
+        value: true
+      }
+    });
 
-    if (settingsError) {
-      console.error('Error fetching settings:', settingsError);
+    if (!settings.length) {
+      console.error('Error fetching settings: No settings found');
       return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
     }
 
@@ -66,16 +72,14 @@ export async function POST(request: Request) {
     }
 
     // Get subject and class details
-    const { data: subject, error: subjectError } = await supabase
-      .from('subjects')
-      .select(`
-        *,
-        class:classes(*)
-      `)
-      .eq('id', subjectId)
-      .single();
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+      include: {
+        class: true
+      }
+    });
 
-    if (subjectError || !subject) {
+    if (!subject) {
       return NextResponse.json({ 
         error: 'Subject not found' 
       }, { status: 404 });
@@ -112,26 +116,26 @@ export async function POST(request: Request) {
     }
 
     // Record payment
-    const { error: paymentError } = await supabase
-      .from('payments')
-      .insert({
-        userId,
-        razorpayPaymentId: razorpay_payment_id,
-        razorpayOrderId: razorpay_order_id,
-        razorpaySignature: razorpay_signature,
-        amount: subjectPrice,
-        currency: 'INR',
-        status: 'SUCCESS',
-        description: `Subject subscription: ${subject.name}`,
-        metadata: {
-          subscriptionId: subscription.id,
-          subjectId,
-          classId: subject.classId,
-          type: 'subject_subscription'
+    try {
+      await prisma.payment.create({
+        data: {
+          userId,
+          razorpayPaymentId: razorpay_payment_id,
+          razorpayOrderId: razorpay_order_id,
+          razorpaySignature: razorpay_signature,
+          amount: subjectPrice,
+          currency: 'INR',
+          status: 'COMPLETED',
+          description: `Subject subscription: ${subject.name}`,
+          metadata: {
+            subscriptionId: subscription.id,
+            subjectId,
+            classId: subject.classId,
+            type: 'subject_subscription'
+          }
         }
       });
-
-    if (paymentError) {
+    } catch (paymentError) {
       console.error('Payment record error:', paymentError);
       // Don't fail the request as subscription is already created
     }

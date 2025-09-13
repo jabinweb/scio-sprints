@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession, signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -15,14 +15,17 @@ export default function AdminLogin() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { signInWithGoogle, signInWithEmail, user, loading, userRole } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const loading = status === 'loading';
 
   useEffect(() => {
     // Only redirect if we have both user and role information and user is admin
-    if (!loading && user && userRole === 'ADMIN') {
+    if (status === 'authenticated' && userRole === 'ADMIN') {
       router.replace('/admin/dashboard');
     }
-  }, [user, loading, userRole, router]);
+  }, [status, userRole, router]);
 
   // Show loading only during initial auth check
   if (loading) {
@@ -39,8 +42,7 @@ export default function AdminLogin() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      await signInWithGoogle();
-      router.push('/admin/dashboard');
+      await signIn('google', { callbackUrl: '/admin/dashboard' });
     } catch (error: unknown) {
       console.error('Google Sign-in Error:', error);
       setError('Failed to sign in with Google');
@@ -53,8 +55,8 @@ export default function AdminLogin() {
     e.preventDefault();
     try {
       setIsLoading(true);
-      await signInWithEmail(email, password);
-      router.push('/admin/dashboard');
+      // TODO: Implement email/password authentication with NextAuth.js credentials provider
+      setError('Email/password authentication not yet implemented');
     } catch (error: unknown) {
       console.error('Email Sign-in Error:', error);
       setError('Invalid email or password');

@@ -10,7 +10,7 @@ import {
   DialogTrigger,
   DialogDescription
 } from "@/components/ui/dialog";
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
@@ -28,16 +28,16 @@ export function LoginDialog({ defaultOpen = false, onClose }: LoginDialogProps) 
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { data: session } = useSession();
   const router = useRouter();
 
   // When the user is already logged in, don't show dialog and redirect
   useEffect(() => {
-    if (user && defaultOpen) {
+    if (session?.user && defaultOpen) {
       setOpen(false);
       router.push('/dashboard');
     }
-  }, [user, defaultOpen, router]);
+  }, [session, defaultOpen, router]);
 
   useEffect(() => {
     setOpen(defaultOpen);
@@ -52,19 +52,17 @@ export function LoginDialog({ defaultOpen = false, onClose }: LoginDialogProps) 
 
   const handleButtonClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent dialog from opening
-    if (user) {
+    if (session?.user) {
       router.push('/dashboard');
     } else {
       setOpen(true);
     }
   };
 
-
-
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
-      await signInWithGoogle();
+      await signIn('google');
     } catch {
       setError('Failed to sign in with Google');
     } finally {
@@ -74,31 +72,18 @@ export function LoginDialog({ defaultOpen = false, onClose }: LoginDialogProps) 
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (isSignUp) {
-        await signUpWithEmail(email, password);
-      } else {
-        await signInWithEmail(email, password);
-      }
-    } catch {
-      setError(isSignUp ? 'Failed to create account' : 'Invalid email or password');
-    } finally {
-      setLoading(false);
-    }
+    setError('Email/password authentication not configured. Please use Google Sign In.');
   };
 
   return (
-    <Dialog open={open && !user} onOpenChange={handleOpenChange}>
+    <Dialog open={open && !session?.user} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
           className="rounded-full"
           onClick={handleButtonClick}
         >
-          {user ? 'Dashboard' : 'Sign In'}
+          {session?.user ? 'Dashboard' : 'Sign In'}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[400px] p-6">

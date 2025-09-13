@@ -7,14 +7,15 @@ import { cn } from "@/lib/utils";
 import { Logo } from './Logo';
 import { useRouter, usePathname } from 'next/navigation';
 import { LoginDialog } from './auth/login-dialog';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession, signOut } from 'next-auth/react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
 
   // Pages that need solid navbar background
   const solidNavbarPages = ['/support', '/privacy', '/terms', '/refund', '/dashboard', '/admin'];
@@ -52,8 +53,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
-      router.push('/');
+      await signOut({ callbackUrl: '/' });
     } catch (error) {
       console.error('Logout error:', error);
     }

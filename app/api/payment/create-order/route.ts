@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 import Razorpay from 'razorpay';
 
 export async function POST(request: Request) {
@@ -30,19 +30,19 @@ export async function POST(request: Request) {
       receipt: `order_${Date.now()}`,
     });
 
-    // Create payment record in Supabase
-    const { error } = await supabase
-      .from('payments')
-      .insert({
-        userId: userId,
-        razorpayOrderId: order.id,
-        amount: amount,
-        currency: currency,
-        status: 'PENDING',
-        description: 'Premium Learning Subscription',
+    // Create payment record in Prisma
+    try {
+      await prisma.payment.create({
+        data: {
+          userId: userId,
+          razorpayOrderId: order.id,
+          amount: amount,
+          currency: currency,
+          status: 'PENDING',
+          description: 'Premium Learning Subscription',
+        }
       });
-
-    if (error) {
+    } catch (error) {
       console.error('Error creating payment record:', error);
       return NextResponse.json(
         { error: 'Payment record creation failed' },

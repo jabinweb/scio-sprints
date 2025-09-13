@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -25,7 +25,8 @@ import {
 } from "lucide-react";
 
 export const UserDropdown = () => {
-  const { user, logout } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -34,10 +35,9 @@ export const UserDropdown = () => {
   const handleSignOut = async () => {
     setIsLoading(true);
     try {
-      await logout();
-      router.push('/');
+      await signOut({ callbackUrl: '/' });
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Logout error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -48,9 +48,9 @@ export const UserDropdown = () => {
   };
 
   // Get user display name and initials
-  const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-  const userEmail = user.email || '';
+  const userEmail = user?.email || '';
 
   return (
     <DropdownMenu>
@@ -58,7 +58,7 @@ export const UserDropdown = () => {
         <Button variant="ghost" className="flex items-center gap-2 h-10 px-3">
           <Avatar className="h-8 w-8">
             <AvatarImage 
-              src={user.user_metadata?.avatar_url} 
+              src={user?.image || undefined} 
               alt={displayName}
             />
             <AvatarFallback className="bg-blue-100 text-blue-700 text-sm font-medium">
@@ -115,7 +115,9 @@ export const UserDropdown = () => {
           <span>Notifications</span>
         </DropdownMenuItem>
 
-        {user.user_metadata?.role === 'admin' && (
+        {/* TODO: Implement proper role checking with NextAuth.js */}
+        {/* {user?.role === 'admin' && ( */}
+        {true && (
           <DropdownMenuItem 
             onClick={() => handleNavigation('/admin')}
             className="cursor-pointer"

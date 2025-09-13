@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { LoginDialog } from './login-dialog';
 
@@ -9,7 +9,7 @@ interface AuthProtectedRouteProps {
 }
 
 export function AuthProtectedRoute({ children }: AuthProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
   const pathname = usePathname();
 
   // Routes that require authentication
@@ -24,7 +24,7 @@ export function AuthProtectedRoute({ children }: AuthProtectedRouteProps) {
   }
 
   // If loading, show loading state
-  if (loading) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -33,7 +33,7 @@ export function AuthProtectedRoute({ children }: AuthProtectedRouteProps) {
   }
 
   // If route requires auth but user not logged in, show login
-  if (!user) {
+  if (!session?.user) {
     return <LoginDialog defaultOpen />;
   }
 

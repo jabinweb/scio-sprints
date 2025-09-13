@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { LoadingScreen } from '@/components/ui/loading-screen';
@@ -12,7 +12,9 @@ export default function ClassLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const loading = status === 'loading';
   const params = useParams();
   const router = useRouter();
   const classId = params.classId as string;
@@ -20,7 +22,7 @@ export default function ClassLayout({
   const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (status === 'unauthenticated') {
       // Redirect to login page with class redirect
       router.push(`/auth/login?redirect=/dashboard/class/${classId}`);
       return;
@@ -66,7 +68,7 @@ export default function ClassLayout({
     } else if (!loading) {
       setCheckingAccess(false);
     }
-  }, [user, loading, classId, router]);
+  }, [user, loading, status, classId, router]);
 
   if (loading || checkingAccess) {
     return <LoadingScreen />;

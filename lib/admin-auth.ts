@@ -1,111 +1,83 @@
-/**
- * Admin Authentication Utilities
- * 
- * Provides server-side admin verification for API routes
- * 
- * @author Scio Sprints Team
- * @version 1.0.0
- */
-
 import { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { auth } from '@/auth';
+
+interface UserWithRole {
+  id: string;
+  role?: string;
+}
 
 /**
- * Verify admin authentication from request headers
- * @param request - NextRequest object containing authorization header
- * @returns Promise<boolean> - True if user is authenticated admin
+ * Verify if the request is from an admin user or a cron job
+ * This function checks for admin authentication or cron job authorization
  */
-export async function verifyAdminAuth(request: NextRequest): Promise<boolean> {
+export async function verifyAdminOrCron(request: NextRequest): Promise<boolean> {
   try {
+    // Check for cron job authorization header (for Vercel cron jobs)
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return false;
-    }
-
-    const token = authHeader.replace('Bearer ', '');
+    const cronSecret = process.env.CRON_SECRET;
     
-    // Verify the JWT token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+      return true;
+    }
+
+    // Check for admin user authentication
+    const session = await auth();
     
-    if (error || !user) {
+    if (!session?.user?.id) {
       return false;
     }
 
-    // Check if user has admin role in database
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (userError || userData?.role !== 'ADMIN') {
-      return false;
-    }
-
-    return true;
+    // Check if user has admin role
+    const user = session.user as UserWithRole;
+    return user.role === 'ADMIN';
+    
   } catch (error) {
-    console.error('Admin auth verification failed:', error);
+    console.error('Error verifying admin or cron:', error);
     return false;
   }
 }
 
 /**
- * Extract user ID from authenticated request
- * @param request - NextRequest object containing authorization header
- * @returns Promise<string | null> - User ID if authenticated, null otherwise
+ * Verify if the current session belongs to an admin user
  */
-export async function getAuthenticatedUserId(request: NextRequest): Promise<string | null> {
+export async function verifyAdmin(): Promise<boolean> {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
+    const session = await auth();
+    
+    if (!session?.user?.id) {
+      return false;
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    // Check if user has admin role
+    const user = session.user as UserWithRole;
+    return user.role === 'ADMIN';
     
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return null;
-    }
-
-    return user.id;
   } catch (error) {
-    console.error('User ID extraction failed:', error);
-    return null;
-  }
-}
-
-/**
- * Verify cron secret for automated API calls
- * @param secret - Secret from request parameters
- * @returns boolean - True if valid cron secret
- */
-export function verifyCronSecret(secret: string | null): boolean {
-  if (!process.env.CRON_SECRET) {
-    console.error('CRON_SECRET environment variable not configured');
+    console.error('Error verifying admin:', error);
     return false;
   }
-  
-  return secret === process.env.CRON_SECRET;
 }
 
+type AdminHandler = (request: NextRequest, ...args: unknown[]) => Promise<Response>;
+
 /**
- * Combined admin or cron authentication check
- * @param request - NextRequest object
- * @param cronSecret - Optional cron secret from query parameters
- * @returns Promise<{ isAuthorized: boolean, isAdmin: boolean, isCron: boolean }>
+ * Middleware function to protect admin routes
+ * Returns unauthorized response if user is not admin
  */
-export async function verifyAdminOrCron(
-  request: NextRequest, 
-  cronSecret?: string | null
-): Promise<{ isAuthorized: boolean, isAdmin: boolean, isCron: boolean }> {
-  // First check cron secret
-  if (cronSecret && verifyCronSecret(cronSecret)) {
-    return { isAuthorized: true, isAdmin: false, isCron: true };
-  }
-  
-  // Then check admin authentication
-  const isAdmin = await verifyAdminAuth(request);
-  return { isAuthorized: isAdmin, isAdmin, isCron: false };
+export function createAdminMiddleware(handler: AdminHandler): AdminHandler {
+  return async function(request: NextRequest, ...args: unknown[]) {
+    const isAuthorized = await verifyAdminOrCron(request);
+    
+    if (!isAuthorized) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized access' }), 
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    return handler(request, ...args);
+  };
 }

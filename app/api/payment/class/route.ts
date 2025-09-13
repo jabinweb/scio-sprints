@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
@@ -11,37 +11,68 @@ export async function POST(req: Request) {
     }
 
     // Get class details
-    const { data: classData, error: classError } = await supabase
-      .from('classes')
-      .select('id, name, price, currency')
-      .eq('id', classId)
-      .single();
+    const classData = await prisma.class.findUnique({
+      where: { id: classId },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        currency: true
+      }
+    });
 
-    if (classError || !classData) {
+    if (!classData) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
 
-    // Check if user already has subscription for this class
-    const { data: existingSubscription } = await supabase
-      .from('subscriptions')
-      .select('id, status')
-      .eq('userId', userId)
-      .eq('classId', classId)
-      .eq('status', 'ACTIVE')
-      .maybeSingle();
+    // Check if user already has a FULL CLASS subscription (not individual subjects)
+    const existingClassSubscription = await prisma.subscription.findFirst({
+      where: {
+        userId: userId,
+        classId: classId,
+        subjectId: null, // Only check for class-level subscriptions
+        status: 'ACTIVE',
+        endDate: {
+          gte: new Date()
+        }
+      },
+      select: {
+        id: true,
+        status: true,
+        startDate: true,
+        endDate: true,
+        planType: true
+      }
+    });
 
-    if (existingSubscription) {
-      return NextResponse.json({ error: 'Already subscribed to this class' }, { status: 400 });
+    if (existingClassSubscription) {
+      return NextResponse.json({ 
+        error: 'Already subscribed to this class',
+        details: {
+          subscriptionId: existingClassSubscription.id,
+          status: existingClassSubscription.status,
+          startDate: existingClassSubscription.startDate,
+          endDate: existingClassSubscription.endDate,
+          planType: existingClassSubscription.planType
+        }
+      }, { status: 400 });
     }
 
     // Fetch payment settings
-    const { data: settings, error: settingsError } = await supabase
-      .from('admin_settings')
-      .select('key, value')
-      .in('key', ['paymentMode', 'razorpayTestKeyId', 'razorpayKeyId', 'razorpayTestKeySecret', 'razorpayKeySecret']);
+    const settings = await prisma.adminSettings.findMany({
+      where: {
+        key: {
+          in: ['paymentMode', 'razorpayTestKeyId', 'razorpayKeyId', 'razorpayTestKeySecret', 'razorpayKeySecret']
+        }
+      },
+      select: {
+        key: true,
+        value: true
+      }
+    });
 
-    if (settingsError) {
-      console.error('Error fetching settings:', settingsError);
+    if (!settings.length) {
+      console.error('Error fetching settings: No settings found');
       return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
     }
 
@@ -65,8 +96,10 @@ export async function POST(req: Request) {
       key_secret: keySecret,
     });
 
+    const orderAmount = classData.price || 0; // Handle null price
+    
     const order = await razorpay.orders.create({
-      amount: classData.price, // Already in paisa
+      amount: orderAmount, // Already in paisa
       currency: classData.currency,
       receipt: `cls_${classId.toString().slice(0, 8)}_${Date.now().toString().slice(-8)}`,
       notes: {

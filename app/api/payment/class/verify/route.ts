@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabase } from '@/lib/supabase';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
@@ -8,13 +7,20 @@ export async function POST(req: Request) {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, userId, classId } = await req.json();
 
     // Fetch payment settings
-    const { data: settings, error: settingsError } = await supabase
-      .from('admin_settings')
-      .select('key, value')
-      .in('key', ['paymentMode', 'razorpayTestKeySecret', 'razorpayKeySecret']);
+    const settings = await prisma.adminSettings.findMany({
+      where: {
+        key: {
+          in: ['paymentMode', 'razorpayTestKeySecret', 'razorpayKeySecret']
+        }
+      },
+      select: {
+        key: true,
+        value: true
+      }
+    });
 
-    if (settingsError) {
-      console.error('Error fetching settings:', settingsError);
+    if (!settings.length) {
+      console.error('Error fetching settings: No settings found');
       return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
     }
 
@@ -43,13 +49,16 @@ export async function POST(req: Request) {
 
     if (isAuthentic) {
       // Get class details
-      const { data: classData, error: classError } = await supabase
-        .from('classes')
-        .select('id, name, price')
-        .eq('id', classId)
-        .single();
+      const classData = await prisma.class.findUnique({
+        where: { id: classId },
+        select: {
+          id: true,
+          name: true,
+          price: true
+        }
+      });
 
-      if (classError || !classData) {
+      if (!classData) {
         return NextResponse.json({ error: 'Class not found' }, { status: 404 });
       }
 
@@ -74,23 +83,21 @@ export async function POST(req: Request) {
       }
 
       // Store payment record
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          id: crypto.randomUUID(),
-          userId,
-          razorpayPaymentId: razorpay_payment_id,
-          razorpayOrderId: razorpay_order_id,
-          amount: classData.price,
-          currency: 'INR',
-          status: 'COMPLETED',
-          description: `Class ${classData.name} Subscription`,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      try {
+        await prisma.payment.create({
+          data: {
+            userId,
+            razorpayPaymentId: razorpay_payment_id,
+            razorpayOrderId: razorpay_order_id,
+            amount: classData.price || 0,
+            currency: 'INR',
+            status: 'COMPLETED',
+            description: `Class subscription: ${classData.name}`,
+          }
         });
-
-      if (paymentError) {
+      } catch (paymentError) {
         console.error('Error creating payment record:', paymentError);
+        // Don't fail the request as subscription is already created
       }
 
       return NextResponse.json({ verified: true });

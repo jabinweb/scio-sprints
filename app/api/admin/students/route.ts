@@ -1,24 +1,18 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const schoolId = searchParams.get('schoolId');
 
-    let query = supabase
-      .from('users')
-      .select('*')
-      .eq('role', 'USER')
-      .order('created_at', { ascending: false });
-
-    if (schoolId) {
-      query = query.eq('school_id', schoolId);
-    }
-
-    const { data: students, error } = await query;
-
-    if (error) throw error;
+    const students = await prisma.user.findMany({
+      where: {
+        role: 'USER',
+        ...(schoolId && { schoolId })
+      },
+      orderBy: { created_at: 'desc' }
+    });
 
     return NextResponse.json(students || []);
   } catch (error) {
@@ -36,18 +30,11 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Student ID is required' }, { status: 400 });
     }
 
-    // Delete from auth and users table
-    const { error: authError } = await supabase.auth.admin.deleteUser(studentId);
-    if (authError) {
-      console.error('Auth deletion error:', authError);
-    }
-
-    const { error: dbError } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', studentId);
-
-    if (dbError) throw dbError;
+    // Note: With NextAuth, user deletion only affects database records
+    // NextAuth doesn't manage user accounts like Supabase Auth
+    await prisma.user.delete({
+      where: { id: studentId }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

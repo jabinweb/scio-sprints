@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession, signOut } from 'next-auth/react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, BookOpen, Users, Clock, ChevronRight, Star, Play, GraduationCap } from "lucide-react";
 import { useClassData } from '@/hooks/useClassData';
-import { supabase } from '@/lib/supabase';
 import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
 import type { DbClass } from '@/hooks/useClassData';
 
@@ -29,6 +28,7 @@ interface ClassWithSubjects {
     name: string;
     icon?: string;
     color?: string;
+    price?: number;
     chapters: Array<{
       id: string;
       name: string;
@@ -40,50 +40,16 @@ interface ClassWithSubjects {
   }>;
 }
 
-// Define a proper type for the user profile returned from Supabase
-interface UserProfile {
-  id: string;
-  grade?: number;
-  school?: {
-    name: string;
-    is_active: boolean;
-  };
-  // add other user fields here if needed
-}
-
 export function DashboardContent() {
-  const { user, logout } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const router = useRouter();
-  const { classes, userProgress, loading, error, accessMessage, accessType } = useClassData();
+  const { classes, userProgress, loading, error, accessMessage, accessType, userProfile } = useClassData();
   const [selectedClass, setSelectedClass] = useState<ClassWithSubjects | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  // Fetch user profile to show grade and school info
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user?.id) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select(`
-            *,
-            school:schools(name, is_active)
-          `)
-          .eq('id', user.id)
-          .single();
-
-        if (!error) {
-          setUserProfile(data);
-        }
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
-      }
-    };
-
-    fetchUserProfile();
-  }, [user?.id]);
+  // The userProfile is now fetched via useClassData hook from the dashboard API
+  // No need for a separate effect here since the data comes from the same API call
 
   const handleClassClick = (classData: ClassWithSubjects) => {
     // Check if user has any access (school, full subscription, or partial subject access)
@@ -170,7 +136,7 @@ export function DashboardContent() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                    Welcome back, {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student'}!
+                    Welcome back, {user?.name || user?.email?.split('@')[0] || 'Student'}!
                   </h1>
                   <div className="flex items-center gap-4 mt-1">
                     <p className="text-gray-600">Continue your learning journey</p>
@@ -181,7 +147,7 @@ export function DashboardContent() {
                         </span>
                         {userProfile.school && (
                           <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                            userProfile.school.is_active 
+                            userProfile.school.isActive 
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-red-100 text-red-800'
                           }`}>
@@ -195,7 +161,7 @@ export function DashboardContent() {
               </div>
               <Button 
                 variant="outline"
-                onClick={() => logout()}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 className="gap-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
@@ -465,7 +431,7 @@ export function DashboardContent() {
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No Classes Available</h3>
               <p className="text-gray-600 max-w-md mx-auto">
                 {userProfile?.school ? 
-                  (userProfile.school.is_active ? 
+                  (userProfile.school.isActive ? 
                     `No classes available for your grade level. Contact your school administrator.` :
                     'Your school account is currently inactive. Please contact your school.'
                   ) :
@@ -492,7 +458,8 @@ export function DashboardContent() {
               name: subject.name,
               icon: subject.icon || '📚',
               color: subject.color || 'from-blue-500 to-blue-600',
-              chapters: subject.chapters || []
+              chapters: subject.chapters || [],
+              price: subject.price || 9900,
             })) || []
           }}
           onSubscribe={(type, options) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,9 @@ import { User, Mail, School, GraduationCap, Calendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const loading = status === 'loading';
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -24,10 +26,10 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       setFormData({
-        fullName: user.user_metadata?.full_name || '',
+        fullName: user.name || '',
         email: user.email || '',
-        grade: user.user_metadata?.grade || '',
-        school: user.user_metadata?.school || ''
+        grade: '', // TODO: Get from database user profile
+        school: '' // TODO: Get from database user profile
       });
     }
   }, [user]);
@@ -40,13 +42,10 @@ export default function ProfilePage() {
     return null;
   }
 
-  const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+  const displayName = user.name || user.email?.split('@')[0] || 'User';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-  const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }) : 'Unknown';
+  // TODO: Get join date from database
+  const joinDate = 'Not available';
 
   const handleSave = async () => {
     // TODO: Implement profile update logic
@@ -57,10 +56,10 @@ export default function ProfilePage() {
   const handleCancel = () => {
     // Reset form data
     setFormData({
-      fullName: user.user_metadata?.full_name || '',
+      fullName: user.name || '',
       email: user.email || '',
-      grade: user.user_metadata?.grade || '',
-      school: user.user_metadata?.school || ''
+      grade: '', // TODO: Get from database user profile
+      school: '' // TODO: Get from database user profile
     });
     setIsEditing(false);
   };
@@ -80,7 +79,7 @@ export default function ProfilePage() {
               <div className="flex items-center gap-6">
                 <Avatar className="h-20 w-20">
                   <AvatarImage 
-                    src={user.user_metadata?.avatar_url} 
+                    src={user.image || undefined} 
                     alt={displayName}
                   />
                   <AvatarFallback className="bg-blue-100 text-blue-700 text-xl font-semibold">
@@ -98,11 +97,12 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="text-right">
-                  {user.user_metadata?.role && (
+                  {/* TODO: Implement role display from database */}
+                  {/* {user.user_metadata?.role && (
                     <Badge variant="outline" className="mb-2">
                       {user.user_metadata.role}
                     </Badge>
-                  )}
+                  )} */}
                   <Button 
                     variant={isEditing ? "outline" : "default"}
                     onClick={() => setIsEditing(!isEditing)}
@@ -211,7 +211,7 @@ export default function ProfilePage() {
                 <div>
                   <span className="font-medium text-gray-700">Email Verified:</span>
                   <div className="text-gray-600 mt-1">
-                    {user.email_confirmed_at ? (
+                    {user.email ? (
                       <Badge className="bg-green-100 text-green-800">Verified</Badge>
                     ) : (
                       <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
@@ -221,7 +221,7 @@ export default function ProfilePage() {
                 <div>
                   <span className="font-medium text-gray-700">Last Sign In:</span>
                   <p className="text-gray-600 mt-1">
-                    {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}
+                    Not available
                   </p>
                 </div>
                 <div>

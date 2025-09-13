@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, userId } = await req.json();
 
     // Fetch payment settings from database
-    const { data: settings, error: settingsError } = await supabase
-      .from('admin_settings')
-      .select('key, value')
-      .in('key', ['paymentMode', 'razorpayTestKeySecret', 'razorpayKeySecret', 'subscriptionPrice']);
+    const settings = await prisma.adminSettings.findMany({
+      where: {
+        key: {
+          in: ['paymentMode', 'razorpayTestKeySecret', 'razorpayKeySecret', 'subscriptionPrice']
+        }
+      },
+      select: {
+        key: true,
+        value: true
+      }
+    });
 
-    if (settingsError) {
-      console.error('Error fetching settings:', settingsError);
+    if (!settings.length) {
+      console.error('Error fetching settings: No settings found');
       return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
     }
 
@@ -44,44 +51,38 @@ export async function POST(req: Request) {
     const isAuthentic = expectedSignature === razorpay_signature;
 
     if (isAuthentic) {
-      // Store subscription in database with generated ID
-      const { error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .insert({
-          id: crypto.randomUUID(), // Generate UUID for new subscription
-          userId,
-          status: 'ACTIVE',
-          planType: 'premium',
-          amount: parseInt(settingsObj.subscriptionPrice) || 29900, // Amount in paisa
-          currency: 'INR',
-          startDate: new Date().toISOString(),
-          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      // Store subscription in database
+      try {
+        await prisma.subscription.create({
+          data: {
+            userId,
+            status: 'ACTIVE',
+            planType: 'premium',
+            amount: parseInt(settingsObj.subscriptionPrice) || 29900, // Amount in paisa
+            currency: 'INR',
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          }
         });
-
-      if (subscriptionError) {
+      } catch (subscriptionError) {
         console.error('Error creating subscription:', subscriptionError);
         return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });
       }
 
-      // Store payment record with generated ID
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          id: crypto.randomUUID(), // Generate UUID for new payment
-          userId,
-          razorpayPaymentId: razorpay_payment_id,
-          razorpayOrderId: razorpay_order_id,
-          amount: parseInt(settingsObj.subscriptionPrice) || 29900,
-          currency: 'INR',
-          status: 'COMPLETED',
-          description: 'Premium Subscription',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      // Store payment record
+      try {
+        await prisma.payment.create({
+          data: {
+            userId,
+            razorpayPaymentId: razorpay_payment_id,
+            razorpayOrderId: razorpay_order_id,
+            amount: parseInt(settingsObj.subscriptionPrice) || 29900,
+            currency: 'INR',
+            status: 'COMPLETED',
+            description: 'Premium Subscription',
+          }
         });
-
-      if (paymentError) {
+      } catch (paymentError) {
         console.error('Error creating payment record:', paymentError);
         // Don't return error as subscription is already created
       }
