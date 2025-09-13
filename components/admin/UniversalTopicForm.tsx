@@ -8,7 +8,19 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingSpinner } from '@/components/ui/loading';
-import { v4 as uuidv4 } from 'uuid'; // Import uuid for generating unique ids
+
+// Simple UUID generator using crypto API
+const generateId = (): string => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for environments without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 interface UniversalTopicFormProps {
   isOpen: boolean;
@@ -162,7 +174,7 @@ export function UniversalTopicForm({ isOpen, onClose, onSubmit }: UniversalTopic
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : uuidv4(),
+          id: generateId(),
           name: newSubjectName,
           icon: '📚',
           color: 'from-blue-400 to-blue-600',
