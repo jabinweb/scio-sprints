@@ -58,33 +58,30 @@ export default function ClassPage() {
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedTopic, setSelectedTopic] = useState<DbTopic & { completed: boolean } | null>(null);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-  const [accessMessage, setAccessMessage] = useState<string>('');
-  const [accessType, setAccessType] = useState<string>('');
   const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
   const [subjectAccess, setSubjectAccess] = useState<Record<string, boolean>>({});
+  const [accessType, setAccessType] = useState<string>('');
+  const [accessMessage, setAccessMessage] = useState<string>('');
   
   const { currentClass, userProgress, loading, error, markTopicComplete } = useClassData(classId);
 
-  // Check if user has access to this specific class and subjects
+  // Get subject-level access data (layout already verified basic access)
   useEffect(() => {
-    const checkClassAccess = async () => {
+    const getSubjectAccess = async () => {
       if (!user?.id || !classId) return;
 
       try {
-        // Use the new enhanced API endpoint
         const response = await fetch(`/api/classes/${classId}/access?userId=${user.id}`);
         const data: ClassAccessResponse = await response.json();
 
         if (response.ok) {
-          setHasAccess(data.hasFullAccess || data.subjectAccess.some((s: SubjectAccessData) => s.hasAccess));
           setAccessType(data.accessType);
           setAccessMessage(
             data.hasFullAccess 
               ? `Full access via ${data.accessType}`
               : data.subjectAccess.some((s: SubjectAccessData) => s.hasAccess)
               ? 'Partial access - some subjects available'
-              : 'No access to this class'
+              : 'Limited access'
           );
 
           // Set subject-level access
@@ -93,18 +90,13 @@ export default function ClassPage() {
             subjectAccessMap[subject.id] = subject.hasAccess;
           });
           setSubjectAccess(subjectAccessMap);
-        } else {
-          setHasAccess(false);
-          setAccessMessage(data.error || 'Access denied');
         }
       } catch (error) {
-        console.error('Error checking class access:', error);
-        setHasAccess(false);
-        setAccessMessage('Unable to verify access');
+        console.error('Error getting subject access:', error);
       }
     };
 
-    checkClassAccess();
+    getSubjectAccess();
   }, [user?.id, classId]);
 
   useEffect(() => {
@@ -116,7 +108,14 @@ export default function ClassPage() {
   }, [currentClass]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading class content...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error || !currentClass) {
@@ -308,30 +307,6 @@ export default function ClassPage() {
   };
 
   const selectedSubjectData = currentClass.subjects.find(s => s.id === selectedSubject);
-
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold mb-2 text-gray-900">Access Denied</h1>
-          <p className="text-gray-600 mb-4">{accessMessage}</p>
-          <div className="space-y-2">
-            <Button onClick={() => router.push('/dashboard')}>
-              Back to Dashboard
-            </Button>
-            <p className="text-sm text-gray-500">
-              Contact your school administrator or purchase a subscription to access this content.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
