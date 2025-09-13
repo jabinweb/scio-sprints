@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Menu, X, LogOut, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Logo } from './Logo';
+import { Logo } from '../Logo';
 import { useRouter, usePathname } from 'next/navigation';
-import { LoginDialog } from './auth/login-dialog';
+import { LoginDialog } from '../auth/login-dialog';
 import { useSession, signOut } from 'next-auth/react';
 
-const Navbar = () => {
+const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const router = useRouter();
@@ -221,4 +221,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default Header;

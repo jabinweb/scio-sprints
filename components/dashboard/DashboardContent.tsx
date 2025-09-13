@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, BookOpen, Users, Clock, ChevronRight, Star, Play, GraduationCap } from "lucide-react";
 import { useClassData } from '@/hooks/useClassData';
 import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
+import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import type { DbClass } from '@/hooks/useClassData';
 
 interface ClassWithSubjects {
@@ -68,12 +69,7 @@ export function DashboardContent() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        <div className="ml-4 text-gray-600">Loading classes...</div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error) {

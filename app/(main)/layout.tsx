@@ -1,5 +1,5 @@
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { WhatsAppChat } from '@/components/WhatsAppChat';
 
 
@@ -10,7 +10,7 @@ export default function Layout({
 }) {
   return (
     <>
-        <Navbar />
+        <Header />
           {children}
         <Footer />
         <WhatsAppChat />

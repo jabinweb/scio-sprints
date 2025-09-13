@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { LoadingScreen } from '@/components/ui/loading-screen';
+import { HeaderSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from 'next/navigation';
@@ -26,11 +26,11 @@ export default function DashboardLayout({
   }, [status, router]);
 
   if (loading) {
-    return <LoadingScreen />;
+    return <HeaderSkeleton />;
   }
 
   if (!user) {
-    return <LoadingScreen />; // Show loading while redirecting
+    return <HeaderSkeleton />; // Show loading while redirecting
   }
 
   return (

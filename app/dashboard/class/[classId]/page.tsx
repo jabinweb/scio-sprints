@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, BookOpen, Lock, Settings } from 'lucide-react';
-import { useClassData, type DbTopic } from '@/hooks/useClassData';
+import { useClassPageData } from '@/hooks/useClassPageData';
+import type { DbTopic } from '@/hooks/useClassData';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
 import { useSession } from 'next-auth/react';
 import { ClassSubscriptionManager } from '@/components/dashboard/ClassSubscriptionManager';
 import { TopicItem } from '@/components/learning/TopicItem';
+import { ClassPageSkeleton } from '@/components/dashboard/dashboard-class-skeleton';
 import { 
   isTopicEnabled, 
   getNextTopic, 
@@ -36,20 +38,6 @@ interface ChapterData {
   topics: DbTopic[];
 }
 
-interface SubjectAccessData {
-  id: string;
-  name: string;
-  hasAccess: boolean;
-  accessType: string;
-}
-
-interface ClassAccessResponse {
-  hasFullAccess: boolean;
-  accessType: string;
-  subjectAccess: SubjectAccessData[];
-  error?: string;
-}
-
 export default function ClassPage() {
   const params = useParams();
   const router = useRouter();
@@ -60,46 +48,19 @@ export default function ClassPage() {
   const [selectedTopic, setSelectedTopic] = useState<DbTopic & { completed: boolean } | null>(null);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
-  const [subjectAccess, setSubjectAccess] = useState<Record<string, boolean>>({});
-  const [accessType, setAccessType] = useState<string>('');
-  const [accessMessage, setAccessMessage] = useState<string>('');
   const [topicRatings, setTopicRatings] = useState<Record<string, { averageRating: number; totalRatings: number }>>({});
   
-  const { currentClass, userProgress, loading, error, markTopicComplete } = useClassData(classId);
-
-  // Get subject-level access data (layout already verified basic access)
-  useEffect(() => {
-    const getSubjectAccess = async () => {
-      if (!user?.id || !classId) return;
-
-      try {
-        const response = await fetch(`/api/classes/${classId}/access?userId=${user.id}`);
-        const data: ClassAccessResponse = await response.json();
-
-        if (response.ok) {
-          setAccessType(data.accessType);
-          setAccessMessage(
-            data.hasFullAccess 
-              ? `Full access via ${data.accessType}`
-              : data.subjectAccess.some((s: SubjectAccessData) => s.hasAccess)
-              ? 'Partial access - some subjects available'
-              : 'Limited access'
-          );
-
-          // Set subject-level access
-          const subjectAccessMap: Record<string, boolean> = {};
-          data.subjectAccess.forEach((subject: SubjectAccessData) => {
-            subjectAccessMap[subject.id] = subject.hasAccess;
-          });
-          setSubjectAccess(subjectAccessMap);
-        }
-      } catch (error) {
-        console.error('Error getting subject access:', error);
-      }
-    };
-
-    getSubjectAccess();
-  }, [user?.id, classId]);
+  // Use unified hook that handles both class data and access verification
+  const { 
+    currentClass, 
+    userProgress, 
+    markTopicComplete, 
+    subjectAccess, 
+    accessType, 
+    accessMessage, 
+    loading, 
+    error 
+  } = useClassPageData(classId);
 
   // Fetch topic difficulty ratings for the class
   useEffect(() => {
@@ -137,14 +98,7 @@ export default function ClassPage() {
   }, [currentClass]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading class content...</p>
-        </div>
-      </div>
-    );
+    return <ClassPageSkeleton />;
   }
 
   if (error || !currentClass) {
