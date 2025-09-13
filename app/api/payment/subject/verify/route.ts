@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { getRazorpayConfig } from '@/lib/razorpay-global';
 
 interface VerifyRequest {
   razorpay_payment_id: string;
@@ -26,42 +27,19 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Get Razorpay settings
-    const settings = await prisma.adminSettings.findMany({
-      where: {
-        key: {
-          in: ['paymentMode', 'razorpayTestKeySecret', 'razorpayKeySecret']
-        }
-      },
-      select: {
-        key: true,
-        value: true
-      }
-    });
-
-    if (!settings.length) {
-      console.error('Error fetching settings: No settings found');
-      return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
-    }
-
-    const settingsObj = settings.reduce((acc: Record<string, string>, setting: { key: string; value: string }) => {
-      acc[setting.key] = setting.value;
-      return acc;
-    }, {} as Record<string, string>);
-
-    const paymentMode = settingsObj.paymentMode || 'test';
-    const keySecret = paymentMode === 'test' ? settingsObj.razorpayTestKeySecret : settingsObj.razorpayKeySecret;
-
-    if (!keySecret) {
+    // Get Razorpay configuration
+    const config = await getRazorpayConfig();
+    
+    if (!config.keySecret) {
       return NextResponse.json({ 
-        error: `Razorpay ${paymentMode} secret not configured` 
+        error: `Razorpay ${config.paymentMode} secret not configured` 
       }, { status: 500 });
     }
 
     // Verify signature
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac('sha256', keySecret)
+      .createHmac('sha256', config.keySecret)
       .update(body.toString())
       .digest('hex');
 

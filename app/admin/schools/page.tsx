@@ -40,8 +40,8 @@ interface SchoolFormData {
 export default function SchoolsPage() {
   const { data: session, status } = useSession();
   const user = session?.user;
-  // Note: We'll need to get userRole from session.user or database
-  const userRole = 'ADMIN'; // TODO: Get from session or database
+  // Get actual role from session
+  const userRole = user?.role; // Get actual role from session
   const authLoading = status === 'loading';
   const [schools, setSchools] = useState<SchoolData[]>([]);
   const [loading, setLoading] = useState(true);

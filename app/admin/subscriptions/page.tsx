@@ -45,7 +45,7 @@ interface RegisteredUser {
 export default function SubscriptionsPage() {
   const { data: session, status } = useSession();
   const user = session?.user;
-  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const userRole = user?.role; // Get actual role from session
   const loading = status === 'loading';
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);

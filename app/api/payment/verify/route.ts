@@ -1,56 +1,40 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { getRazorpayConfig } from '@/lib/razorpay-global';
 
 export async function POST(req: Request) {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, userId } = await req.json();
 
-    // Fetch payment settings from database
-    const settings = await prisma.adminSettings.findMany({
-      where: {
-        key: {
-          in: ['paymentMode', 'razorpayTestKeySecret', 'razorpayKeySecret', 'subscriptionPrice']
-        }
-      },
-      select: {
-        key: true,
-        value: true
-      }
-    });
-
-    if (!settings.length) {
-      console.error('Error fetching settings: No settings found');
-      return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
-    }
-
-    // Convert array to object
-    const settingsObj = settings.reduce((acc: Record<string, string>, setting: { key: string; value: string }) => {
-      acc[setting.key] = setting.value;
-      return acc;
-    }, {} as Record<string, string>);
-
-    const paymentMode = settingsObj.paymentMode || 'test';
+    // Get Razorpay configuration
+    const config = await getRazorpayConfig();
     
-    // Use appropriate secret based on payment mode
-    const keySecret = paymentMode === 'test' ? settingsObj.razorpayTestKeySecret : settingsObj.razorpayKeySecret;
-
-    if (!keySecret) {
+    if (!config.keySecret) {
       return NextResponse.json({ 
-        error: `Razorpay ${paymentMode} secret not configured` 
+        error: `Razorpay ${config.paymentMode} secret not configured` 
       }, { status: 500 });
     }
+
+    // Get subscription price from database
+    const subscriptionPriceSetting = await prisma.adminSettings.findFirst({
+      where: { key: 'subscriptionPrice' },
+      select: { value: true }
+    });
 
     // Verify payment signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac("sha256", keySecret)
+      .createHmac("sha256", config.keySecret)
       .update(body.toString())
       .digest("hex");
 
     const isAuthentic = expectedSignature === razorpay_signature;
 
     if (isAuthentic) {
+      // Get subscription price
+      const subscriptionPrice = parseInt(subscriptionPriceSetting?.value || '29900');
+      
       // Store subscription in database
       try {
         await prisma.subscription.create({
@@ -58,7 +42,7 @@ export async function POST(req: Request) {
             userId,
             status: 'ACTIVE',
             planType: 'premium',
-            amount: parseInt(settingsObj.subscriptionPrice) || 29900, // Amount in paisa
+            amount: subscriptionPrice, // Amount in paisa
             currency: 'INR',
             startDate: new Date(),
             endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
@@ -76,7 +60,7 @@ export async function POST(req: Request) {
             userId,
             razorpayPaymentId: razorpay_payment_id,
             razorpayOrderId: razorpay_order_id,
-            amount: parseInt(settingsObj.subscriptionPrice) || 29900,
+            amount: subscriptionPrice,
             currency: 'INR',
             status: 'COMPLETED',
             description: 'Premium Subscription',

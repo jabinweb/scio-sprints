@@ -95,7 +95,6 @@ model User {
   emailVerified DateTime?           @map("email_verified")
   image         String?
   displayName   String?             @map("display_name")
-  photoURL      String?             @map("photo_url")
   role          UserRole            @default(USER)
   isActive      Boolean             @default(true) @map("is_active")
   lastLoginAt   DateTime?           @map("last_login_at")

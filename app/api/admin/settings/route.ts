@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { clearSmtpCache } from '@/lib/mail';
+import { clearRazorpayCache } from '@/lib/razorpay-global';
 
 export async function GET() {
   try {
@@ -20,13 +22,24 @@ export async function GET() {
       return acc;
     }, {
       // Default values as fallback
-      siteName: 'Learning Platform',
+      siteName: 'ScioLabs',
+      siteDescription: 'Interactive Learning Platform',
+      contactEmail: 'contact@sciolabs.in',
+      supportEmail: 'support@sciolabs.in',
       subscriptionPrice: '299',
+      emailNotifications: 'true',
+      maintenanceMode: 'false',
       paymentMode: 'test',
       razorpayKeyId: '',
       razorpayTestKeyId: '',
       razorpayKeySecret: '',
-      razorpayTestKeySecret: ''
+      razorpayTestKeySecret: '',
+      smtpHost: 'smtp.hostinger.com',
+      smtpPort: '587',
+      smtpUser: 'info@sciolabs.in',
+      smtpPass: '',
+      smtpFrom: 'info@sciolabs.in',
+      smtpFromName: 'ScioLabs Team'
     });
 
     return NextResponse.json(settingsObj);
@@ -35,13 +48,24 @@ export async function GET() {
     
     // Return default settings on any error
     return NextResponse.json({
-      siteName: 'Learning Platform',
+      siteName: 'ScioLabs',
+      siteDescription: 'Interactive Learning Platform',
+      contactEmail: 'contact@sciolabs.in',
+      supportEmail: 'support@sciolabs.in',
       subscriptionPrice: '299',
+      emailNotifications: 'true',
+      maintenanceMode: 'false',
       paymentMode: 'test',
       razorpayKeyId: '',
       razorpayTestKeyId: '',
       razorpayKeySecret: '',
-      razorpayTestKeySecret: ''
+      razorpayTestKeySecret: '',
+      smtpHost: 'smtp.hostinger.com',
+      smtpPort: '587',
+      smtpUser: 'info@sciolabs.in',
+      smtpPass: '',
+      smtpFrom: 'info@sciolabs.in',
+      smtpFromName: 'ScioLabs Team'
     });
   }
 }
@@ -87,6 +111,19 @@ export async function PUT(request: Request) {
       }
     }
 
+    // Clear appropriate caches based on what was updated
+    const updatedKeys = Object.keys(updates);
+    const hasSmtpUpdate = updatedKeys.some(key => key.includes('smtp') || key.includes('email') || key.includes('mail'));
+    const hasPaymentUpdate = updatedKeys.some(key => key.includes('razorpay') || key.includes('payment'));
+    
+    if (hasSmtpUpdate) {
+      clearSmtpCache();
+    }
+    
+    if (hasPaymentUpdate) {
+      clearRazorpayCache();
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating settings:', error);
@@ -97,7 +134,8 @@ export async function PUT(request: Request) {
 // Helper function to categorize settings
 function getSettingCategory(key: string): string {
   if (key.includes('razorpay') || key.includes('payment')) return 'payment';
-  if (key.includes('smtp') || key.includes('email')) return 'email';
-  if (key.includes('site') || key.includes('contact')) return 'general';
+  if (key.includes('smtp') || key.includes('email') || key.includes('mail')) return 'email';
+  if (key.includes('site') || key.includes('contact') || key.includes('support') || key.includes('description')) return 'general';
+  if (key.includes('maintenance')) return 'system';
   return 'general';
 }

@@ -450,10 +450,24 @@ export default function ClassPage() {
           <div className="mb-6">
             <ClassSubscriptionManager 
               classId={parseInt(classId)}
-              onSubscribe={(type, options) => {
+              onSubscribe={async (type, options) => {
                 console.log('Subscription request:', type, options);
-                // TODO: Handle subscription logic
-                // This will integrate with your payment system
+                
+                try {
+                  // Handle different subscription types
+                  if (type === 'class' || type === 'upgrade') {
+                    // Redirect to class payment page for both full class and upgrade
+                    router.push(`/payment/class/${classId}`);
+                  } else if (type === 'subject' && options?.subjectId) {
+                    // Redirect to subject payment page
+                    router.push(`/payment/subject/${options.subjectId}`);
+                  } else {
+                    // General subscription - could be a modal or redirect
+                    router.push('/dashboard/subscriptions');
+                  }
+                } catch (error) {
+                  console.error('Subscription handling error:', error);
+                }
               }}
             />
           </div>

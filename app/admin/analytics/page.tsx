@@ -62,7 +62,7 @@ interface AnalyticsData {
 export default function SubscriptionAnalyticsPage() {
   const { data: session, status } = useSession();
   const user = session?.user;
-  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const userRole = user?.role; // Get actual role from session
   const loading = status === 'loading';
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);

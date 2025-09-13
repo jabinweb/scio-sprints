@@ -1,51 +1,24 @@
 import { NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
-import { prisma } from '@/lib/prisma';
+import { createRazorpayInstance, validateRazorpayConfig } from '@/lib/razorpay-global';
 
 export async function POST(req: Request) {
   try {
     const { amount } = await req.json();
 
-    // Fetch payment settings from database
-    const settings = await prisma.adminSettings.findMany({
-      where: {
-        key: {
-          in: ['paymentMode', 'razorpayTestKeyId', 'razorpayKeyId', 'razorpayTestKeySecret', 'razorpayKeySecret']
-        }
-      },
-      select: {
-        key: true,
-        value: true
-      }
-    });
-
-    if (!settings.length) {
-      console.error('Error fetching settings: No settings found');
-      return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
+    // Validate Razorpay configuration
+    const validation = await validateRazorpayConfig();
+    if (!validation.valid) {
+      console.error('Razorpay configuration error:', validation.error);
+      return NextResponse.json({ error: validation.error }, { status: 500 });
     }
 
-    // Convert array to object
-    const settingsObj = settings.reduce((acc: Record<string, string>, setting: { key: string; value: string }) => {
-      acc[setting.key] = setting.value;
-      return acc;
-    }, {} as Record<string, string>);
-
-    const paymentMode = settingsObj.paymentMode || 'test';
-    
-    // Use appropriate keys based on payment mode
-    const keyId = paymentMode === 'test' ? settingsObj.razorpayTestKeyId : settingsObj.razorpayKeyId;
-    const keySecret = paymentMode === 'test' ? settingsObj.razorpayTestKeySecret : settingsObj.razorpayKeySecret;
-
-    if (!keyId || !keySecret) {
+    // Create Razorpay instance with global configuration
+    const razorpay = await createRazorpayInstance();
+    if (!razorpay) {
       return NextResponse.json({ 
-        error: `Razorpay ${paymentMode} credentials not configured` 
+        error: 'Failed to initialize Razorpay instance' 
       }, { status: 500 });
     }
-
-    const razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
-    });
 
     const order = await razorpay.orders.create({
       amount: amount * 100, // Razorpay expects amount in paisa
@@ -53,11 +26,14 @@ export async function POST(req: Request) {
       receipt: `order_${Date.now()}`,
     });
 
+    // Get the configuration to return the key ID
+    const config = await import('@/lib/razorpay-global').then(m => m.getRazorpayConfig());
+    
     return NextResponse.json({
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      keyId: keyId, // Send the appropriate key ID to frontend
+      keyId: config.keyId, // Send the appropriate key ID to frontend
     });
   } catch (error) {
     console.error('Payment creation error:', error);

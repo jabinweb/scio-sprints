@@ -46,7 +46,7 @@ export default function SubjectsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const user = session?.user;
-  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const userRole = user?.role; // Get actual role from session
   const authLoading = status === 'loading';
   const classId = parseInt(params.classId as string);
   

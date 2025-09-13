@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, CreditCard, UserCheck, AlertCircle } from 'lucide-react';
+import { Users, CreditCard, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Plus } from 'lucide-react';
 import { UniversalTopicForm } from '@/components/admin/UniversalTopicForm';
@@ -55,8 +55,7 @@ interface TopicFormData {
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const user = session?.user;
-  // Note: We'll need to get userRole from session.user or database
-  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const userRole = user?.role;
   const loading = status === 'loading';
   const [signups, setSignups] = useState<Signup[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -65,9 +64,9 @@ export default function AdminPage() {
   const [dataFetched, setDataFetched] = useState(false);
   const [topicFormOpen, setTopicFormOpen] = useState(false);
 
-  // Enhanced admin check - wait for userRole to be loaded
-  const isAdmin = user && userRole === 'ADMIN';
-  const isLoadingAuth = loading || (user && userRole === null);
+  // Admin check is now handled by layout, this is just for component state
+  const isAdmin = userRole === 'ADMIN';
+  const isLoadingAuth = loading || (user && !userRole);
 
   console.log('User:', user);
   console.log('User Role:', userRole);
@@ -76,15 +75,8 @@ export default function AdminPage() {
   console.log('Data Fetched:', dataFetched);
 
   useEffect(() => {
-    // Only redirect if we're sure the user is not an admin and auth is fully loaded
-    if (!isLoadingAuth && user && userRole !== 'ADMIN') {
-      console.log('Redirecting non-admin user to home');
-      window.location.href = '/';
-      return;
-    }
-
-    // Only fetch data once when user is confirmed admin and data hasn't been fetched yet
-    if (isAdmin && !dataFetched) {
+    // Fetch data when user is confirmed admin and data hasn't been fetched yet
+    if (isAdmin && !dataFetched && !isLoadingAuth) {
       const fetchData = async () => {
         setDataLoading(true);
         try {
@@ -116,12 +108,8 @@ export default function AdminPage() {
       };
 
       fetchData();
-    } else if (!isLoadingAuth && !user) {
-      setDataLoading(false);
-    } else if (!isLoadingAuth && userRole !== 'ADMIN') {
-      setDataLoading(false);
     }
-  }, [isAdmin, isLoadingAuth, dataFetched, user, userRole]);
+  }, [isAdmin, isLoadingAuth, dataFetched]);
 
   const refreshData = async () => {
     setDataLoading(true);
@@ -162,7 +150,7 @@ export default function AdminPage() {
     }
   };
 
-  // Show loading while checking auth and role
+  // Show loading while checking auth and role - layout handles redirects
   if (isLoadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -171,20 +159,7 @@ export default function AdminPage() {
     );
   }
 
-  // User authentication is now handled by the layout
-  // Only check for admin role here
-  if (userRole !== 'ADMIN') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-          <p className="text-muted-foreground">You don&apos;t have permission to access this page.</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Layout already handles non-admin users, so if we reach here, user is admin
   if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

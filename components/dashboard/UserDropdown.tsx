@@ -115,9 +115,8 @@ export const UserDropdown = () => {
           <span>Notifications</span>
         </DropdownMenuItem>
 
-        {/* TODO: Implement proper role checking with NextAuth.js */}
-        {/* {user?.role === 'admin' && ( */}
-        {true && (
+        {/* Admin Panel access for admin users only */}
+        {user?.role === 'ADMIN' && (
           <DropdownMenuItem 
             onClick={() => handleNavigation('/admin')}
             className="cursor-pointer"

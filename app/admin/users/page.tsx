@@ -48,7 +48,7 @@ interface UserFormData {
 export default function UsersPage() {
   const { data: session, status } = useSession();
   const user = session?.user;
-  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const userRole = user?.role; // Get actual role from session
   const loading = status === 'loading';
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -362,7 +362,7 @@ export default function UsersPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ₹{Math.round(registeredUsers.reduce((sum, u) => sum + u.totalAmountPaid, 0)).toLocaleString()}
+                ₹{Math.round(registeredUsers.reduce((sum, u) => sum + u.totalAmountPaid, 0) / 100).toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -412,7 +412,7 @@ export default function UsersPage() {
                   
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-sm font-medium">₹{registeredUser.totalAmountPaid}</p>
+                      <p className="text-sm font-medium">₹{Math.round(registeredUser.totalAmountPaid / 100).toLocaleString()}</p>
                       <p className="text-xs text-muted-foreground">{registeredUser.totalPayments} payments</p>
                       <p className="text-xs text-muted-foreground">
                         Joined: {new Date(registeredUser.creationTime).toLocaleDateString()}

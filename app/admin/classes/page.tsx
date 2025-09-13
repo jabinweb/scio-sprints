@@ -34,7 +34,7 @@ interface ClassFormData {
 export default function ClassesPage() {
   const { data: session, status } = useSession();
   const user = session?.user;
-  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const userRole = user?.role; // Get actual role from session
   const authLoading = status === 'loading';
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);

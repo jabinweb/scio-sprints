@@ -1,5 +1,5 @@
 import Razorpay from 'razorpay';
-import { razorpayConfig } from './razorpay-config';
+import { createRazorpayInstance, getRazorpayConfig } from './razorpay-global';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -93,26 +93,14 @@ export const verifyPayment = async (paymentData: {
 };
 
 // Server-side functions
-export const createServerRazorpayInstance = (): Razorpay | null => {
-  try {
-    if (!razorpayConfig.keyId || !razorpayConfig.keySecret) {
-      console.error('Razorpay configuration not found');
-      return null;
-    }
-
-    return new Razorpay({
-      key_id: razorpayConfig.keyId,
-      key_secret: razorpayConfig.keySecret,
-    });
-  } catch (error) {
-    console.error('Failed to create Razorpay instance:', error);
-    return null;
-  }
+export const createServerRazorpayInstance = async (): Promise<Razorpay | null> => {
+  // Use the global configuration function
+  return await createRazorpayInstance();
 };
 
 export const createServerOrder = async (orderData: ServerOrderData): Promise<ServerOrderResult> => {
   try {
-    const razorpay = createServerRazorpayInstance();
+    const razorpay = await createServerRazorpayInstance();
     
     if (!razorpay) {
       return {
@@ -141,8 +129,13 @@ export const createServerOrder = async (orderData: ServerOrderData): Promise<Ser
   }
 };
 
-export const validateRazorpayConfig = (): boolean => {
-  return !!(razorpayConfig.keyId && razorpayConfig.keySecret);
+export const validateRazorpayConfig = async (): Promise<boolean> => {
+  try {
+    const config = await getRazorpayConfig();
+    return !!(config.keyId && config.keySecret);
+  } catch {
+    return false;
+  }
 };
 
 // Server-side payment processing for auto-renewal

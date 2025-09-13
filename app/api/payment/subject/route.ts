@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import Razorpay from 'razorpay';
+import { createRazorpayInstance, validateRazorpayConfig, getRazorpayConfig } from '@/lib/razorpay-global';
 
 interface PaymentRequest {
   subjectId: string;
@@ -72,44 +72,20 @@ export async function POST(request: Request) {
     // Get subject price (use subject's own price field)
     const subjectPrice = amount || subject.price || 7500; // Default to ₹75 if not set
 
-    // Fetch payment settings
-    const settings = await prisma.adminSettings.findMany({
-      where: {
-        key: {
-          in: ['paymentMode', 'razorpayTestKeyId', 'razorpayKeyId', 'razorpayTestKeySecret', 'razorpayKeySecret']
-        }
-      },
-      select: {
-        key: true,
-        value: true
-      }
-    });
-
-    if (!settings.length) {
-      console.error('Error fetching settings: No settings found');
-      return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
+    // Validate Razorpay configuration
+    const validation = await validateRazorpayConfig();
+    if (!validation.valid) {
+      console.error('Razorpay configuration error:', validation.error);
+      return NextResponse.json({ error: validation.error }, { status: 500 });
     }
 
-    const settingsObj = settings.reduce((acc: Record<string, string>, setting: { key: string; value: string }) => {
-      acc[setting.key] = setting.value;
-      return acc;
-    }, {} as Record<string, string>);
-
-    const paymentMode = settingsObj.paymentMode || 'test';
-    const keyId = paymentMode === 'test' ? settingsObj.razorpayTestKeyId : settingsObj.razorpayKeyId;
-    const keySecret = paymentMode === 'test' ? settingsObj.razorpayTestKeySecret : settingsObj.razorpayKeySecret;
-
-    if (!keyId || !keySecret) {
+    // Create Razorpay instance with global configuration
+    const razorpay = await createRazorpayInstance();
+    if (!razorpay) {
       return NextResponse.json({ 
-        error: `Razorpay ${paymentMode} credentials not configured` 
+        error: 'Failed to initialize Razorpay instance' 
       }, { status: 500 });
     }
-
-    // Create Razorpay order
-    const razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
-    });
 
     const order = await razorpay.orders.create({
       amount: subjectPrice,
@@ -123,11 +99,14 @@ export async function POST(request: Request) {
       }
     });
 
+    // Get the configuration to return the key ID
+    const config = await getRazorpayConfig();
+
     return NextResponse.json({
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      keyId: keyId,
+      keyId: config.keyId,
       subjectId: subjectId,
       subjectName: subject.name,
     });

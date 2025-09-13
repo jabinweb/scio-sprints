@@ -15,7 +15,6 @@ import {
   AlertCircle, 
   RefreshCw, 
   Mail, 
-  Settings as SettingsIcon,
   Globe,
   CreditCard,
   Server,
@@ -43,19 +42,23 @@ interface AppSettings {
   smtpHost: string;
   smtpPort: string;
   smtpUser: string;
+  smtpPass: string;
+  smtpFrom: string;
+  smtpFromName: string;
 }
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const user = session?.user;
-  const userRole = 'ADMIN'; // TODO: Get from session or database
+  const userRole = user?.role; // Get actual role from session
   const authLoading = status === 'loading';
+  
   const [settings, setSettings] = useState<AppSettings>({
     siteName: 'ScioLabs',
     siteDescription: 'Interactive Learning Platform',
-    contactEmail: 'contact@sciolabs.com',
-    supportEmail: 'support@sciolabs.com',
-    subscriptionPrice: '896',
+    contactEmail: 'contact@sciolabs.in',
+    supportEmail: 'support@sciolabs.in',
+    subscriptionPrice: '299',
     emailNotifications: true,
     maintenanceMode: false,
     razorpayKeyId: '',
@@ -63,14 +66,22 @@ export default function SettingsPage() {
     razorpayTestKeyId: '',
     razorpayTestKeySecret: '',
     paymentMode: 'test',
-    smtpHost: '',
+    smtpHost: 'smtp.hostinger.com',
     smtpPort: '587',
-    smtpUser: '',
+    smtpUser: 'info@sciolabs.in',
+    smtpPass: '',
+    smtpFrom: 'info@sciolabs.in',
+    smtpFromName: 'ScioLabs Team',
   });
+  
   const [loading, setLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<string>('');
+  const [saveStatus, setSaveStatus] = useState('');
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [showSecrets, setShowSecrets] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    razorpayKeySecret: false,
+    razorpayTestKeySecret: false,
+    smtpPass: false,
+  });
 
   // Enhanced admin check
   const isAdmin = user && userRole === 'ADMIN';
@@ -92,8 +103,8 @@ export default function SettingsPage() {
           const safeSettings: AppSettings = {
             siteName: data.siteName || 'ScioLabs',
             siteDescription: data.siteDescription || 'Interactive Learning Platform',
-            contactEmail: data.contactEmail || 'contact@sciolabs.com',
-            supportEmail: data.supportEmail || 'support@sciolabs.com',
+            contactEmail: data.contactEmail || 'contact@sciolabs.in',
+            supportEmail: data.supportEmail || 'support@sciolabs.in',
             subscriptionPrice: String(data.subscriptionPrice || '299'),
             emailNotifications: Boolean(data.emailNotifications ?? true),
             maintenanceMode: Boolean(data.maintenanceMode ?? false),
@@ -102,9 +113,12 @@ export default function SettingsPage() {
             razorpayTestKeyId: data.razorpayTestKeyId || '',
             razorpayTestKeySecret: data.razorpayTestKeySecret || '',
             paymentMode: (data.paymentMode === 'live' ? 'live' : 'test') as 'test' | 'live',
-            smtpHost: data.smtpHost || '',
+            smtpHost: data.smtpHost || 'smtp.hostinger.com',
             smtpPort: data.smtpPort || '587',
-            smtpUser: data.smtpUser || '',
+            smtpUser: data.smtpUser || 'info@sciolabs.in',
+            smtpPass: data.smtpPass || '',
+            smtpFrom: data.smtpFrom || 'info@sciolabs.in',
+            smtpFromName: data.smtpFromName || 'ScioLabs Team',
           };
           
           setSettings(safeSettings);
@@ -155,6 +169,13 @@ export default function SettingsPage() {
     setSettings(prev => ({ ...prev, [field]: value }));
   };
 
+  const togglePasswordVisibility = (field: keyof typeof showPasswords) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
   // Show loading while checking auth and role
   if (isLoadingAuth) {
     return (
@@ -187,348 +208,280 @@ export default function SettingsPage() {
     );
   }
 
-  // Don't render form until data is loaded
-  if (!dataLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto p-8">
-        {/* Header Section */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 pt-16">
           <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg">
-                  <SettingsIcon className="h-6 w-6 text-white" />
-                </div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  System Settings
-                </h1>
-              </div>
-              <p className="text-lg text-gray-600 ml-11">
-                Configure your application settings and preferences
-              </p>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                System Settings
+              </h1>
+              <p className="text-gray-600 text-lg">Configure your application settings and preferences</p>
             </div>
-            <Button 
-              onClick={handleSave} 
-              disabled={loading}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-3 h-auto"
-            >
-              {loading ? (
-                <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-5 w-5 mr-2" />
-              )}
-              Save Changes
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                onClick={handleSave} 
+                disabled={loading}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg"
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Settings
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
+          
+          {/* Save Status */}
+          {saveStatus && (
+            <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${
+              saveStatus.includes('success') 
+                ? 'bg-green-100 border border-green-200 text-green-800' 
+                : 'bg-red-100 border border-red-200 text-red-800'
+            }`}>
+              {saveStatus.includes('success') ? (
+                <CheckCircle className="h-5 w-5" />
+              ) : (
+                <AlertTriangle className="h-5 w-5" />
+              )}
+              {saveStatus}
+            </div>
+          )}
         </div>
 
-        {/* Status Alert */}
-        {saveStatus && (
-          <div className={`mb-6 p-4 rounded-xl border shadow-sm flex items-center gap-3 ${
-            saveStatus.includes('Error') 
-              ? 'bg-red-50 border-red-200 text-red-800' 
-              : 'bg-green-50 border-green-200 text-green-800'
-          }`}>
-            {saveStatus.includes('Error') ? (
-              <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-            ) : (
-              <CheckCircle className="h-5 w-5 flex-shrink-0" />
-            )}
-            <span className="font-medium">{saveStatus}</span>
-          </div>
-        )}
-
-        {/* Main Content */}
+        {/* Settings Tabs */}
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-1">
-            <TabsTrigger 
-              value="general" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
-            >
+          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur-sm border shadow-lg">
+            <TabsTrigger value="general" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
               General
             </TabsTrigger>
-            <TabsTrigger 
-              value="payment" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
-            >
+            <TabsTrigger value="payment" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
               Payment
             </TabsTrigger>
-            <TabsTrigger 
-              value="email" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
-            >
+            <TabsTrigger value="email" className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
               Email
             </TabsTrigger>
-            <TabsTrigger 
-              value="system" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
-            >
+            <TabsTrigger value="system" className="flex items-center gap-2">
               <Server className="h-4 w-4" />
               System
             </TabsTrigger>
           </TabsList>
 
+          {/* General Settings */}
           <TabsContent value="general" className="space-y-6">
             <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+              <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <Globe className="h-6 w-6" />
-                  General Settings
+                  General Configuration
                   <Badge className="bg-white/20 text-white border-white/20">Core</Badge>
                 </CardTitle>
-                <p className="text-blue-100 mt-2">Basic application configuration and branding</p>
+                <p className="text-green-100 mt-2">Basic site information and branding settings</p>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Site Information */}
-                  <div className="space-y-6">
-                    <div className="border-l-4 border-blue-500 pl-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Site Information</h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="siteName" className="text-gray-700 font-medium">Site Name</Label>
-                          <Input
-                            id="siteName"
-                            value={settings.siteName}
-                            onChange={(e) => handleInputChange('siteName', e.target.value)}
-                            className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-sm"
-                            placeholder="Your site name"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="siteDescription" className="text-gray-700 font-medium">Site Description</Label>
-                          <Textarea
-                            id="siteDescription"
-                            value={settings.siteDescription}
-                            onChange={(e) => handleInputChange('siteDescription', e.target.value)}
-                            rows={4}
-                            className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-sm resize-none"
-                            placeholder="Describe your platform..."
-                          />
-                        </div>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <Label htmlFor="siteName" className="text-gray-700 font-medium">Site Name</Label>
+                    <Input
+                      id="siteName"
+                      value={settings.siteName}
+                      onChange={(e) => handleInputChange('siteName', e.target.value)}
+                      className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
+                    />
                   </div>
-
-                  {/* Contact Information */}
-                  <div className="space-y-6">
-                    <div className="border-l-4 border-green-500 pl-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="contactEmail" className="text-gray-700 font-medium">Contact Email</Label>
-                          <Input
-                            id="contactEmail"
-                            type="email"
-                            value={settings.contactEmail}
-                            onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                            className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
-                            placeholder="contact@example.com"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="supportEmail" className="text-gray-700 font-medium">Support Email</Label>
-                          <Input
-                            id="supportEmail"
-                            type="email"
-                            value={settings.supportEmail}
-                            onChange={(e) => handleInputChange('supportEmail', e.target.value)}
-                            className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
-                            placeholder="support@example.com"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="subscriptionPrice" className="text-gray-700 font-medium">Subscription Price</Label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">₹</span>
-                            <Input
-                              id="subscriptionPrice"
-                              type="number"
-                              value={settings.subscriptionPrice}
-                              onChange={(e) => handleInputChange('subscriptionPrice', e.target.value)}
-                              className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm pl-8"
-                              placeholder="299"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="subscriptionPrice" className="text-gray-700 font-medium">Subscription Price (₹)</Label>
+                    <Input
+                      id="subscriptionPrice"
+                      type="number"
+                      value={settings.subscriptionPrice}
+                      onChange={(e) => handleInputChange('subscriptionPrice', e.target.value)}
+                      className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="siteDescription" className="text-gray-700 font-medium">Site Description</Label>
+                  <Textarea
+                    id="siteDescription"
+                    value={settings.siteDescription}
+                    onChange={(e) => handleInputChange('siteDescription', e.target.value)}
+                    className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <Label htmlFor="contactEmail" className="text-gray-700 font-medium">Contact Email</Label>
+                    <Input
+                      id="contactEmail"
+                      type="email"
+                      value={settings.contactEmail}
+                      onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                      className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="supportEmail" className="text-gray-700 font-medium">Support Email</Label>
+                    <Input
+                      id="supportEmail"
+                      type="email"
+                      value={settings.supportEmail}
+                      onChange={(e) => handleInputChange('supportEmail', e.target.value)}
+                      className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
+                    />
                   </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Payment Settings */}
           <TabsContent value="payment" className="space-y-6">
             <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-t-lg">
+              <CardHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <CreditCard className="h-6 w-6" />
-                  Payment Configuration
-                  <Badge className="bg-white/20 text-white border-white/20">Secure</Badge>
+                  Payment Gateway Configuration
+                  <Badge className="bg-white/20 text-white border-white/20">Razorpay</Badge>
                 </CardTitle>
-                <p className="text-emerald-100 mt-2">Configure Razorpay payment gateway settings</p>
+                <p className="text-orange-100 mt-2">Configure Razorpay payment gateway settings</p>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
                 {/* Payment Mode Selection */}
-                <div className="border-l-4 border-emerald-500 pl-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Payment Mode</h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowSecrets(!showSecrets)}
-                      className="flex items-center gap-2"
+                <div className="border-l-4 border-orange-500 pl-6">
+                  <div className="p-4 bg-orange-50 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Mode</h3>
+                    <RadioGroup 
+                      value={settings.paymentMode} 
+                      onValueChange={(value: 'test' | 'live') => handleInputChange('paymentMode', value)}
+                      className="flex gap-6"
                     >
-                      {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      {showSecrets ? 'Hide' : 'Show'} Secrets
-                    </Button>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="test" id="test" />
+                        <Label htmlFor="test" className="text-gray-700">Test Mode</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="live" id="live" />
+                        <Label htmlFor="live" className="text-gray-700">Live Mode</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
-                  <RadioGroup
-                    value={settings.paymentMode}
-                    onValueChange={(value) => handleInputChange('paymentMode', value as 'test' | 'live')}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                  >
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                      <RadioGroupItem value="test" id="test" />
-                      <div className="flex-1">
-                        <Label htmlFor="test" className="font-medium cursor-pointer">Test Mode</Label>
-                        <p className="text-sm text-gray-600">For development and testing</p>
-                      </div>
-                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Safe</Badge>
-                    </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                      <RadioGroupItem value="live" id="live" />
-                      <div className="flex-1">
-                        <Label htmlFor="live" className="font-medium cursor-pointer">Live Mode</Label>
-                        <p className="text-sm text-gray-600">For production payments</p>
-                      </div>
-                      <Badge variant="default" className="bg-red-100 text-red-800">Live</Badge>
-                    </div>
-                  </RadioGroup>
                 </div>
 
-                {/* API Keys */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Test Keys */}
-                  <div className="space-y-4">
-                    <div className="border-l-4 border-yellow-500 pl-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        Test Credentials
-                        <Badge className="bg-yellow-100 text-yellow-800">Development</Badge>
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="razorpayTestKeyId" className="text-gray-700 font-medium">Test Key ID</Label>
-                          <Input
-                            id="razorpayTestKeyId"
-                            value={settings.razorpayTestKeyId}
-                            onChange={(e) => handleInputChange('razorpayTestKeyId', e.target.value)}
-                            className="border-gray-200 focus:border-yellow-500 focus:ring-yellow-500 bg-white shadow-sm font-mono text-sm"
-                            placeholder="rzp_test_..."
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="razorpayTestKeySecret" className="text-gray-700 font-medium">Test Key Secret</Label>
-                          <Input
-                            id="razorpayTestKeySecret"
-                            type={showSecrets ? "text" : "password"}
-                            value={settings.razorpayTestKeySecret}
-                            onChange={(e) => handleInputChange('razorpayTestKeySecret', e.target.value)}
-                            className="border-gray-200 focus:border-yellow-500 focus:ring-yellow-500 bg-white shadow-sm font-mono text-sm"
-                            placeholder={showSecrets ? "Your test secret key" : "••••••••••••••••"}
-                          />
-                        </div>
-                      </div>
+                {/* Test Keys */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-blue-500 pl-4">
+                    Test Environment Keys
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="razorpayTestKeyId" className="text-gray-700 font-medium">Test Key ID</Label>
+                      <Input
+                        id="razorpayTestKeyId"
+                        value={settings.razorpayTestKeyId}
+                        onChange={(e) => handleInputChange('razorpayTestKeyId', e.target.value)}
+                        className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm"
+                        placeholder="rzp_test_..."
+                      />
                     </div>
-                  </div>
-
-                  {/* Live Keys */}
-                  <div className="space-y-4">
-                    <div className="border-l-4 border-red-500 pl-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        Live Credentials
-                        <Badge className="bg-red-100 text-red-800">Production</Badge>
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="razorpayKeyId" className="text-gray-700 font-medium">Live Key ID</Label>
-                          <Input
-                            id="razorpayKeyId"
-                            value={settings.razorpayKeyId}
-                            onChange={(e) => handleInputChange('razorpayKeyId', e.target.value)}
-                            className="border-gray-200 focus:border-red-500 focus:ring-red-500 bg-white shadow-sm font-mono text-sm"
-                            placeholder="rzp_live_..."
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="razorpayKeySecret" className="text-gray-700 font-medium">Live Key Secret</Label>
-                          <Input
-                            id="razorpayKeySecret"
-                            type={showSecrets ? "text" : "password"}
-                            value={settings.razorpayKeySecret}
-                            onChange={(e) => handleInputChange('razorpayKeySecret', e.target.value)}
-                            className="border-gray-200 focus:border-red-500 focus:ring-red-500 bg-white shadow-sm font-mono text-sm"
-                            placeholder={showSecrets ? "Your live secret key" : "••••••••••••••••"}
-                          />
-                        </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="razorpayTestKeySecret" className="text-gray-700 font-medium">Test Key Secret</Label>
+                      <div className="relative">
+                        <Input
+                          id="razorpayTestKeySecret"
+                          type={showPasswords.razorpayTestKeySecret ? "text" : "password"}
+                          value={settings.razorpayTestKeySecret}
+                          onChange={(e) => handleInputChange('razorpayTestKeySecret', e.target.value)}
+                          className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm pr-10"
+                          placeholder="Enter test key secret"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                          onClick={() => togglePasswordVisibility('razorpayTestKeySecret')}
+                        >
+                          {showPasswords.razorpayTestKeySecret ? 
+                            <EyeOff className="h-4 w-4 text-gray-500" /> : 
+                            <Eye className="h-4 w-4 text-gray-500" />
+                          }
+                        </Button>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Current Mode Status */}
-                <div className={`p-6 rounded-xl border-2 ${
-                  settings.paymentMode === 'test' 
-                    ? 'bg-yellow-50 border-yellow-200' 
-                    : 'bg-red-50 border-red-200'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      settings.paymentMode === 'test' ? 'bg-yellow-200' : 'bg-red-200'
-                    }`}>
-                      <CreditCard className={`h-5 w-5 ${
-                        settings.paymentMode === 'test' ? 'text-yellow-700' : 'text-red-700'
-                      }`} />
+                {/* Live Keys */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-red-500 pl-4">
+                    Live Environment Keys
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="razorpayKeyId" className="text-gray-700 font-medium">Live Key ID</Label>
+                      <Input
+                        id="razorpayKeyId"
+                        value={settings.razorpayKeyId}
+                        onChange={(e) => handleInputChange('razorpayKeyId', e.target.value)}
+                        className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm"
+                        placeholder="rzp_live_..."
+                      />
                     </div>
-                    <div>
-                      <h4 className={`font-semibold ${
-                        settings.paymentMode === 'test' ? 'text-yellow-800' : 'text-red-800'
-                      }`}>
-                        Current Mode: {settings.paymentMode.toUpperCase()}
-                      </h4>
-                      <p className={`text-sm ${
-                        settings.paymentMode === 'test' ? 'text-yellow-700' : 'text-red-700'
-                      }`}>
-                        {settings.paymentMode === 'test' 
-                          ? 'Test mode is active - no real payments will be processed' 
-                          : 'Live mode is active - real payments will be processed'}
-                      </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="razorpayKeySecret" className="text-gray-700 font-medium">Live Key Secret</Label>
+                      <div className="relative">
+                        <Input
+                          id="razorpayKeySecret"
+                          type={showPasswords.razorpayKeySecret ? "text" : "password"}
+                          value={settings.razorpayKeySecret}
+                          onChange={(e) => handleInputChange('razorpayKeySecret', e.target.value)}
+                          className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm pr-10"
+                          placeholder="Enter live key secret"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                          onClick={() => togglePasswordVisibility('razorpayKeySecret')}
+                        >
+                          {showPasswords.razorpayKeySecret ? 
+                            <EyeOff className="h-4 w-4 text-gray-500" /> : 
+                            <Eye className="h-4 w-4 text-gray-500" />
+                          }
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Security Warning */}
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                {/* Payment Configuration Tips */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-start gap-3">
-                    <Shield className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <Shield className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-amber-800 mb-2">Security Notice</h4>
-                      <p className="text-sm text-amber-700">
-                        Keep your API keys secure. Never share them in client-side code or public repositories.
-                        Use test keys for development and live keys only in production.
-                      </p>
+                      <h4 className="font-medium text-blue-800 mb-2">Security Tips</h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• Always use test mode during development</li>
+                        <li>• Keep your API keys secure and never share them</li>
+                        <li>• Switch to live mode only when ready for production</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -536,9 +489,10 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
+          {/* Email Settings */}
           <TabsContent value="email" className="space-y-6">
             <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg">
+              <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <Mail className="h-6 w-6" />
                   Email Configuration
@@ -577,7 +531,7 @@ export default function SettingsPage() {
                         value={settings.smtpHost}
                         onChange={(e) => handleInputChange('smtpHost', e.target.value)}
                         className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-white shadow-sm"
-                        placeholder="smtp.gmail.com"
+                        placeholder="smtp.hostinger.com"
                       />
                     </div>
                     <div className="space-y-2">
@@ -591,15 +545,65 @@ export default function SettingsPage() {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpUser" className="text-gray-700 font-medium">SMTP Username</Label>
-                    <Input
-                      id="smtpUser"
-                      value={settings.smtpUser}
-                      onChange={(e) => handleInputChange('smtpUser', e.target.value)}
-                      className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-white shadow-sm"
-                      placeholder="your-email@gmail.com"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="smtpUser" className="text-gray-700 font-medium">SMTP Username</Label>
+                      <Input
+                        id="smtpUser"
+                        value={settings.smtpUser}
+                        onChange={(e) => handleInputChange('smtpUser', e.target.value)}
+                        className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-white shadow-sm"
+                        placeholder="info@sciolabs.in"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtpPass" className="text-gray-700 font-medium">SMTP Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="smtpPass"
+                          type={showPasswords.smtpPass ? "text" : "password"}
+                          value={settings.smtpPass}
+                          onChange={(e) => handleInputChange('smtpPass', e.target.value)}
+                          className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-white shadow-sm pr-10"
+                          placeholder="Your SMTP password"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                          onClick={() => togglePasswordVisibility('smtpPass')}
+                        >
+                          {showPasswords.smtpPass ? 
+                            <EyeOff className="h-4 w-4 text-gray-500" /> : 
+                            <Eye className="h-4 w-4 text-gray-500" />
+                          }
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="smtpFrom" className="text-gray-700 font-medium">From Email Address</Label>
+                      <Input
+                        id="smtpFrom"
+                        type="email"
+                        value={settings.smtpFrom}
+                        onChange={(e) => handleInputChange('smtpFrom', e.target.value)}
+                        className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-white shadow-sm"
+                        placeholder="noreply@yourdomain.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtpFromName" className="text-gray-700 font-medium">From Name</Label>
+                      <Input
+                        id="smtpFromName"
+                        value={settings.smtpFromName}
+                        onChange={(e) => handleInputChange('smtpFromName', e.target.value)}
+                        className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-white shadow-sm"
+                        placeholder="Your Company Name"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -610,9 +614,10 @@ export default function SettingsPage() {
                     <div>
                       <h4 className="font-medium text-blue-800 mb-2">Email Setup Tips</h4>
                       <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• Hostinger: Use smtp.hostinger.com with port 587</li>
                         <li>• Gmail: Use smtp.gmail.com with port 587 and app password</li>
                         <li>• Outlook: Use smtp-mail.outlook.com with port 587</li>
-                        <li>• Enable &quot;Less secure app access&quot; for older email providers</li>
+                        <li>• Make sure to use the same email in both username and from fields</li>
                       </ul>
                     </div>
                   </div>
@@ -621,6 +626,7 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
+          {/* System Settings */}
           <TabsContent value="system" className="space-y-6">
             <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
               <CardHeader className="bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-t-lg">
@@ -645,67 +651,20 @@ export default function SettingsPage() {
                       <Switch
                         checked={settings.maintenanceMode}
                         onCheckedChange={(checked) => handleInputChange('maintenanceMode', checked)}
-                        className="data-[state=checked]:bg-gray-700"
+                        className="data-[state=checked]:bg-gray-600"
                       />
                     </div>
-                    
-                    {/* Maintenance Mode Warning */}
-                    <div className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                      settings.maintenanceMode 
-                        ? 'bg-red-50 border-red-200' 
-                        : 'bg-yellow-50 border-yellow-200'
-                    }`}>
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
-                          settings.maintenanceMode ? 'text-red-600' : 'text-yellow-600'
-                        }`} />
-                        <div>
-                          <h4 className={`font-medium mb-2 ${
-                            settings.maintenanceMode ? 'text-red-800' : 'text-yellow-800'
-                          }`}>
-                            {settings.maintenanceMode ? '🚧 Maintenance Mode Active' : '⚠️ Maintenance Mode Warning'}
-                          </h4>
-                          <p className={`text-sm ${
-                            settings.maintenanceMode ? 'text-red-700' : 'text-yellow-700'
-                          }`}>
-                            {settings.maintenanceMode 
-                              ? 'Your site is currently in maintenance mode. Only admin users can access the application.'
-                              : 'Enabling maintenance mode will show a maintenance page to all non-admin users. Use this during updates or system maintenance.'}
-                          </p>
+                    {settings.maintenanceMode && (
+                      <div className="p-3 bg-yellow-100 border border-yellow-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-yellow-800">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span className="font-medium">Warning: Maintenance mode is active</span>
                         </div>
+                        <p className="text-sm text-yellow-700 mt-1">
+                          Users will see a maintenance page and cannot access the application
+                        </p>
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* System Status */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <div>
-                        <h4 className="font-medium text-green-800">Database</h4>
-                        <p className="text-sm text-green-700">Connected</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <h4 className="font-medium text-blue-800">API</h4>
-                        <p className="text-sm text-blue-700">Operational</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-purple-600" />
-                      <div>
-                        <h4 className="font-medium text-purple-800">Storage</h4>
-                        <p className="text-sm text-purple-700">Available</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
