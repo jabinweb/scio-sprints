@@ -192,7 +192,7 @@ export function DashboardContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-blue-100 text-sm">Available Classes</p>
-                    <p className="text-3xl font-bold">{classes.length}</p>
+                    <p className="text-3xl font-bold text-gray-100">{classes.length}</p>
                   </div>
                   <BookOpen className="w-10 h-10 text-blue-200" />
                 </div>
@@ -201,7 +201,7 @@ export function DashboardContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-green-100 text-sm">Total Subjects</p>
-                    <p className="text-3xl font-bold">{classes.reduce((acc, cls) => acc + (cls.subjects?.length || 0), 0)}</p>
+                    <p className="text-3xl font-bold text-gray-100">{classes.reduce((acc, cls) => acc + (cls.subjects?.length || 0), 0)}</p>
                   </div>
                   <Users className="w-10 h-10 text-green-200" />
                 </div>
@@ -210,7 +210,7 @@ export function DashboardContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-purple-100 text-sm">Avg Progress</p>
-                    <p className="text-3xl font-bold">
+                    <p className="text-3xl font-bold text-gray-100">
                       {classes.length > 0 
                         ? Math.round(classes.reduce((acc, cls) => acc + calculateClassProgress(toClassWithSubjects(cls)), 0) / classes.length)
                         : 0}%

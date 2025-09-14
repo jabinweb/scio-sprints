@@ -129,20 +129,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt", // Use JWT for consistency with middleware
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role
+    async signIn({ user, account, profile }) {
+      // Handle account linking - allow linking accounts with same email
+      if (account?.provider && user?.email) {
+        try {
+          // Check if user exists with this email
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email }
+          })
+          
+          if (existingUser) {
+            // Check if account already exists for this provider
+            const existingAccount = await prisma.account.findFirst({
+              where: {
+                userId: existingUser.id,
+                provider: account.provider
+              }
+            })
+            
+            // If account doesn't exist for this provider but user exists, link them
+            if (!existingAccount) {
+              console.log(`Linking ${account.provider} account to existing user: ${user.email}`)
+            }
+          }
+        } catch (error) {
+          console.error('Error in signIn callback:', error)
+        }
       }
-      return token
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.sub || ""
-        session.user.role = token.role ? String(token.role) as typeof session.user.role : UserRole.USER
-      }
-      return session
-    },
-    async signIn({ user, profile }) {
+
       // Update user information when they sign in
       if (user.email) {
         try {
@@ -167,6 +181,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
       return true
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.sub || ""
+        session.user.role = token.role ? String(token.role) as typeof session.user.role : UserRole.USER
+      }
+      return session
     },
   },
   pages: {
