@@ -12,12 +12,7 @@ import type { DbTopic } from '@/hooks/useClassData';
 import { TopicItem } from '@/components/learning/TopicItem';
 import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
 import { 
-  isTopicEnabled, 
-  handleTopicCompletion, 
-  getNextTopic, 
-  isSubjectCompleted,
-  canNavigateToNext,
-  type SubjectProgression 
+  handleTopicCompletion
 } from '@/lib/topic-progression';
 
 // Types for demo data (similar to static data but from API)
@@ -144,6 +139,7 @@ export default function DemoClassPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [topicRatings, setTopicRatings] = useState<Record<string, { userRating: number; hasRated: boolean }>>({});
   
   // Get selected subject data
   const selectedSubjectData = demoClass?.subjects.find(s => s.id === selectedSubject);
@@ -190,34 +186,33 @@ export default function DemoClassPage() {
     }
   }, [demoClass, selectedSubject]);
 
+  // Load demo ratings from localStorage for persistence
+  useEffect(() => {
+    if (typeof window !== 'undefined' && classId) {
+      const savedRatings = localStorage.getItem(`demo-ratings-${classId}`);
+      if (savedRatings) {
+        try {
+          setTopicRatings(JSON.parse(savedRatings));
+        } catch (error) {
+          console.error('Error loading demo ratings from localStorage:', error);
+        }
+      }
+    }
+  }, [classId]);
+
   const handleTopicClick = (topic: DemoTopic) => {
-    // Check if topic should be enabled (sequential unlock)
+    // For demo: Check if this is the first topic (only enabled topic)
     if (selectedSubjectData) {
-      const subjectProgress: SubjectProgression = {
-        id: selectedSubjectData.id,
-        name: selectedSubjectData.name,
-        chapters: selectedSubjectData.chapters.map(ch => ({
-          id: ch.id,
-          name: ch.name,
-          topics: ch.topics.map(t => ({
-            id: t.id,
-            name: t.name,
-            completed: t.completed
-          }))
-        }))
-      };
-
-      const topicForProgression = {
-        id: topic.id,
-        name: topic.name,
-        completed: topic.completed
-      };
-
-      if (!isTopicEnabled(topicForProgression, subjectProgress, completedTopics)) {
-        return; // Don't open disabled topics
+      const isFirstTopic = selectedSubjectData.chapters[0]?.topics[0]?.id === topic.id;
+      
+      if (!isFirstTopic) {
+        // Show subscription dialog for locked topics
+        setShowPaymentDialog(true);
+        return;
       }
     }
     
+    // Game-based learning: Allow playing the enabled topic
     setSelectedTopic(topic);
     setIsPlayerOpen(true);
   };
@@ -235,23 +230,14 @@ export default function DemoClassPage() {
         setCompletedTopics
       );
 
-      // Check if subject is completed using shared utility
+      // Check if all topics in the subject are completed
       if (selectedSubjectData) {
-        const subjectProgress: SubjectProgression = {
-          id: selectedSubjectData.id,
-          name: selectedSubjectData.name,
-          chapters: selectedSubjectData.chapters.map(ch => ({
-            id: ch.id,
-            name: ch.name,
-            topics: ch.topics.map(t => ({
-              id: t.id,
-              name: t.name,
-              completed: t.completed
-            }))
-          }))
-        };
+        const allTopics = selectedSubjectData.chapters.flatMap(ch => ch.topics);
+        const allCompleted = allTopics.every(topic => 
+          topic.completed || newCompletedTopics.has(topic.id)
+        );
 
-        if (isSubjectCompleted(subjectProgress, newCompletedTopics)) {
+        if (allCompleted) {
           setCompletedSubjectName(selectedSubjectData.name);
           setShowCompletionModal(true);
         }
@@ -262,46 +248,19 @@ export default function DemoClassPage() {
 
   const handleNextTopic = () => {
     if (selectedSubjectData && selectedTopic) {
-      const subjectProgress: SubjectProgression = {
-        id: selectedSubjectData.id,
-        name: selectedSubjectData.name,
-        chapters: selectedSubjectData.chapters.map(ch => ({
-          id: ch.id,
-          name: ch.name,
-          topics: ch.topics.map(t => ({
-            id: t.id,
-            name: t.name,
-            completed: t.completed
-          }))
-        }))
-      };
-
-      const topicForProgression = {
-        id: selectedTopic.id,
-        name: selectedTopic.name,
-        completed: selectedTopic.completed
-      };
-
-      // Check if we can navigate to next topic (current must be completed)
-      if (!canNavigateToNext(topicForProgression, subjectProgress, completedTopics)) {
-        console.log('Cannot navigate to next topic: current topic not completed');
-        return; // Don't proceed if current topic is not completed
+      // For demo: Only allow access to the first topic
+      const isFirstTopic = selectedSubjectData.chapters[0]?.topics[0]?.id === selectedTopic.id;
+      
+      if (isFirstTopic) {
+        // Demo users trying to access next topic should see subscription dialog
+        setShowPaymentDialog(true);
+        handlePlayerClose(); // Close the player to show the subscription dialog
+        return;
       }
-
-      const nextTopic = getNextTopic(topicForProgression, subjectProgress);
-      if (nextTopic) {
-        // Find the full DemoTopic object
-        const fullNextTopic = selectedSubjectData.chapters
-          .flatMap(ch => ch.topics)
-          .find(t => t.id === nextTopic.id);
-        
-        if (fullNextTopic) {
-          setSelectedTopic(fullNextTopic);
-        }
-      } else {
-        // No more topics, close the player
-        handlePlayerClose();
-      }
+      
+      // This shouldn't happen in demo since only first topic is enabled,
+      // but just in case, close the player
+      handlePlayerClose();
     }
   };
 
@@ -311,6 +270,31 @@ export default function DemoClassPage() {
 
   const setShowSubscriptionDialog = () => {
       setShowPaymentDialog(true);
+  };
+
+  // Handle difficulty rating submission
+  const handleDifficultyRate = async (topicId: string, rating: number) => {
+    try {
+      // For demo purposes, we'll store ratings locally in state and localStorage
+      const newRatings = {
+        ...topicRatings,
+        [topicId]: {
+          userRating: rating,
+          hasRated: true
+        }
+      };
+      
+      setTopicRatings(newRatings);
+      
+      // Save to localStorage for demo persistence
+      if (typeof window !== 'undefined' && classId) {
+        localStorage.setItem(`demo-ratings-${classId}`, JSON.stringify(newRatings));
+      }
+      
+      console.log(`Demo: Topic ${topicId} rated ${rating} stars`);
+    } catch (error) {
+      console.error('Error saving difficulty rating in demo:', error);
+    }
   };
 
   // Show loading state
@@ -368,6 +352,18 @@ export default function DemoClassPage() {
       </div>
     );
   }
+
+  // Convert demo topic content to TopicContent format for ContentPlayer
+  const convertDemoContentToTopicContent = (demoTopic: DemoTopic) => {
+    return {
+      contentType: demoTopic.content.type,
+      url: demoTopic.content.url,
+      videoUrl: demoTopic.content.videoUrl,
+      pdfUrl: demoTopic.content.pdfUrl,
+      textContent: demoTopic.content.textContent,
+      widgetConfig: demoTopic.content.widgetConfig
+    };
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -574,40 +570,27 @@ export default function DemoClassPage() {
 
                             {/* Topics Grid */}
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {chapter.topics.map((topic: DemoTopic) => {
+                              {chapter.topics.map((topic: DemoTopic, topicIndex) => {
                                 const isCompleted = topic.completed || completedTopics.has(topic.id);
                                 
-                                // Create subject progression data for topic enabling check
-                                const subjectProgress: SubjectProgression = {
-                                  id: selectedSubjectData.id,
-                                  name: selectedSubjectData.name,
-                                  chapters: selectedSubjectData.chapters.map(ch => ({
-                                    id: ch.id,
-                                    name: ch.name,
-                                    topics: ch.topics.map(t => ({
-                                      id: t.id,
-                                      name: t.name,
-                                      completed: t.completed
-                                    }))
-                                  }))
-                                };
-
-                                const topicForProgression = {
-                                  id: topic.id,
-                                  name: topic.name,
-                                  completed: topic.completed
-                                };
-
-                                const isEnabled = isTopicEnabled(topicForProgression, subjectProgress, completedTopics);
+                                // For demo: Only enable the very first topic of the first chapter
+                                const isFirstTopic = chapterIndex === 0 && topicIndex === 0;
+                                const isDisabled = !isFirstTopic;
+                                
+                                // Game-based learning - students can play any topic/game
                                 const dbTopic = convertTopicForItem(topic);
+                                
+                                // Get rating for this topic
+                                const topicRating = topicRatings[topic.id];
                                 
                                 return (
                                   <TopicItem
                                     key={topic.id}
                                     topic={dbTopic}
                                     isCompleted={isCompleted}
-                                    hasAccess={true} // Demo has full access
-                                    isEnabled={isEnabled}
+                                    isDisabled={isDisabled}
+                                    userRating={topicRating?.userRating}
+                                    hasRated={topicRating?.hasRated}
                                     onClick={() => handleTopicClick(topic)}
                                   />
                                 );
@@ -637,30 +620,11 @@ export default function DemoClassPage() {
         onClose={handlePlayerClose}
         onComplete={handleTopicComplete}
         onNext={handleNextTopic}
+        onDifficultyRate={handleDifficultyRate}
         isCompleted={selectedTopic ? (selectedTopic.completed || completedTopics.has(selectedTopic.id)) : false}
-        canProceedToNext={selectedTopic && selectedSubjectData ? (() => {
-          const subjectProgress: SubjectProgression = {
-            id: selectedSubjectData.id,
-            name: selectedSubjectData.name,
-            chapters: selectedSubjectData.chapters.map(ch => ({
-              id: ch.id,
-              name: ch.name,
-              topics: ch.topics.map(t => ({
-                id: t.id,
-                name: t.name,
-                completed: t.completed
-              }))
-            }))
-          };
-
-          const topicForProgression = {
-            id: selectedTopic.id,
-            name: selectedTopic.name,
-            completed: selectedTopic.completed
-          };
-
-          return canNavigateToNext(topicForProgression, subjectProgress, completedTopics);
-        })() : false}
+        isDemo={true}
+        demoContent={selectedTopic ? convertDemoContentToTopicContent(selectedTopic) : undefined}
+        isDemoLimitReached={selectedTopic && selectedSubjectData ? selectedSubjectData.chapters[0]?.topics[0]?.id === selectedTopic.id : false}
       />
 
       {/* Subject Completion Modal */}

@@ -52,7 +52,7 @@ export async function GET() {
       }
     });
 
-    // Get all classes with their subjects and content
+    // Get all classes with their subjects and chapters (excluding content for security)
     const classes = await prisma.class.findMany({
       where: { isActive: true },
       include: {
@@ -61,8 +61,14 @@ export async function GET() {
             chapters: {
               include: {
                 topics: {
-                  include: {
-                    content: true
+                  select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    duration: true,
+                    description: true,
+                    orderIndex: true
+                    // Explicitly excluding content for security
                   },
                   orderBy: { orderIndex: 'asc' }
                 }

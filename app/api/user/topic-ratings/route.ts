@@ -125,32 +125,23 @@ export async function GET(request: NextRequest) {
         totalRatings
       });
     } else if (classId) {
-      // Get all ratings for a class
-      const ratings = await prisma.topicDifficultyRating.findMany({
-        where: { classId: parseInt(classId) },
+      // Get current user's ratings for a class
+      const userRatings = await prisma.topicDifficultyRating.findMany({
+        where: { 
+          classId: parseInt(classId),
+          userId: user.id  // Only get current user's ratings
+        },
         select: { topicId: true, rating: true, created_at: true }
       });
 
-      // Group ratings by topic
-      type RatingData = { topicId: string; rating: number; created_at: Date };
-      const ratingsByTopic = ratings.reduce((acc: Record<string, number[]>, rating: RatingData) => {
-        if (!acc[rating.topicId]) {
-          acc[rating.topicId] = [];
-        }
-        acc[rating.topicId].push(rating.rating);
-        return acc;
-      }, {} as Record<string, number[]>);
+      // Convert to the expected format
+      const topicRatings = userRatings.map(rating => ({
+        topicId: rating.topicId,
+        userRating: rating.rating,  // Individual user rating, not average
+        hasRated: true
+      }));
 
-      const topicAverages = Object.entries(ratingsByTopic).map(([topicId, ratingsArray]) => {
-        const ratings = ratingsArray as number[];
-        return {
-          topicId,
-          averageRating: Math.round((ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length) * 10) / 10,
-          totalRatings: ratings.length
-        };
-      });
-
-      return NextResponse.json({ ratings: topicAverages });
+      return NextResponse.json({ ratings: topicRatings });
     }
   } catch (error) {
     console.error('Error in GET topic ratings API:', error);

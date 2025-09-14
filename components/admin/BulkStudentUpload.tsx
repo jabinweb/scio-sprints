@@ -44,9 +44,9 @@ export function BulkStudentUpload({ isOpen, onClose, schoolId, schoolName, onCom
 
   const downloadTemplate = () => {
     const csvContent = `name,email,grade,section,roll_number,phone,parent_name,parent_email
-John Doe,john.doe@example.com,5,A,001,9876543210,John Sr,john.sr@example.com
-Jane Smith,jane.smith@example.com,5,A,002,9876543211,Jane Sr,jane.sr@example.com
-Mike Johnson,mike.johnson@example.com,5,B,003,9876543212,Mike Sr,mike.sr@example.com`;
+John Doe,john.doe@example.com,5,A,001,9495212484,John Sr,john.sr@example.com
+Jane Smith,jane.smith@example.com,5,A,002,9495212485,Jane Sr,jane.sr@example.com
+Mike Johnson,mike.johnson@example.com,5,B,003,9495212486,Mike Sr,mike.sr@example.com`;
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);

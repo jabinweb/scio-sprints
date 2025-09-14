@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Play, Clock, Star, Users, GraduationCap, ChevronRight } from 'lucide-react';
+import { ArrowLeft, BookOpen, Play, Clock, Star, Users, GraduationCap, ChevronRight, Crown } from 'lucide-react';
+import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
 
 // Types for demo classes data
 interface DemoClass {
@@ -52,6 +53,8 @@ export default function DemoPage() {
   const [classes, setClasses] = useState<DemoClass[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
+  const [selectedClassForSubscription, setSelectedClassForSubscription] = useState<DemoClass | null>(null);
 
   // Fetch demo classes from API
   useEffect(() => {
@@ -98,11 +101,33 @@ export default function DemoPage() {
     return Math.round((completedCount / allTopics.length) * 100);
   };
 
-  const formatPrice = (price: number, currency: string = 'INR') => {
-    const amount = price / 100; // Convert from paise/cents to main currency
-    const symbol = currency === 'INR' ? '₹' : '$';
-    return `${symbol}${amount.toLocaleString()}`;
+  // Transform DemoClass to ClassData format for SubscriptionDialog
+  const transformToClassData = (demoClass: DemoClass) => {
+    return {
+      id: demoClass.id,
+      name: demoClass.name,
+      description: demoClass.description,
+      price: demoClass.price, // Already in paisa
+      subjects: demoClass.subjects.map(subject => ({
+        id: subject.id,
+        name: subject.name,
+        icon: subject.icon,
+        color: subject.color,
+        price: Math.floor(demoClass.price * 0.3), // 30% of class price for individual subjects
+        isSubscribed: false,
+        subscriptionType: undefined,
+        chapters: subject.chapters.map(chapter => ({
+          id: chapter.id,
+          name: chapter.name,
+          topics: chapter.topics.map(topic => ({
+            id: topic.id,
+            name: topic.name
+          }))
+        }))
+      }))
+    };
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -232,8 +257,7 @@ export default function DemoPage() {
                 return (
                   <Card 
                     key={classInfo.id}
-                    className="group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer bg-white"
-                    onClick={() => handleClassClick(classInfo.id)}
+                    className="group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 bg-white"
                   >
                     <CardHeader className="relative z-1 pb-4">
                       {/* Icon Section */}
@@ -271,7 +295,7 @@ export default function DemoPage() {
 
                     <CardContent className="relative z-10 space-y-4">
                       {/* Price Display */}
-                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
+                      {/* <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
                         <div className="flex items-center gap-2">
                           <div className="p-1.5 bg-green-100 rounded-lg">
                             <Star className="h-3.5 w-3.5 text-green-600" />
@@ -286,7 +310,7 @@ export default function DemoPage() {
                         <div className="text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded-full">
                           Live Data
                         </div>
-                      </div>
+                      </div> */}
 
                       {/* Stats Grid */}
                       <div className="grid grid-cols-2 gap-3">
@@ -324,9 +348,13 @@ export default function DemoPage() {
                         </div>
                       </div>
 
-                      {/* Action Button */}
-                      <div className="pt-2">
-                        <div className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-gray-50 to-blue-50 border-gray-100 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:border-blue-200 transition-all">
+                      {/* Action Buttons */}
+                      <div className="pt-2 space-y-2">
+                        {/* Try Demo Button */}
+                        <div 
+                          className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-gray-50 to-blue-50 border-gray-100 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:border-blue-200 transition-all cursor-pointer"
+                          onClick={() => handleClassClick(classInfo.id)}
+                        >
                           <div className="flex items-center gap-2">
                             <div className="p-1.5 bg-blue-100 group-hover:bg-blue-200 rounded-lg transition-colors">
                               <Play className="h-3.5 w-3.5 text-blue-600" />
@@ -336,6 +364,26 @@ export default function DemoPage() {
                             </span>
                           </div>
                           <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-all group-hover:translate-x-1" />
+                        </div>
+                        
+                        {/* Upgrade Button */}
+                        <div 
+                          className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-100 hover:from-orange-100 hover:to-yellow-100 hover:border-orange-200 transition-all cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedClassForSubscription(classInfo);
+                            setShowSubscriptionDialog(true);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors">
+                              <Crown className="h-3.5 w-3.5 text-orange-600" />
+                            </div>
+                            <span className="text-sm font-semibold text-gray-700 hover:text-orange-700 transition-colors">
+                              Upgrade
+                            </span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-gray-400 hover:text-orange-600 transition-all hover:translate-x-1" />
                         </div>
                       </div>
                     </CardContent>
@@ -361,6 +409,23 @@ export default function DemoPage() {
             )}
           </div>
         </>
+      )}
+
+      {/* Subscription Dialog */}
+      {selectedClassForSubscription && (
+        <SubscriptionDialog 
+          open={showSubscriptionDialog}
+          onClose={() => {
+            setShowSubscriptionDialog(false);
+            setSelectedClassForSubscription(null);
+          }}
+          classData={transformToClassData(selectedClassForSubscription)}
+          onSubscribe={(type, options) => {
+            console.log('Demo subscription:', type, options);
+            setShowSubscriptionDialog(false);
+            setSelectedClassForSubscription(null);
+          }}
+        />
       )}
     </div>
   );

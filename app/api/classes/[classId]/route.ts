@@ -9,25 +9,52 @@ export async function GET(
   const { classId } = await params;
 
   try {
+    // Return structure without actual content data
     const classData = await prisma.class.findUnique({
       where: {
         id: parseInt(classId)
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        isActive: true,
+        currency: true,
+        price: true,
         subjects: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+            color: true,
+            isLocked: true,
+            orderIndex: true,
+            currency: true,
+            price: true,
             chapters: {
-              include: {
+              select: {
+                id: true,
+                name: true,
+                orderIndex: true,
                 topics: {
-                  include: {
-                    content: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                  select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    duration: true,
+                    orderIndex: true,
+                    description: true,
+                    // Exclude content - this protects the data
+                  },
+                  orderBy: { orderIndex: 'asc' },
+                },
+              },
+              orderBy: { orderIndex: 'asc' },
+            },
+          },
+          orderBy: { orderIndex: 'asc' },
+        },
+      },
     });
 
     if (!classData) {

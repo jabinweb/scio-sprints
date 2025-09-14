@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 
 export function WhatsAppChat() {
   const [isVisible, setIsVisible] = useState(false);
-  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '+919876543210';
+  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '+919495212484';
   const defaultMessage = process.env.NEXT_PUBLIC_WHATSAPP_DEFAULT_MESSAGE || 'Hi! I want to know more about ScioLabs';
 
   useEffect(() => {

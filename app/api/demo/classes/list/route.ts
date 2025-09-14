@@ -10,19 +10,16 @@ export async function GET() {
       },
       include: {
         subjects: {
-          take: 2, // Limit subjects for demo
           orderBy: {
             orderIndex: 'asc'
           },
           include: {
             chapters: {
-              take: 2, // Limit chapters for demo
               orderBy: {
                 orderIndex: 'asc'
               },
               include: {
                 topics: {
-                  take: 3, // Limit topics for demo
                   orderBy: {
                     orderIndex: 'asc'
                   },

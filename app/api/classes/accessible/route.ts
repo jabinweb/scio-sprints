@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get all active classes
+    // Get all active classes (excluding content for security)
     const allClasses = await prisma.class.findMany({
       where: { isActive: true },
       include: {
@@ -37,8 +37,14 @@ export async function GET(request: Request) {
             chapters: {
               include: {
                 topics: {
-                  include: {
-                    content: true
+                  select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    duration: true,
+                    description: true,
+                    orderIndex: true
+                    // Explicitly excluding content for security
                   }
                 }
               }

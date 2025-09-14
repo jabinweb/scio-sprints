@@ -14,10 +14,8 @@ import { ClassSubscriptionManager } from '@/components/dashboard/ClassSubscripti
 import { TopicItem } from '@/components/learning/TopicItem';
 import { ClassPageSkeleton } from '@/components/dashboard/dashboard-class-skeleton';
 import { 
-  isTopicEnabled, 
   getNextTopic, 
   isSubjectCompleted,
-  canNavigateToNext,
   type SubjectProgression 
 } from '@/lib/topic-progression';
 
@@ -48,7 +46,7 @@ export default function ClassPage() {
   const [selectedTopic, setSelectedTopic] = useState<DbTopic & { completed: boolean } | null>(null);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
-  const [topicRatings, setTopicRatings] = useState<Record<string, { averageRating: number; totalRatings: number }>>({});
+  const [topicRatings, setTopicRatings] = useState<Record<string, { userRating: number; hasRated: boolean }>>({});
   
   // Use unified hook that handles both class data and access verification
   const { 
@@ -72,10 +70,10 @@ export default function ClassPage() {
         if (response.ok) {
           const data = await response.json();
           // Convert array to object with topicId as key
-          const ratingsMap = data.ratings.reduce((acc: Record<string, { averageRating: number; totalRatings: number }>, rating: { topicId: string; averageRating: number; totalRatings: number }) => {
+          const ratingsMap = data.ratings.reduce((acc: Record<string, { userRating: number; hasRated: boolean }>, rating: { topicId: string; userRating: number; hasRated: boolean }) => {
             acc[rating.topicId] = {
-              averageRating: rating.averageRating,
-              totalRatings: rating.totalRatings
+              userRating: rating.userRating,
+              hasRated: rating.hasRated
             };
             return acc;
           }, {});
@@ -124,39 +122,7 @@ export default function ClassPage() {
       return;
     }
 
-    // Check if topic should be enabled (sequential unlock)
-    if (selectedSubjectData) {
-      const subjectProgress: SubjectProgression = {
-        id: selectedSubjectData.id,
-        name: selectedSubjectData.name,
-        chapters: selectedSubjectData.chapters.map(ch => ({
-          id: ch.id,
-          name: ch.name,
-          topics: ch.topics.map(t => ({
-            id: t.id,
-            name: t.name,
-            completed: userProgress.get(t.id) || false
-          }))
-        }))
-      };
-
-      // Create a Set from userProgress for compatibility with shared functions
-      const completedTopicsSet = new Set<string>();
-      userProgress.forEach((completed, topicId) => {
-        if (completed) completedTopicsSet.add(topicId);
-      });
-
-      const topicForProgression = {
-        id: topic.id,
-        name: topic.name,
-        completed: userProgress.get(topic.id) || false
-      };
-
-      if (!isTopicEnabled(topicForProgression, subjectProgress, completedTopicsSet)) {
-        return; // Don't open disabled topics
-      }
-    }
-
+    // Game-based learning: Allow playing any topic/game without sequential restrictions
     // Convert DbTopic to the expected format with proper content structure
     const topicWithCompleted: DbTopic & { completed: boolean } = {
       ...topic,
@@ -248,12 +214,7 @@ export default function ClassPage() {
       if (completed) completedTopicsSet.add(topicId);
     });
 
-    // Check if we can navigate to next topic (current must be completed)
-    if (!canNavigateToNext(currentTopicForProgression, subjectProgress, completedTopicsSet)) {
-      console.log('Cannot navigate to next topic: current topic not completed');
-      return; // Don't proceed if current topic is not completed
-    }
-
+    // Game-based learning: Always allow moving to next topic without restrictions
     const nextTopic = getNextTopic(currentTopicForProgression, subjectProgress);
     
     if (nextTopic) {
@@ -310,14 +271,14 @@ export default function ClassPage() {
       if (response.ok) {
         console.log(`Difficulty rating saved: Topic ${topicId} rated ${rating} stars`);
         
-        // Refresh topic ratings to show updated average
+        // Refresh topic ratings to show updated rating
         const ratingsResponse = await fetch(`/api/user/topic-ratings?classId=${classId}`);
         if (ratingsResponse.ok) {
           const data = await ratingsResponse.json();
-          const ratingsMap = data.ratings.reduce((acc: Record<string, { averageRating: number; totalRatings: number }>, ratingData: { topicId: string; averageRating: number; totalRatings: number }) => {
+          const ratingsMap = data.ratings.reduce((acc: Record<string, { userRating: number; hasRated: boolean }>, ratingData: { topicId: string; userRating: number; hasRated: boolean }) => {
             acc[ratingData.topicId] = {
-              averageRating: ratingData.averageRating,
-              totalRatings: ratingData.totalRatings
+              userRating: ratingData.userRating,
+              hasRated: ratingData.hasRated
             };
             return acc;
           }, {});
@@ -538,37 +499,8 @@ export default function ClassPage() {
                           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                             {chapter.topics.map((topic) => {
                               const isCompleted = userProgress.get(topic.id) || false;
-                              const hasSubjectAccess = subjectAccess[selectedSubject] !== false;
                               
-                              // Create subject progression data for topic enabling check
-                              const subjectProgress: SubjectProgression = {
-                                id: selectedSubjectData.id,
-                                name: selectedSubjectData.name,
-                                chapters: selectedSubjectData.chapters.map(ch => ({
-                                  id: ch.id,
-                                  name: ch.name,
-                                  topics: ch.topics.map(t => ({
-                                    id: t.id,
-                                    name: t.name,
-                                    completed: userProgress.get(t.id) || false
-                                  }))
-                                }))
-                              };
-
-                              // Create a Set from userProgress for compatibility with shared functions
-                              const completedTopicsSet = new Set<string>();
-                              userProgress.forEach((completed, topicId) => {
-                                if (completed) completedTopicsSet.add(topicId);
-                              });
-
-                              const topicForProgression = {
-                                id: topic.id,
-                                name: topic.name,
-                                completed: isCompleted
-                              };
-
-                              const isEnabled = isTopicEnabled(topicForProgression, subjectProgress, completedTopicsSet);
-                              
+                              // Game-based learning: Students can play any topic/game
                               // Get difficulty rating for this topic
                               const topicRating = topicRatings[topic.id];
                               
@@ -577,10 +509,8 @@ export default function ClassPage() {
                                   key={topic.id}
                                   topic={topic}
                                   isCompleted={isCompleted}
-                                  hasAccess={hasSubjectAccess}
-                                  isEnabled={isEnabled}
-                                  difficultyRating={topicRating?.averageRating}
-                                  totalRatings={topicRating?.totalRatings}
+                                  userRating={topicRating?.userRating}
+                                  hasRated={topicRating?.hasRated}
                                   onClick={handleTopicClick}
                                 />
                               );
@@ -611,34 +541,6 @@ export default function ClassPage() {
         onNext={handleNextTopic}
         onDifficultyRate={handleDifficultyRate}
         isCompleted={selectedTopic ? (userProgress.get(selectedTopic.id) || false) : false}
-        canProceedToNext={selectedTopic && selectedSubjectData ? (() => {
-          const subjectProgress: SubjectProgression = {
-            id: selectedSubjectData.id,
-            name: selectedSubjectData.name,
-            chapters: selectedSubjectData.chapters.map(ch => ({
-              id: ch.id,
-              name: ch.name,
-              topics: ch.topics.map(t => ({
-                id: t.id,
-                name: t.name,
-                completed: userProgress.get(t.id) || false
-              }))
-            }))
-          };
-
-          const currentTopicForProgression = {
-            id: selectedTopic.id,
-            name: selectedTopic.name,
-            completed: selectedTopic.completed
-          };
-
-          const completedTopicsSet = new Set<string>();
-          userProgress.forEach((completed, topicId) => {
-            if (completed) completedTopicsSet.add(topicId);
-          });
-
-          return canNavigateToNext(currentTopicForProgression, subjectProgress, completedTopicsSet);
-        })() : false}
       />
     </div>
   );

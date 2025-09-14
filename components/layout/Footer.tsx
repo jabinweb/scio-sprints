@@ -66,16 +66,16 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-teal-400 flex-shrink-0" />
-                <a href="tel:+919876543210" className="text-slate-200 hover:text-teal-300 transition-colors">
-                  +91 98765 43210
+                <a href="tel:+919495212484" className="text-slate-200 hover:text-teal-300 transition-colors">
+                  +91 94952 12484
                 </a>
               </li>
-              <li className="flex items-center gap-3">
+              {/* <li className="flex items-center gap-3">
                 <Globe className="w-5 h-5 text-blue-400 flex-shrink-0" />
                 <a href="https://www.sciosprints.com" className="text-slate-200 hover:text-blue-300 transition-colors">
                   www.sciosprints.com
                 </a>
-              </li>
+              </li> */}
             </ul>
           </div>
         </div>

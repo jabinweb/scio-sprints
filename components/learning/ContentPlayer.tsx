@@ -6,6 +6,14 @@ import { Button } from '@/components/ui/button';
 import { ExternalLink, Play, FileText, Monitor, Star } from 'lucide-react';
 import { type DbTopic } from '@/hooks/useClassData';
 
+interface TopicContent {
+  contentType: string;
+  url?: string;
+  videoUrl?: string;
+  pdfUrl?: string;
+  textContent?: string;
+  widgetConfig?: object;
+}
 
 interface ContentPlayerProps {
   topic: DbTopic | null;
@@ -14,8 +22,10 @@ interface ContentPlayerProps {
   onComplete: () => void;
   onNext?: () => void;
   isCompleted?: boolean;
-  canProceedToNext?: boolean;
   onDifficultyRate?: (topicId: string, rating: number) => void;
+  isDemo?: boolean; // Flag to indicate this is demo mode
+  demoContent?: TopicContent; // Pre-loaded demo content
+  isDemoLimitReached?: boolean; // Flag to indicate demo user has reached access limit
 }
 
 export function ContentPlayer({ 
@@ -25,14 +35,55 @@ export function ContentPlayer({
   onComplete, 
   onNext, 
   isCompleted = false, 
-  canProceedToNext = true,
-  onDifficultyRate 
+  onDifficultyRate,
+  isDemo = false,
+  demoContent,
+  isDemoLimitReached = false
 }: ContentPlayerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [difficultyRating, setDifficultyRating] = useState<number>(0);
   const [hasRated, setHasRated] = useState(false);
+  const [topicContent, setTopicContent] = useState<TopicContent | null>(null);
+  const [contentLoading, setContentLoading] = useState(false);
+
+  // Fetch content from secure endpoint when topic opens
+  useEffect(() => {
+    if (topic?.id && isOpen) {
+      // If demo mode and demo content is provided, use it directly
+      if (isDemo && demoContent) {
+        setTopicContent(demoContent);
+        return;
+      }
+      
+      // Otherwise fetch from API (for dashboard/authenticated users)
+      if (!topicContent) {
+        setContentLoading(true);
+        fetch(`/api/content/topic/${topic.id}`)
+          .then(async response => {
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+              throw new Error(`Failed to fetch content: ${response.status} - ${errorData.error || response.statusText}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            setTopicContent(data.content);
+            setContentLoading(false);
+          })
+          .catch(error => {
+            console.error('Error fetching topic content:', error);
+            setContentLoading(false);
+          });
+      }
+    }
+  }, [topic?.id, isOpen, topicContent, isDemo, demoContent]);
+
+  // Reset content when topic changes
+  useEffect(() => {
+    setTopicContent(null);
+  }, [topic?.id]);
 
   // Only reset state when topic actually changes (by ID), not when completion status changes
   useEffect(() => {
@@ -75,21 +126,15 @@ export function ContentPlayer({
     }
   };
 
-  const handleSkipRating = () => {
-    console.log('Rating skipped');
-    setShowRating(false);
-    setHasRated(true);
-  };
-
   const handleContentAction = () => {
-    if (!topic?.content) return;
+    if (!topicContent) return;
     
     setIsLoading(true);
     
-    switch (topic.content.contentType?.toLowerCase()) {
+    switch (topicContent.contentType?.toLowerCase()) {
       case 'external_link':
-        if (topic.content.url) {
-          window.open(topic.content.url, '_blank');
+        if (topicContent.url) {
+          window.open(topicContent.url, '_blank');
         }
         break;
       case 'video':
@@ -98,8 +143,8 @@ export function ContentPlayer({
         break;
       case 'pdf':
         // Handle PDF viewing
-        if (topic.content.pdfUrl) {
-          window.open(topic.content.pdfUrl, '_blank');
+        if (topicContent.pdfUrl) {
+          window.open(topicContent.pdfUrl, '_blank');
         }
         break;
       case 'text':
@@ -107,14 +152,14 @@ export function ContentPlayer({
         break;
       case 'interactive_widget':
         // Handle interactive widget
-        console.log('Loading widget:', topic.content.widgetConfig);
+        console.log('Loading widget:', topicContent.widgetConfig);
         break;
       case 'iframe':
         // Iframe content is displayed inline
         console.log('Iframe content displayed inline');
         break;
       default:
-        console.warn('Unknown content type:', topic.content.contentType);
+        console.warn('Unknown content type:', topicContent.contentType);
         break;
     }
     
@@ -122,9 +167,9 @@ export function ContentPlayer({
   };
 
   const getContentIcon = () => {
-    if (!topic?.content) return <Play className="h-5 w-5" />;
+    if (!topicContent) return <Play className="h-5 w-5" />;
     
-    const contentType = topic.content.contentType?.toLowerCase();
+    const contentType = topicContent.contentType?.toLowerCase();
     switch (contentType) {
       case 'external_link': return <ExternalLink className="h-5 w-5" />;
       case 'video': return <Play className="h-5 w-5" />;
@@ -137,9 +182,9 @@ export function ContentPlayer({
   };
 
   const getActionText = () => {
-    if (!topic?.content) return 'Start Learning';
+    if (!topicContent) return 'Start Learning';
     
-    const contentType = topic.content.contentType?.toLowerCase();
+    const contentType = topicContent.contentType?.toLowerCase();
     switch (contentType) {
       case 'external_link': return 'Open Link';
       case 'video': return 'Play Video';
@@ -158,42 +203,49 @@ export function ContentPlayer({
         <DialogTitle className="sr-only">{topic.name}</DialogTitle>
         
         {/* Minimal header with only essential controls */}
-        <div className="flex-shrink-0 px-4 py-2 border-b border-gray-800 bg-gray-900 flex flex-row items-center justify-between">
-          <div className="flex items-center gap-2 text-white text-sm">
+        <div className="flex-shrink-0 px-2 sm:px-4 py-2 border-b border-gray-800 bg-gray-900 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-1 sm:gap-2 text-white text-xs sm:text-sm min-w-0 flex-1">
             {getContentIcon()}
             <span className="truncate">{topic.name}</span>
           </div>
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2 flex-shrink-0">
             <Button 
               onClick={handleComplete} 
               size="sm" 
               disabled={hasCompleted || isCompleted}
-              className={`gap-1 text-white text-xs px-3 py-1 ${
+              className={`gap-1 text-white text-xs px-2 sm:px-3 py-1 ${
                 hasCompleted || isCompleted 
                   ? 'bg-gray-600 cursor-not-allowed opacity-50' 
                   : 'bg-green-600 hover:bg-green-700'
               }`}
             >
-              {hasCompleted || isCompleted ? 'Completed' : 'Complete'}
+              <span className="hidden sm:inline">{hasCompleted || isCompleted ? 'Completed' : 'Complete'}</span>
+              <span className="sm:hidden">✓</span>
             </Button>
             {onNext && (
               <Button 
                 onClick={onNext} 
                 size="sm" 
-                disabled={!canProceedToNext || (!hasCompleted && !isCompleted)}
-                className={`gap-1 text-white text-xs px-3 py-1 ${
-                  !canProceedToNext || (!hasCompleted && !isCompleted)
-                    ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                disabled={false} // Always enabled for game-based learning
+                className={`gap-1 text-white text-xs px-2 sm:px-3 py-1 ${
+                  isDemo && isDemoLimitReached 
+                    ? 'bg-orange-600 hover:bg-orange-700' 
                     : 'bg-blue-600 hover:bg-blue-700'
                 }`}
-                title={!canProceedToNext || (!hasCompleted && !isCompleted) ? 'Complete current topic to proceed' : 'Go to next topic'}
+                title={isDemo && isDemoLimitReached ? "Upgrade to access more content" : "Play the next game/topic"}
               >
-                Next Topic
+                <span className="hidden sm:inline">
+                  {isDemo && isDemoLimitReached ? 'Upgrade to Continue' : 'Play Next'}
+                </span>
+                <span className="sm:hidden">
+                  {isDemo && isDemoLimitReached ? '⬆' : '→'}
+                </span>
               </Button>
             )}
-            <Button variant="outline" onClick={onClose} size="sm" className="border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white text-xs px-3 py-1">
-              Close
+            <Button variant="outline" onClick={onClose} size="sm" className="border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white text-xs px-2 sm:px-3 py-1">
+              <span className="hidden sm:inline">Close</span>
+              <span className="sm:hidden">×</span>
             </Button>
           </div>
         </div>
@@ -201,23 +253,31 @@ export function ContentPlayer({
         <div className="flex-1 min-h-0">
           {/* Content Display Area - Maximum space */}
           <div className="h-full bg-gray-900 overflow-hidden flex items-center justify-center">
-            {topic?.content?.contentType?.toLowerCase() === 'text' && topic.content.textContent ? (
-              <div className="prose prose-invert max-w-4xl h-full overflow-auto p-4">
-                <p className="text-gray-200">{topic.content.textContent}</p>
+            {contentLoading ? (
+              <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                <div className="mb-4 p-4 bg-gray-800 rounded-full animate-pulse">
+                  <Play className="h-8 w-8 text-blue-400" />
+                </div>
+                <h3 className="text-lg font-medium mb-2 text-white">Loading Content...</h3>
+                <p className="text-gray-400">Please wait while we fetch the content.</p>
               </div>
-            ) : topic?.content?.contentType?.toLowerCase() === 'video' && topic.content.videoUrl ? (
+            ) : topicContent?.contentType?.toLowerCase() === 'text' && topicContent.textContent ? (
+              <div className="prose prose-invert max-w-4xl h-full overflow-auto p-4">
+                <p className="text-gray-200">{topicContent.textContent}</p>
+              </div>
+            ) : topicContent?.contentType?.toLowerCase() === 'video' && topicContent.videoUrl ? (
               <div className="w-full h-full max-w-full bg-black overflow-hidden flex items-center justify-center">
                 {/* Handle different video URL formats */}
-                {topic.content.videoUrl.includes('youtube.com') || topic.content.videoUrl.includes('youtu.be') ? (
+                {topicContent.videoUrl.includes('youtube.com') || topicContent.videoUrl.includes('youtu.be') ? (
                   <iframe 
-                    src={topic.content.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                    src={topicContent.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
                     className="w-full h-full"
                     allowFullScreen
                     title={topic.name}
                   />
-                ) : topic.content.videoUrl.includes('vimeo.com') ? (
+                ) : topicContent.videoUrl.includes('vimeo.com') ? (
                   <iframe 
-                    src={topic.content.videoUrl.replace('vimeo.com/', 'player.vimeo.com/video/')}
+                    src={topicContent.videoUrl.replace('vimeo.com/', 'player.vimeo.com/video/')}
                     className="w-full h-full"
                     allowFullScreen
                     title={topic.name}
@@ -228,22 +288,22 @@ export function ContentPlayer({
                     className="w-full h-full object-contain"
                     title={topic.name}
                   >
-                    <source src={topic.content.videoUrl} type="video/mp4" />
-                    <source src={topic.content.videoUrl} type="video/webm" />
-                    <source src={topic.content.videoUrl} type="video/ogg" />
+                    <source src={topicContent.videoUrl} type="video/mp4" />
+                    <source src={topicContent.videoUrl} type="video/webm" />
+                    <source src={topicContent.videoUrl} type="video/ogg" />
                     Your browser does not support the video tag.
                   </video>
                 )}
               </div>
-            ) : topic?.content?.contentType?.toLowerCase() === 'pdf' && topic.content.pdfUrl ? (
+            ) : topicContent?.contentType?.toLowerCase() === 'pdf' && topicContent.pdfUrl ? (
               <div className="w-full h-full bg-white overflow-hidden">
                 <iframe 
-                  src={topic.content.pdfUrl}
+                  src={topicContent.pdfUrl}
                   className="w-full h-full"
                   title="PDF Viewer"
                 />
               </div>
-            ) : topic?.content?.contentType?.toLowerCase() === 'interactive_widget' ? (
+            ) : topicContent?.contentType?.toLowerCase() === 'interactive_widget' ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <div className="mb-4 p-4 bg-gray-800 rounded-full">
                   <Monitor className="h-8 w-8 text-blue-400" />
@@ -252,36 +312,36 @@ export function ContentPlayer({
                 <p className="text-gray-400 mb-4">
                   This content will load an interactive learning experience.
                 </p>
-                {topic.content?.widgetConfig && (
+                {topicContent?.widgetConfig && (
                   <pre className="text-xs bg-gray-800 text-green-400 p-2 rounded max-w-md overflow-auto">
-                    {JSON.stringify(topic.content.widgetConfig, null, 2)}
+                    {JSON.stringify(topicContent.widgetConfig, null, 2)}
                   </pre>
                 )}
               </div>
-            ) : topic?.content?.contentType?.toLowerCase() === 'iframe' && topic.content.textContent ? (
-              <div className="w-full h-full bg-gray-900 overflow-hidden flex items-center justify-center">
+            ) : topicContent?.contentType?.toLowerCase() === 'iframe' && topicContent.textContent ? (
+              <div className="w-full h-full bg-gray-900 overflow-hidden">
                 <div 
-                  dangerouslySetInnerHTML={{ __html: topic.content.textContent }}
-                  className="flex items-center justify-center"
-                  style={{ width: '90%', height: '90%' }}
+                  dangerouslySetInnerHTML={{ __html: topicContent.textContent }}
+                  className="w-full h-full"
+                  style={{ width: '100%', height: '100%' }}
                 />
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                <div className="mb-4 p-4 bg-gray-800 rounded-full">
+              <div className="flex flex-col items-center justify-center h-full text-center p-4 sm:p-8">
+                <div className="mb-4 p-3 sm:p-4 bg-gray-800 rounded-full">
                   {getContentIcon()}
                 </div>
-                <h3 className="text-lg font-medium mb-2 text-white">{topic?.name}</h3>
-                <p className="text-gray-400 mb-4">
-                  Duration: {topic?.duration} • Type: {topic?.content?.contentType || 'content'}
+                <h3 className="text-base sm:text-lg font-medium mb-2 text-white">{topic?.name}</h3>
+                <p className="text-sm sm:text-base text-gray-400 mb-4">
+                  Duration: {topic?.duration} • Type: {topicContent?.contentType || 'content'}
                 </p>
                 <Button 
                   onClick={handleContentAction}
-                  disabled={isLoading}
-                  className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={isLoading || contentLoading}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 text-sm sm:text-base px-4 py-2"
                 >
                   {getContentIcon()}
-                  {getActionText()}
+                  {contentLoading ? 'Loading...' : getActionText()}
                 </Button>
               </div>
             )}
@@ -291,24 +351,24 @@ export function ContentPlayer({
         {/* Difficulty Rating Overlay */}
         {showRating && !hasRated && (
           <div 
-            className="absolute inset-0 bg-black/70 flex items-center justify-center z-50"
+            className="absolute inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
             onClick={(e) => e.stopPropagation()} // Prevent accidental closing
           >
             <div 
-              className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl"
+              className="bg-white rounded-2xl p-4 sm:p-8 max-w-sm sm:max-w-md mx-4 w-full text-center shadow-2xl"
               onClick={(e) => e.stopPropagation()} // Prevent event bubbling
             >
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">How was this topic?</h3>
-                <p className="text-gray-600">Rate the difficulty level to help other students</p>
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2">How was this topic?</h3>
+                <p className="text-sm sm:text-base text-gray-600">Rate the difficulty level for your personal tracking</p>
               </div>
               
-              <div className="flex justify-center gap-2 mb-6">
+              <div className="flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6">
                 {[1, 2, 3, 4, 5].map((rating) => (
                   <button
                     key={rating}
                     onClick={() => handleDifficultyRate(rating)}
-                    className="group transition-all duration-200 hover:scale-110"
+                    className="group transition-all duration-200 hover:scale-110 p-1"
                     title={`${rating} star${rating > 1 ? 's' : ''} - ${
                       rating === 1 ? 'Very Easy' :
                       rating === 2 ? 'Easy' :
@@ -317,7 +377,7 @@ export function ContentPlayer({
                     }`}
                   >
                     <Star 
-                      className={`h-10 w-10 transition-colors duration-200 ${
+                      className={`h-8 w-8 sm:h-10 sm:w-10 transition-colors duration-200 ${
                         difficultyRating >= rating 
                           ? 'text-yellow-400 fill-yellow-400' 
                           : 'text-gray-300 hover:text-yellow-300'
@@ -327,30 +387,20 @@ export function ContentPlayer({
                 ))}
               </div>
               
-              <div className="text-sm text-gray-500 mb-6">
+              <div className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">
                 <div className="flex justify-between text-xs">
                   <span>Very Easy</span>
                   <span>Very Hard</span>
                 </div>
               </div>
               
-              <div className="flex gap-3 justify-center">
-                <Button
-                  onClick={handleSkipRating}
-                  variant="outline"
-                  className="text-gray-600 border-gray-300 hover:bg-gray-50"
-                >
-                  Skip
-                </Button>
-                {difficultyRating > 0 && (
-                  <Button
-                    onClick={() => handleDifficultyRate(difficultyRating)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Submit Rating
-                  </Button>
-                )}
-              </div>
+              <Button 
+                onClick={() => setShowRating(false)}
+                variant="outline"
+                className="w-full sm:w-auto px-6 py-2 text-sm"
+              >
+                Skip
+              </Button>
             </div>
           </div>
         )}

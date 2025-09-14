@@ -18,7 +18,7 @@ async function main() {
         { key: 'siteName', value: 'ScioLabs', description: 'Site name' },
         { key: 'siteUrl', value: 'https://sciolabs.in', description: 'Site URL' },
         { key: 'contactEmail', value: 'info@sciolabs.in', description: 'Contact email' },
-        { key: 'contactPhone', value: '+91 98765 43210', description: 'Contact phone' },
+        { key: 'contactPhone', value: '+91 94952 12484', description: 'Contact phone' },
         { key: 'address', value: 'N-304, Ashiyana, Sector N, Lucknow, UP - 226012, India', description: 'Business address' }
       ],
       skipDuplicates: true
@@ -31,14 +31,14 @@ async function main() {
       where: { email: 'info@sciolabs.in' },
       update: {
         name: 'ScioLabs',
-        phone: '+91 98765 43210',
+        phone: '+91 94952 12484',
         address: 'N-304, Ashiyana, Sector N, Lucknow, UP - 226012, India',
         isActive: true
       },
       create: {
         name: 'ScioLabs',
         email: 'info@sciolabs.in',
-        phone: '+91 98765 43210',
+        phone: '+91 94952 12484',
         address: 'N-304, Ashiyana, Sector N, Lucknow, UP - 226012, India',
         isActive: true
       }

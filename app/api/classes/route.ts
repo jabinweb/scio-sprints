@@ -3,24 +3,48 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
+    // Return structure without actual content data
     const classes = await prisma.class.findMany({
       where: { isActive: true },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        isActive: true,
+        currency: true,
+        price: true,
         subjects: {
-          orderBy: { orderIndex: 'asc' },
-          include: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+            color: true,
+            isLocked: true,
+            orderIndex: true,
+            currency: true,
+            price: true,
             chapters: {
-              orderBy: { orderIndex: 'asc' },
-              include: {
+              select: {
+                id: true,
+                name: true,
+                orderIndex: true,
                 topics: {
-                  orderBy: { orderIndex: 'asc' },
-                  include: {
-                    content: true,
+                  select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    duration: true,
+                    orderIndex: true,
+                    description: true,
+                    // Exclude content - this is the key change
                   },
+                  orderBy: { orderIndex: 'asc' },
                 },
               },
+              orderBy: { orderIndex: 'asc' },
             },
           },
+          orderBy: { orderIndex: 'asc' },
         },
       },
       orderBy: { id: 'asc' },

@@ -14,19 +14,16 @@ export async function GET(request: Request) {
       },
       include: {
         subjects: {
-          take: 2, // Limit to 2 subjects for demo
           orderBy: {
             orderIndex: 'asc'
           },
           include: {
             chapters: {
-              take: 2, // Limit to 2 chapters per subject
               orderBy: {
                 orderIndex: 'asc'
               },
               include: {
                 topics: {
-                  take: 3, // Limit to 3 topics per chapter for demo
                   orderBy: {
                     orderIndex: 'asc'
                   },

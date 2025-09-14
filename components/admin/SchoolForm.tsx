@@ -133,7 +133,7 @@ export function SchoolForm({ isOpen, onClose, onSubmit, initialData, mode }: Sch
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => updateFormData('phone', e.target.value)}
-                placeholder="+91 9876543210"
+                placeholder="+91 94952 12484"
               />
             </div>
 
