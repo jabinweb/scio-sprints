@@ -21,6 +21,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
   secret: process.env.AUTH_SECRET,
+  experimental: {
+    enableWebAuthn: false,
+  },
   providers: [
     ...authConfig.providers,
     Nodemailer({
@@ -129,34 +132,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt", // Use JWT for consistency with middleware
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Handle account linking - allow linking accounts with same email
-      if (account?.provider && user?.email) {
-        try {
-          // Check if user exists with this email
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email }
-          })
-          
-          if (existingUser) {
-            // Check if account already exists for this provider
-            const existingAccount = await prisma.account.findFirst({
-              where: {
-                userId: existingUser.id,
-                provider: account.provider
-              }
-            })
-            
-            // If account doesn't exist for this provider but user exists, link them
-            if (!existingAccount) {
-              console.log(`Linking ${account.provider} account to existing user: ${user.email}`)
-            }
-          }
-        } catch (error) {
-          console.error('Error in signIn callback:', error)
-        }
-      }
-
+    async signIn({ user, profile }) {
       // Update user information when they sign in
       if (user.email) {
         try {
