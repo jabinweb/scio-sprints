@@ -42,15 +42,15 @@ export async function GET(request: Request) {
     const transformedTopics = topics.map(topic => {
       let content = undefined;
       
-      if (topic.content && Array.isArray(topic.content) && topic.content.length > 0) {
-        const contentData = topic.content[0];
+      if (topic.content) {
+        // topic.content is a single object, not an array (one-to-one relationship)
         content = {
-          contentType: contentData.contentType?.toLowerCase() || 'external_link', // Convert to lowercase for form
-          url: contentData.url,
-          videoUrl: contentData.videoUrl,
-          pdfUrl: contentData.pdfUrl,
-          textContent: contentData.textContent,
-          widgetConfig: contentData.widgetConfig,
+          contentType: topic.content.contentType?.toLowerCase() || 'external_link', // Convert to lowercase for form
+          url: topic.content.url,
+          videoUrl: topic.content.videoUrl,
+          pdfUrl: topic.content.pdfUrl,
+          textContent: topic.content.textContent,
+          widgetConfig: topic.content.widgetConfig,
         };
       }
       

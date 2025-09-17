@@ -68,21 +68,21 @@ const promiseItems: PromiseItem[] = [
 
 export function ScioSprintsPromise() {
   return (
-    <section className="py-20 bg-gradient-to-b from-white to-slate-50 relative overflow-hidden" id="promise">
+    <section className="py-12 md:py-20 bg-gradient-to-b from-gray-50 to-gray-100 relative overflow-hidden" id="promise">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-grid-pattern opacity-5" />
       <div className="absolute top-10 left-20 w-32 h-32 bg-brand-blue/10 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-20 w-40 h-40 bg-brand-orange/10 rounded-full blur-3xl" />
       
-      <div className="container mx-auto px-6 relative">
+      <div className="container mx-auto px-4 md:px-6 relative">
         {/* Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 tracking-tight text-gray-900">
             <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">
               The ScioSprints Promise
             </span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             We know revision can feel stressful — for both children and parents. That&apos;s why ScioSprints makes it simple, engaging, and effective, ensuring better focus, stronger memory, and improved grades.
           </p>
         </div>
@@ -92,7 +92,7 @@ export function ScioSprintsPromise() {
           {promiseItems.map((item) => (
             <Card 
               key={item.id} 
-              className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm hover:-translate-y-1"
+              className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm hover:-translate-y-1 shadow-md"
             >
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
@@ -103,10 +103,10 @@ export function ScioSprintsPromise() {
                   
                   {/* Content */}
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-brand-blue transition-colors">
+                    <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 group-hover:text-brand-blue transition-colors">
                       {item.title}
                     </h3>
-                    <p className="text-gray-600 leading-relaxed text-sm">
+                    <p className="text-gray-600 leading-relaxed font-medium text-sm md:text-base lg:text-lg">
                       {item.description}
                     </p>
                   </div>

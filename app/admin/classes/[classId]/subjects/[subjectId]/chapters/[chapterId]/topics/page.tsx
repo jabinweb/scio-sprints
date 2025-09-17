@@ -113,7 +113,7 @@ export default function TopicsPage() {
     } else if (topic.content && typeof topic.content === 'object') {
       // Content is already an object, ensure all fields are present and convert contentType
       parsedContent = {
-        contentType: topic.content.contentType?.toLowerCase().replace('_', '_') || 'external_link',
+        contentType: topic.content.contentType?.toLowerCase() || 'external_link',
         url: topic.content.url || '',
         videoUrl: topic.content.videoUrl || '',
         pdfUrl: topic.content.pdfUrl || '',

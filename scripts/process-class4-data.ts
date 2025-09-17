@@ -80,7 +80,7 @@ async function processClass4Data() {
     for (const row of data) {
       console.log(`Processing: ${row.class_name} -> ${row.subject_name} -> ${row.chapter_name} -> ${row.topic_name}`);
       
-      // Find or create class
+      // Find or create/update class
       let classRecord = await prisma.class.findFirst({
         where: { name: row.class_name }
       });
@@ -95,7 +95,7 @@ async function processClass4Data() {
         console.log(`  Created class: ${classRecord.name}`);
       }
       
-      // Find or create subject
+      // Find or create/update subject
       let subjectRecord = await prisma.subject.findFirst({
         where: {
           name: row.subject_name,
@@ -114,9 +114,18 @@ async function processClass4Data() {
           }
         });
         console.log(`  Created subject: ${subjectRecord.name}`);
+      } else {
+        // Update existing subject with new order
+        subjectRecord = await prisma.subject.update({
+          where: { id: subjectRecord.id },
+          data: {
+            orderIndex: row.subject_order
+          }
+        });
+        console.log(`  Updated subject: ${subjectRecord.name}`);
       }
       
-      // Find or create chapter
+      // Find or create/update chapter
       let chapterRecord = await prisma.chapter.findFirst({
         where: {
           name: row.chapter_name,
@@ -133,9 +142,18 @@ async function processClass4Data() {
           }
         });
         console.log(`  Created chapter: ${chapterRecord.name}`);
+      } else {
+        // Update existing chapter with new order
+        chapterRecord = await prisma.chapter.update({
+          where: { id: chapterRecord.id },
+          data: {
+            orderIndex: row.chapter_order
+          }
+        });
+        console.log(`  Updated chapter: ${chapterRecord.name}`);
       }
       
-      // Find or create topic
+      // Find or create/update topic
       let topicRecord = await prisma.topic.findFirst({
         where: {
           name: row.topic_name,
@@ -154,33 +172,66 @@ async function processClass4Data() {
           }
         });
         console.log(`  Created topic: ${topicRecord.name}`);
+      } else {
+        // Update existing topic with new data
+        topicRecord = await prisma.topic.update({
+          where: { id: topicRecord.id },
+          data: {
+            type: row.topic_type as TopicType,
+            description: row.topic_description,
+            orderIndex: 1
+          }
+        });
+        console.log(`  Updated topic: ${topicRecord.name}`);
       }
       
-      // Create or update topic content
+      // Create or update topic content - Always override existing data
       const existingContent = await prisma.topicContent.findFirst({
         where: {
-          topicId: topicRecord.id,
-          contentType: row.content_type as ContentType
+          topicId: topicRecord.id
         }
       });
       
-      if (!existingContent) {
-        await prisma.topicContent.create({
-          data: {
-            topicId: topicRecord.id,
-            contentType: row.content_type as ContentType,
-            url: row.content_url
-          }
-        });
-        console.log(`  Created content for topic: ${topicRecord.name}`);
-      } else {
+      // Map content type to enum value
+      let contentType: ContentType;
+      switch (row.content_type.toUpperCase()) {
+        case 'IFRAME':
+          contentType = ContentType.IFRAME;
+          break;
+        case 'VIDEO':
+          contentType = ContentType.VIDEO;
+          break;
+        case 'PDF':
+          contentType = ContentType.PDF;
+          break;
+        case 'TEXT':
+          contentType = ContentType.TEXT;
+          break;
+        case 'INTERACTIVE_WIDGET':
+          contentType = ContentType.INTERACTIVE_WIDGET;
+          break;
+        default:
+          contentType = ContentType.EXTERNAL_LINK;
+      }
+      
+      const contentData = {
+        topicId: topicRecord.id,
+        contentType: contentType,
+        textContent: row.content_url, // Store iframe HTML in textContent field
+        url: null, // Clear URL field since we're using textContent for iframe
+      };
+      
+      if (existingContent) {
         await prisma.topicContent.update({
           where: { id: existingContent.id },
-          data: {
-            url: row.content_url
-          }
+          data: contentData
         });
         console.log(`  Updated content for topic: ${topicRecord.name}`);
+      } else {
+        await prisma.topicContent.create({
+          data: contentData
+        });
+        console.log(`  Created content for topic: ${topicRecord.name}`);
       }
     }
     

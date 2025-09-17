@@ -321,8 +321,16 @@ export function ContentPlayer({
             ) : topicContent?.contentType?.toLowerCase() === 'iframe' && topicContent.textContent ? (
               <div className="w-full h-full bg-gray-900 overflow-hidden">
                 <div 
-                  dangerouslySetInnerHTML={{ __html: topicContent.textContent }}
-                  className="w-full h-full"
+                  dangerouslySetInnerHTML={{ 
+                    __html: topicContent.textContent
+                      // More aggressive iframe dimension overrides
+                      .replace(/width\s*=\s*["']\d+["']/gi, 'width="100%"')
+                      .replace(/height\s*=\s*["']\d+["']/gi, 'height="100%"')
+                      .replace(/frameborder\s*=\s*["']\d+["']/gi, 'frameborder="0"')
+                      .replace(/style\s*=\s*["'][^"']*["']/gi, '')
+                      .replace(/<iframe/gi, '<iframe style="width: 100%; height: 100%; border: none; min-height: 100vh;"')
+                  }}
+                  className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:min-h-screen [&_iframe]:border-0"
                   style={{ width: '100%', height: '100%' }}
                 />
               </div>
