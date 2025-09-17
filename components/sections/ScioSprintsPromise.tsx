@@ -31,7 +31,7 @@ const promiseItems: PromiseItem[] = [
   },
   {
     id: 'grades',
-    title: 'Better grades Guaranteed!',
+    title: 'Better grades!',
     description: 'Builds reasoning and recall that reflect in exam performance.',
     icon: <TrendingUp className="w-6 h-6" />,
     color: 'from-green-500 to-emerald-600',
@@ -59,7 +59,7 @@ const promiseItems: PromiseItem[] = [
   },
   {
     id: 'memory',
-    title: 'Longer & Sharper Memory',
+    title: 'Sharper Memory',
     description: 'Activities designed for better recall and lasting understanding.',
     icon: <Brain className="w-6 h-6" />,
     color: 'from-indigo-500 to-blue-600',
