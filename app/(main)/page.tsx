@@ -1,8 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, Target, Book } from 'lucide-react';
-import { TabSection } from '@/components/sections/TabSection';
+import React from 'react';
 import { Hero } from '@/components/sections/Hero';
 import { CallToAction } from '@/components/sections/CallToAction';
 import { FAQ } from '@/components/sections/FAQ';
@@ -13,13 +11,7 @@ import { RevisionProblems } from '@/components/sections/RevisionProblems';
 import Image from 'next/image';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('features');
 
-  const tabs = [
-    { id: 'features', label: 'Features', icon: <Sparkles className="w-5 h-5" /> },
-    { id: 'curriculum', label: 'Curriculum', icon: <Book className="w-5 h-5" /> },
-    { id: 'benefits', label: 'Benefits', icon: <Target className="w-5 h-5" /> },
-  ];
 
   const platforms = [
     { 
@@ -60,22 +52,17 @@ export default function Home() {
         <Hero />
         
         <RevisionProblems />
-        
+        <TryGamesSection />        
         <ScioSprintsPromise />
-        
-        <section id="features">
-          <TabSection
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        </section>
 
         {/* <section id="demo">
           <DemoVideo />
         </section> */}
 
-        <TryGamesSection />
+
+        <section id="cta">
+          <CallToAction />
+        </section>
 
         {/* Platforms Section */}
         <section id="platforms" className="py-20 relative overflow-hidden">
@@ -128,9 +115,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="cta">
-          <CallToAction />
-        </section>
 
         <section id="faq">
           <FAQ />

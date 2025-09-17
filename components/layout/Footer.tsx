@@ -21,8 +21,7 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-slate-200 mb-6 max-w-md leading-relaxed">
-              Transforming education through interactive, gamified learning experiences. 
-              Empowering students to excel with engaging content aligned to CBSE curriculum.
+              Making revision fun, focused, and effective — with curriculum-aligned games that build memory, confidence, and better grades.
             </p>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-r from-teal-500/20 to-blue-500/20 rounded-full flex items-center justify-center hover:from-teal-500/30 hover:to-blue-500/30 transition-colors cursor-pointer border border-teal-500/30">

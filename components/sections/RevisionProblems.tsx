@@ -15,25 +15,25 @@ interface ProblemItem {
 const problemItems: ProblemItem[] = [
   {
     id: 'rote',
-    description: 'Rote learning and worksheets feel like a burden, not real learning.',
+    description: ' Rote learning and worksheets often feel like a burden, not true learning.',
     emoji: '📚',
     bgColor: 'bg-blue-50',
   },
   {
     id: 'memory',
-    description: 'Kids forget concepts quickly — short-term cramming, no lasting memory.',
+    description: 'Children quickly forget concepts, leading to short-term cramming without lasting memory.',
     emoji: '⏳',
     bgColor: 'bg-orange-50',
   },
   {
     id: 'motivation',
-    description: 'Parents struggle to keep children focused and motivated.',
+    description: 'Parents constantly struggle to keep children attentive, focused, and truly motivated.',
     emoji: '😕',
     bgColor: 'bg-yellow-50',
   },
   {
     id: 'results',
-    description: 'Exam results often don&apos;t reflect the effort put in.',
+    description: 'Despite hours of study, exam results often fail to reflect effort.',
     emoji: '🎯',
     bgColor: 'bg-purple-50',
   },
@@ -166,14 +166,15 @@ export function RevisionProblems() {
               />
               
               {/* Image positioned to overflow blob */}
-              <div className="absolute -inset-8 z-20">
+              <div className="absolute -inset-16 z-20">
                 <Image
                   src="/5.png"
                   alt="Stressed student struggling with traditional revision methods"
-                  width={200}
-                  height={200}
-                  className="object-cover object-center w-full h-full"
+                  width={600}
+                  height={600}
+                  className="object-contain w-full h-full scale-110"
                   priority
+                  quality={95}
                 />
               </div>
             </div>

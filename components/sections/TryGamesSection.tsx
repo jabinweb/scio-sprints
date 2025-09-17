@@ -40,8 +40,8 @@ const gamesData: GameData[] = [
   },
   {
     id: 'colors',
-    title: 'Colours',
-    description: 'Find the names of the colours hidden in this wordsearch grid before time runs out!',
+    title: 'Colour Search',
+    description: 'Find the names of the colours hidden in this wordsearch grid.',
     category: 'Vocabulary',
     difficulty: 'Easy',
     icon: <Palette className="w-5 h-5" />,
@@ -70,7 +70,7 @@ const gamesData: GameData[] = [
   {
     id: 'cities',
     title: 'Indian Cities',
-    description: 'Guess the names of these cities using the clues given, one letter at a time!',
+    description: 'Guess the names of these cities using the clues given.',
     category: 'Geography',
     difficulty: 'Medium',
     icon: <MapPin className="w-5 h-5" />,
