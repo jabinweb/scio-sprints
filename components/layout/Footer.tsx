@@ -31,6 +31,9 @@ const Footer = () => {
                 <Mail className="w-5 h-5 text-blue-300" />
               </div>
             </div>
+            <p className="text-slate-400 text-xs mt-4">
+                Built with <span className="text-red-400">❤️</span> for Indian students 
+            </p>
           </div>
 
           {/* Quick Links */}
@@ -38,10 +41,10 @@ const Footer = () => {
             <h3 className="text-xl font-semibold mb-6 text-white">Quick Links</h3>
             <ul className="space-y-3">
               <li><Link href="/" className="text-slate-200 hover:text-teal-300 transition-colors">Home</Link></li>
-              <li><Link href="/demo" className="text-slate-200 hover:text-teal-300 transition-colors">Try Demo</Link></li>
+              <li><Link href="/#cta" className="text-slate-200 hover:text-teal-300 transition-colors">Try Demo</Link></li>
               {/* <li><Link href="/dashboard" className="text-slate-200 hover:text-blue-300 transition-colors">Dashboard</Link></li> */}
-              <li><Link href="#features" className="text-slate-200 hover:text-teal-300 transition-colors">Features</Link></li>
-              <li><Link href="#about" className="text-slate-200 hover:text-blue-300 transition-colors">About Us</Link></li>
+              <li><Link href="/#features" className="text-slate-200 hover:text-teal-300 transition-colors">Features</Link></li>
+              <li><Link href="/#platforms" className="text-slate-200 hover:text-blue-300 transition-colors">Platforms</Link></li>
             </ul>
           </div>
 
@@ -95,18 +98,6 @@ const Footer = () => {
               <Link href="/support" className="text-slate-300 hover:text-teal-300 transition-colors">
                 Support
               </Link>
-            </div>
-          </div>
-          
-          {/* Additional Info */}
-          <div className="mt-6 pt-6 border-t border-slate-700/50">
-            <div className="text-center">
-              <p className="text-slate-300 text-sm mb-2">
-                🎓 Aligned with CBSE Curriculum | 🎮 Gamified Learning | 📱 Mobile Friendly
-              </p>
-              <p className="text-slate-400 text-xs">
-                Built with <span className="text-red-400">❤️</span> for Indian students • Classes 4-8 • Interactive Content • Progress Tracking
-              </p>
             </div>
           </div>
         </div>

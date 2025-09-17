@@ -52,8 +52,8 @@ export default function Home() {
         <Hero />
         
         <RevisionProblems />
-        <TryGamesSection />        
         <ScioSprintsPromise />
+        <TryGamesSection />        
 
         {/* <section id="demo">
           <DemoVideo />

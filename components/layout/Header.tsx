@@ -60,10 +60,10 @@ const Header = () => {
   };
 
   const navLinks = [
-    { label: 'Features', id: 'features' },
-    { label: 'Demo', id: 'games' },
+    { label: 'Features', id: 'promise' },
     { label: 'Platforms', id: 'platforms' },
-    { label: 'FAQ', id: 'faq' },
+    { label: 'Play Now', id: 'games' },
+    { label: 'FAQs', id: 'faq' },
   ];
 
   return (

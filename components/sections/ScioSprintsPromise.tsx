@@ -66,7 +66,7 @@ const promiseItems: PromiseItem[] = [
 
 export function ScioSprintsPromise() {
   return (
-    <section className="py-20 bg-gradient-to-b from-white to-slate-50 relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-b from-white to-slate-50 relative overflow-hidden" id="promise">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-grid-pattern opacity-5" />
       <div className="absolute top-10 left-20 w-32 h-32 bg-brand-blue/10 rounded-full blur-3xl" />
