@@ -2,12 +2,14 @@
 
 import React, { useState } from 'react';
 import { Sparkles, Target, Book } from 'lucide-react';
-import { TabSection } from '@/components/TabSection';
-import { Hero } from '@/components/Hero';
-import { CallToAction } from '@/components/CallToAction';
-import { FAQ } from '@/components/FAQ';
-import { DemoVideo } from '@/components/DemoVideo';
-import { TryGamesSection } from '@/components/TryGamesSection';
+import { TabSection } from '@/components/sections/TabSection';
+import { Hero } from '@/components/sections/Hero';
+import { CallToAction } from '@/components/sections/CallToAction';
+import { FAQ } from '@/components/sections/FAQ';
+// import { DemoVideo } from '@/components/DemoVideo';
+import { TryGamesSection } from '@/components/sections/TryGamesSection';
+import { ScioSprintsPromise } from '@/components/sections/ScioSprintsPromise';
+import { RevisionProblems } from '@/components/sections/RevisionProblems';
 import Image from 'next/image';
 
 export default function Home() {
@@ -56,6 +58,10 @@ export default function Home() {
     <>
       <div className="bg-background">
         <Hero />
+        
+        <RevisionProblems />
+        
+        <ScioSprintsPromise />
         
         <section id="features">
           <TabSection

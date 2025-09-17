@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,12 +20,12 @@ interface FormData {
   role: string;
 }
 
-export function SignupForm({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function SignupForm({ open, onOpenChange, initialRole }: { open: boolean; onOpenChange: (open: boolean) => void; initialRole?: string }) {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     school: '',
-    role: ''
+    role: initialRole || ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +60,11 @@ export function SignupForm({ open, onOpenChange }: { open: boolean; onOpenChange
       setLoading(false);
     }
   };
+
+  // Reset form role when dialog is opened/closed and initialRole changes
+  React.useEffect(() => {
+    setFormData(prev => ({ ...prev, role: initialRole || '' }));
+  }, [initialRole, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

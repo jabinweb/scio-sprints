@@ -1,17 +1,25 @@
 import { Button } from "@/components/ui/button";
-import { Users, GraduationCap } from "lucide-react";
+import { Users, GraduationCap, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
-import { SignupForm } from './SignupForm';
+import { SignupForm } from '../SignupForm';
 
 export function CallToAction() {
   const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const [signupRole, setSignupRole] = useState<string | undefined>(undefined);
   const router = useRouter();
 
   const handleEducatorClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    setSignupRole('admin');
+    setIsSignupOpen(true);
+  };
+
+  const handleTeacherClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setSignupRole('teacher');
     setIsSignupOpen(true);
   };
 
@@ -46,6 +54,23 @@ export function CallToAction() {
                 
                 <Tooltip>
                   <TooltipTrigger asChild>
+                    <div className="relative">
+                      <Button 
+                        onClick={handleTeacherClick}
+                        className="bg-orange-400 hover:bg-orange-500 text-white rounded-full px-8 py-6 text-lg shadow-lg transform-gpu hover:scale-[1.02] focus:outline-none"
+                      >
+                        <BookOpen className="mr-2 h-5 w-5" />
+                        I am a Teacher
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-gray-900 text-white border-gray-800 shadow-xl px-4 py-2 rounded-lg">
+                    Classroom-ready activities and student progress tracking.
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Button 
                       onClick={handleEducatorClick}
                       variant="outline"
@@ -68,6 +93,7 @@ export function CallToAction() {
       <SignupForm 
         open={isSignupOpen} 
         onOpenChange={setIsSignupOpen}
+        initialRole={signupRole}
       />
     </section>
   );

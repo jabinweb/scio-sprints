@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Play, Globe, Palette, Heart, MapPin, BookOpen, Type } from 'lucide-react';
 
@@ -27,12 +27,12 @@ const gamesData: GameData[] = [
   {
     id: 'countries',
     title: 'Countries & Capitals',
-    description: 'Test your geography knowledge with world capitals',
+    description: 'Match the countries with their capitals before time runs out!',
     category: 'Geography',
     difficulty: 'Medium',
     icon: <Globe className="w-5 h-5" />,
     iframe: {
-      src: 'https://wordwall.net/embed/play/97069/953/459',
+      src: 'https://wordwall.net/embed/play/97069/953/922',
       width: 500,
       height: 380,
     },
@@ -40,8 +40,8 @@ const gamesData: GameData[] = [
   },
   {
     id: 'colors',
-    title: 'Find the Colours',
-    description: 'Discover hidden colors in this word search puzzle',
+    title: 'Colours',
+    description: 'Find the names of the colours hidden in this wordsearch grid before time runs out!',
     category: 'Vocabulary',
     difficulty: 'Easy',
     icon: <Palette className="w-5 h-5" />,
@@ -56,12 +56,12 @@ const gamesData: GameData[] = [
   {
     id: 'emotions',
     title: 'Emotions',
-    description: 'Learn about different emotions and feelings',
+    description: 'Can you rearrange the words and find the names of emotions?',
     category: 'Social Learning',
     difficulty: 'Easy',
     icon: <Heart className="w-5 h-5" />,
     iframe: {
-      src: 'https://wordwall.net/embed/play/97070/887/112',
+      src: 'https://wordwall.net/embed/play/97070/887/862',
       width: 500,
       height: 380,
     },
@@ -70,12 +70,12 @@ const gamesData: GameData[] = [
   {
     id: 'cities',
     title: 'Indian Cities',
-    description: 'Explore the geography and culture of India',
+    description: 'Guess the names of these cities using the clues given, one letter at a time!',
     category: 'Geography',
     difficulty: 'Medium',
     icon: <MapPin className="w-5 h-5" />,
     iframe: {
-      src: 'https://wordwall.net/embed/play/97070/306/355',
+      src: 'https://wordwall.net/embed/play/97070/306/480',
       width: 500,
       height: 380,
     },
@@ -84,12 +84,12 @@ const gamesData: GameData[] = [
   {
     id: 'verbs',
     title: 'Irregular Verbs',
-    description: 'Master English irregular verbs and grammar',
+    description: 'Test your English skills by hitting the moles, the irregular verbs!',
     category: 'Language',
     difficulty: 'Hard',
     icon: <BookOpen className="w-5 h-5" />,
     iframe: {
-      src: 'https://wordwall.net/embed/play/97071/185/378',
+      src: 'https://wordwall.net/embed/play/97071/185/784',
       width: 500,
       height: 380,
     },
@@ -97,8 +97,8 @@ const gamesData: GameData[] = [
   },
   {
     id: 'speech',
-    title: 'Parts of Speech',
-    description: 'Learn grammar with nouns, adjectives, and adverbs',
+    title: 'Adjectives or Adverbs',
+    description: 'Is it an adjective or an adverb, or both?',
     category: 'Language',
     difficulty: 'Medium',
     icon: <Type className="w-5 h-5" />,
@@ -148,8 +148,7 @@ export const TryGamesSection: React.FC = () => {
           </h2>
           
           <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Experience hands-on learning with our curated collection of educational games. 
-            Each game is designed to make learning engaging and effective.
+            Jump in and explore! Play a few sample games to see how ScioSprints works — quick, fun, and easy.
           </p>
         </div>
 
@@ -187,27 +186,21 @@ export const TryGamesSection: React.FC = () => {
                         </TabsList>
                       </div>
                       
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="flex items-center justify-center w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl">
-                              {game.icon}
-                            </div>
-                            <div>
-                              <CardTitle className="text-2xl font-bold mb-1">
-                                {game.title} <Badge variant="secondary" className={`${getDifficultyColor(game.difficulty)} border font-medium`}>
-                              {game.difficulty}
-                            </Badge>
-                              </CardTitle>
+                          <div className="mb-4 text-center">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                              <Badge variant="secondary" className={`${getDifficultyColor(game.difficulty)} border text-sm py-1 px-2`}>
+                                {game.difficulty}
+                              </Badge>
                               <p className="text-white/90 text-sm font-medium">
                                 {game.category}
                               </p>
                             </div>
+                            <p className="text-white/90 text-xl md:text-xl leading-relaxed mx-auto max-w-2xl">
+                              {game.description}
+                            </p>
                           </div>
-                          
-                          <p className="text-white/90 text-lg leading-relaxed mb-4">
-                            {game.description}
-                          </p>
                     
                         </div>
                       </div>
