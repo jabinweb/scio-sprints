@@ -55,11 +55,6 @@ export default function Home() {
         <ScioSprintsPromise />
         <TryGamesSection />        
 
-        {/* <section id="demo">
-          <DemoVideo />
-        </section> */}
-
-
         <section id="cta">
           <CallToAction />
         </section>
@@ -114,7 +109,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-
 
         <section id="faq">
           <FAQ />

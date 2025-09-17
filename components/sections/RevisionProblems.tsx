@@ -76,21 +76,21 @@ export function RevisionProblems() {
   };
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden">
-      <div className="container mx-auto px-6 relative max-w-7xl">
+    <section className="py-12 md:py-20 bg-white relative overflow-hidden">
+      <div className="container mx-auto px-4 md:px-6 relative max-w-7xl">
         {/* Header */}
         <motion.div 
-          className="text-center mb-16"
+          className="text-center mb-12 md:mb-16"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 rounded-full border border-red-100 mb-6">
-            <span className="text-xl">😣</span>
-            <span className="text-sm font-medium text-red-700">The Problem</span>
+          <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-red-50 rounded-full border border-red-100 mb-4 md:mb-6">
+            <span className="text-lg md:text-xl">😣</span>
+            <span className="text-xs md:text-sm font-medium text-red-700">The Problem</span>
           </div>
           
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight text-gray-900">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 tracking-tight text-gray-900 px-4">
             <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
               Why Revision Feels Hard?
             </span>
@@ -98,10 +98,10 @@ export function RevisionProblems() {
         </motion.div>
 
         {/* Two Column Layout */}
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center">
           {/* Left Column - Problems */}
           <motion.div 
-            className="space-y-4"
+            className="space-y-3 md:space-y-4 order-2 lg:order-1"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -115,17 +115,17 @@ export function RevisionProblems() {
                   transition: { duration: 0.2 }
                 }}
               >
-                <Card className="">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
+                <Card className="shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-start gap-3 md:gap-4">
                       {/* Emoji Icon */}
-                      <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${item.bgColor} flex items-center justify-center text-2xl`}>
+                      <div className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl ${item.bgColor} flex items-center justify-center text-xl md:text-2xl`}>
                         {item.emoji}
                       </div>
                       
                       {/* Content */}
                       <div className="flex-1">
-                        <p className="text-gray-700 leading-relaxed font-medium text-lg">
+                        <p className="text-gray-700 leading-relaxed font-medium text-sm md:text-base lg:text-lg">
                           {item.description}
                         </p>
                       </div>
