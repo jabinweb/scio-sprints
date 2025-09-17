@@ -226,20 +226,6 @@ export const TryGamesSection: React.FC = () => {
             ))}
           </Tabs>
         </div>
-
-        {/* Bottom CTA */}
-
-        <div className="text-center mt-16">
-          <p className="text-gray-600 mb-6">
-            Want access to more games and personalized learning paths?
-          </p>
-            <Link href="/#cta">
-              <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-brand-blue to-brand-orange text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer group">
-              <span className="font-semibold">Explore Demo</span>
-                <Play className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-        </div>
       </div>
     </section>
   );

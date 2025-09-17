@@ -49,16 +49,18 @@ export default function Home() {
   return (
     <>
       <div className="bg-background">
+        {/* Hero Section */}
         <Hero />
-        
+        {/* Problem Section */}
         <RevisionProblems />
+        {/* Promise Section */}
         <ScioSprintsPromise />
-        <TryGamesSection />        
-
+        {/* Games Section */}
+        <TryGamesSection />       
+        {/* CTA Section */} 
         <section id="cta">
           <CallToAction />
         </section>
-
         {/* Platforms Section */}
         <section id="platforms" className="py-20 relative overflow-hidden">
           {/* Animated Background */}
@@ -109,7 +111,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-
+        {/* FAQ Section */}
         <section id="faq">
           <FAQ />
         </section>
