@@ -29,7 +29,7 @@ export function CallToAction() {
       <div className="container mx-auto px-4 sm:px-6 relative">
         <Card className="bg-white/50 backdrop-blur-sm border border-white/20">
           <CardContent className="text-center py-12 px-6">
-            <h2 className="text-4xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-4 tracking-tight text-gray-900">
               <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">Choose Your Journey</span> 🚀
             </h2>
             <p className="text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">

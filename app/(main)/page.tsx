@@ -72,10 +72,10 @@ export default function Home() {
 
           <div className="container mx-auto px-6 relative">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent ">Multi-Platform Learning</span> 🎮
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 tracking-tight text-gray-900">
+                <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">Multi-Platform Learning</span> 🎮
               </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              <p className="text-base md:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
                 Learn and play across trusted educational platforms, all in one place.
               </p>
             </div>

@@ -156,13 +156,13 @@ export const TryGamesSection: React.FC = () => {
             <span className="text-sm font-medium text-gray-600">Interactive Learning</span>
           </div>
           
-          <h2 className="text-5xl font-bold mb-6 tracking-tight">
-            <span className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 tracking-tight text-gray-900">
+            <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">
               Try Our Games
             </span>
           </h2>
           
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base md:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Jump in and explore! Play a few sample games to see how ScioSprints works — quick, fun, and easy.
           </p>
         </div>
