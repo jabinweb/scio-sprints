@@ -181,7 +181,7 @@ export const TryGamesSection: React.FC = () => {
                     <div className="relative">
                       {/* Tab Navigation - Inside the header */}
                       <div className="flex justify-center mb-6">
-                        <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1 bg-white/20 backdrop-blur-sm border border-white/30 shadow-sm rounded-2xl p-2 h-auto">
+                        <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1 bg-white/20 backdrop-blur-sm border border-white/30 shadow-sm rounded-2xl p-2 h-auto">
                           {gamesData.map((gameTab) => (
                             <TabsTrigger
                               key={gameTab.id}
