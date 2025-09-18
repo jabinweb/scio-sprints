@@ -24,25 +24,10 @@ interface GameData {
 }
 
 const gamesData: GameData[] = [
-    {
-    id: 'baamboozle',
-    title: 'Baamboozle Study',
-    description: 'Study and play with Baamboozle interactive sets.',
-    category: 'Study',
-    difficulty: 'Easy',
-    icon: <Play className="w-5 h-5" />,
-    iframe: {
-      src: 'https://www.baamboozle.com/study/3525668',
-      width: 600,
-      height: 400,
-      allow: '',
-    },
-    color: 'from-pink-600 to-pink-800',
-  },
   {
     id: 'formative',
-    title: 'Formative Practice',
-    description: 'Practice sets powered by Formative. Interactive and auto-graded.',
+    title: 'Parts of Speech',
+    description: 'Identify the parts of speech of these words.',
     category: 'Practice',
     difficulty: 'Medium',
     icon: <Play className="w-5 h-5" />,
@@ -53,21 +38,6 @@ const gamesData: GameData[] = [
       allow: 'fullscreen',
     },
     color: 'from-gray-700 to-gray-900',
-  },
-  {
-    id: 'blooket',
-    title: 'Blooket Game',
-    description: 'Play a fun Blooket quiz game. Compete and learn!',
-    category: 'Quiz',
-    difficulty: 'Easy',
-    icon: <Play className="w-5 h-5" />,
-    iframe: {
-      src: 'https://play.blooket.com/play?hwId=68cb8fc4c2c8123d69a67e53',
-      width: 100,
-      height: 600,
-      allow: 'fullscreen',
-    },
-    color: 'from-green-700 to-green-900',
   },
   {
     id: 'countries',
