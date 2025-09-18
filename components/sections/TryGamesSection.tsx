@@ -24,6 +24,36 @@ interface GameData {
 
 const gamesData: GameData[] = [
   {
+    id: 'formative',
+    title: 'Formative Practice',
+    description: 'Practice sets powered by Formative. Interactive and auto-graded.',
+    category: 'Practice',
+    difficulty: 'Medium',
+    icon: <Play className="w-5 h-5" />,
+    iframe: {
+      src: 'https://app.formative.com/practice/sets/66a095aea044d0b8279f9d29',
+      width: 100,
+      height: 600,
+      allow: 'fullscreen',
+    },
+    color: 'from-gray-700 to-gray-900',
+  },
+  {
+    id: 'blooket',
+    title: 'Blooket Game',
+    description: 'Play a fun Blooket quiz game. Compete and learn!',
+    category: 'Quiz',
+    difficulty: 'Easy',
+    icon: <Play className="w-5 h-5" />,
+    iframe: {
+      src: 'https://play.blooket.com/play?hwId=68cb8fc4c2c8123d69a67e53',
+      width: 100,
+      height: 600,
+      allow: 'fullscreen',
+    },
+    color: 'from-green-700 to-green-900',
+  },
+  {
     id: 'countries',
     title: 'Countries & Capitals',
     description: 'Match the countries with their capitals before time runs out!',
