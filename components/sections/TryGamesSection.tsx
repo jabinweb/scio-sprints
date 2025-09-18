@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -23,6 +24,21 @@ interface GameData {
 }
 
 const gamesData: GameData[] = [
+    {
+    id: 'baamboozle',
+    title: 'Baamboozle Study',
+    description: 'Study and play with Baamboozle interactive sets.',
+    category: 'Study',
+    difficulty: 'Easy',
+    icon: <Play className="w-5 h-5" />,
+    iframe: {
+      src: 'https://www.baamboozle.com/study/3525668',
+      width: 600,
+      height: 400,
+      allow: '',
+    },
+    color: 'from-pink-600 to-pink-800',
+  },
   {
     id: 'formative',
     title: 'Formative Practice',
