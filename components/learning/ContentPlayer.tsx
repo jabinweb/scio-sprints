@@ -363,7 +363,7 @@ export function ContentPlayer({
                       .replace(/height\s*=\s*["']\d+["']/gi, 'height="100%"')
                       .replace(/frameborder\s*=\s*["']\d+["']/gi, 'frameborder="0"')
                       .replace(/style\s*=\s*["'][^"']*["']/gi, '')
-                      .replace(/<iframe/gi, '<iframe style="width: 100%; height: 100%; border: none; min-height: 100vh;"')
+                      .replace(/<iframe/gi, '<iframe style="width: 100%; height: 100%; border: none; min-height: calc(100vh - 100px);"')
                   }}
                   className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:min-h-screen [&_iframe]:border-0"
                   style={{ width: '100%', height: '100%' }}
