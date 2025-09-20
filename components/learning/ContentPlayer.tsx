@@ -61,36 +61,36 @@ export function ContentPlayer({
       }
       
       // Otherwise fetch from API (for dashboard/authenticated users)
-      if (!topicContent) {
-        setContentLoading(true);
-        fetch(`/api/content/topic/${topic.id}`)
-          .then(async response => {
-            if (!response.ok) {
-              const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-              throw new Error(`Failed to fetch content: ${response.status} - ${errorData.error || response.statusText}`);
-            }
-            return response.json();
-          })
-          .then(data => {
-            setTopicContent(data.content);
-            setContentLoading(false);
-          })
-          .catch(error => {
-            console.error('Error fetching topic content:', error);
-            setContentLoading(false);
-          });
-      }
+      setContentLoading(true);
+      fetch(`/api/content/topic/${topic.id}`)
+        .then(async response => {
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(`Failed to fetch content: ${response.status} - ${errorData.error || response.statusText}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('ContentPlayer: Fetched content from API:', data.content);
+          setTopicContent(data.content);
+          setContentLoading(false);
+        })
+        .catch(error => {
+          console.error('Error fetching topic content:', error);
+          setContentLoading(false);
+        });
     }
-  }, [topic?.id, isOpen, topicContent, isDemo, demoContent]);
+  }, [topic?.id, isOpen, isDemo, demoContent]);
 
-  // Reset content when topic changes
+  // Reset content when topic changes (but not in demo mode where content is passed directly)
   useEffect(() => {
-    setTopicContent(null);
-  }, [topic?.id]);
+    if (!isDemo) {
+      setTopicContent(null);
+    }
+  }, [topic?.id, isDemo]);
 
   // Only reset state when topic actually changes (by ID), not when completion status changes
   useEffect(() => {
-    console.log('Topic changed:', topic?.name);
     setHasCompleted(isCompleted);
     setShowRating(false);
     setDifficultyRating(0);
@@ -276,6 +276,18 @@ export function ContentPlayer({
         <div className="flex-1 min-h-0">
           {/* Content Display Area - Maximum space */}
           <div className="h-full bg-gray-900 overflow-hidden flex items-center justify-center">
+            {(() => {
+              console.log('ContentPlayer: Current state:', {
+                isOpen,
+                isDemo,
+                hasTopicContent: !!topicContent,
+                topicContentType: topicContent?.contentType,
+                hasIframeHtml: !!topicContent?.iframeHtml,
+                contentLoading,
+                topicName: topic?.name
+              });
+              return null;
+            })()}
             {contentLoading ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <div className="mb-4 p-4 bg-gray-800 rounded-full animate-pulse">
@@ -341,7 +353,7 @@ export function ContentPlayer({
                   </pre>
                 )}
               </div>
-            ) : topicContent?.contentType?.toLowerCase() === 'iframe' && topicContent.iframeHtml ? (
+            ) : (topicContent?.contentType?.toLowerCase() === 'iframe' || topicContent?.contentType === 'IFRAME') && topicContent.iframeHtml ? (
               <div className="w-full h-full bg-gray-900 overflow-hidden">
                 <div 
                   dangerouslySetInnerHTML={{ 

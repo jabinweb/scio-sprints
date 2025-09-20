@@ -121,7 +121,8 @@ const convertToDbTopic = (topic: DemoTopic): DbTopic => {
       url: topic.content.url,
       videoUrl: topic.content.videoUrl,
       pdfUrl: topic.content.pdfUrl,
-      textContent: topic.content.iframeHtml || topic.content.textContent,
+      textContent: topic.content.textContent,
+      iframeHtml: topic.content.iframeHtml,
       widgetConfig: topic.content.widgetConfig,
     }
   };
@@ -142,9 +143,23 @@ export default function DemoClassPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [topicRatings, setTopicRatings] = useState<Record<string, { userRating: number; hasRated: boolean }>>({});
+  const [demoStartTime] = useState<number>(Date.now());
   
   // Get selected subject data
   const selectedSubjectData = demoClass?.subjects.find(s => s.id === selectedSubject);
+
+  // Auto-trigger subscription dialog every 3 minutes (180000ms)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const timeElapsed = Date.now() - demoStartTime;
+      // Show subscription dialog every 3 minutes if not already showing
+      if (timeElapsed > 180000 && !showPaymentDialog && !isPlayerOpen) {
+        setShowPaymentDialog(true);
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [demoStartTime, showPaymentDialog, isPlayerOpen]);
 
   // Fetch demo data from API
   useEffect(() => {
@@ -565,6 +580,20 @@ export default function DemoClassPage() {
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Upgrade Now Button */}
+                  <div className="mt-3 lg:mt-4 pt-3 lg:pt-4 border-t border-gray-200">
+                    <Button
+                      onClick={() => setShowPaymentDialog(true)}
+                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-2 lg:py-3 px-3 lg:px-4 rounded-lg lg:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-xs lg:text-sm"
+                    >
+                      <Star className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+                      Upgrade Now
+                    </Button>
+                    <p className="text-xs text-gray-500 text-center mt-1 lg:mt-2">
+                      Unlock all subjects & chapters
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>

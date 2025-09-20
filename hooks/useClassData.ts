@@ -19,6 +19,7 @@ export interface TopicContent {
   videoUrl?: string;
   pdfUrl?: string;
   textContent?: string;
+  iframeHtml?: string;
   widgetConfig?: Record<string, unknown>;
 }
 
