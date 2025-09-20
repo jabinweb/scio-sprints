@@ -22,6 +22,7 @@ interface TopicItemProps {
   hasRated?: boolean;   // Whether user has rated this topic
   isDisabled?: boolean; // Whether this topic is locked/disabled
   onClick: (topic: DbTopic) => void;
+  onLockedClick?: () => void; // New prop for handling locked item clicks
 }
 
 export function TopicItem({ 
@@ -30,22 +31,29 @@ export function TopicItem({
   userRating,
   hasRated,
   isDisabled = false,
-  onClick 
+  onClick,
+  onLockedClick
 }: TopicItemProps) {
   const contentType = topic.content?.contentType;
-  // Check if topic can be clicked (not disabled)
-  const canClick = !isDisabled;
+  
+  const handleClick = () => {
+    if (isDisabled && onLockedClick) {
+      onLockedClick();
+    } else if (!isDisabled) {
+      onClick(topic);
+    }
+  };
 
   return (
     <div
       className={`p-4 rounded-xl border-2 transition-all group ${
         isDisabled 
-          ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' 
+          ? 'border-gray-200 bg-gray-50 opacity-60 cursor-pointer' 
           : isCompleted 
             ? 'border-green-200 bg-green-50 hover:bg-green-100 cursor-pointer' 
             : 'border-blue-200 bg-blue-50 hover:border-blue-300 hover:shadow-md hover:bg-blue-100 cursor-pointer'
       }`}
-      onClick={() => canClick && onClick(topic)}
+      onClick={handleClick}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">

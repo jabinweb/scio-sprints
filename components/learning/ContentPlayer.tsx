@@ -20,6 +20,7 @@ interface ContentPlayerProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
+  onIncomplete?: () => void; // New prop for marking as incomplete
   onNext?: () => void;
   isCompleted?: boolean;
   onDifficultyRate?: (topicId: string, rating: number) => void;
@@ -33,6 +34,7 @@ export function ContentPlayer({
   isOpen, 
   onClose, 
   onComplete, 
+  onIncomplete, // New prop
   onNext, 
   isCompleted = false, 
   onDifficultyRate,
@@ -111,6 +113,14 @@ export function ContentPlayer({
           console.log('Rating dialog should be visible now');
         }, 100);
       }
+    }
+  };
+
+  const handleIncomplete = () => {
+    if ((hasCompleted || isCompleted) && onIncomplete) {
+      console.log('Marking topic as incomplete:', topic?.name);
+      setHasCompleted(false);
+      onIncomplete();
     }
   };
 
@@ -210,19 +220,31 @@ export function ContentPlayer({
           </div>
           {/* Action Buttons */}
           <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-            <Button 
-              onClick={handleComplete} 
-              size="sm" 
-              disabled={hasCompleted || isCompleted}
-              className={`gap-1 text-white text-xs px-2 sm:px-3 py-1 ${
-                hasCompleted || isCompleted 
-                  ? 'bg-gray-600 cursor-not-allowed opacity-50' 
-                  : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              <span className="hidden sm:inline">{hasCompleted || isCompleted ? 'Completed' : 'Complete'}</span>
-              <span className="sm:hidden">✓</span>
-            </Button>
+            {/* Complete/Incomplete Toggle Button */}
+            {(hasCompleted || isCompleted) && onIncomplete ? (
+              <Button 
+                onClick={handleIncomplete} 
+                size="sm" 
+                className="gap-1 text-white text-xs px-2 sm:px-3 py-1 bg-orange-600 hover:bg-orange-700"
+              >
+                <span className="hidden sm:inline">Mark Incomplete</span>
+                <span className="sm:hidden">↺</span>
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleComplete} 
+                size="sm" 
+                disabled={hasCompleted || isCompleted}
+                className={`gap-1 text-white text-xs px-2 sm:px-3 py-1 ${
+                  hasCompleted || isCompleted 
+                    ? 'bg-gray-600 cursor-not-allowed opacity-50' 
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                <span className="hidden sm:inline">{hasCompleted || isCompleted ? 'Completed' : 'Complete'}</span>
+                <span className="sm:hidden">✓</span>
+              </Button>
+            )}
             {onNext && (
               <Button 
                 onClick={onNext} 

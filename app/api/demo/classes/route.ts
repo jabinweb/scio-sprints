@@ -59,9 +59,10 @@ export async function GET(request: Request) {
         isLocked: subject.isLocked,
         price: subject.price,
         currency: subject.currency,
-        chapters: subject.chapters.map(chapter => ({
+        chapters: subject.chapters.map((chapter, chapterIndex) => ({
           id: chapter.id,
           name: chapter.name,
+          isLocked: chapterIndex > 0, // First chapter (index 0) is free, rest are locked
           topics: chapter.topics.map(topic => ({
             id: topic.id,
             name: topic.name,

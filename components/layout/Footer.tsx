@@ -55,7 +55,7 @@ const Footer = () => {
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" />
                 <span className="text-slate-200 text-sm leading-relaxed">
-                  N-304, Ashiyana<br />
+                  N-304, Ashiyana
                   Sector N, Lucknow<br />
                   UP - 226012, India
                 </span>

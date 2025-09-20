@@ -193,23 +193,23 @@ async function bulkUploadFromJSON() {
                 }
               });
 
-              // Update topic content
+              // Update topic content - handle IFRAME content specially
+              const contentUpdate = {
+                contentType: topicData.content.contentType as 'EXTERNAL_LINK' | 'VIDEO' | 'PDF' | 'TEXT' | 'INTERACTIVE_WIDGET' | 'IFRAME',
+                url: topicData.content.contentType === 'IFRAME' ? null : topicData.content.url,
+                videoUrl: topicData.content.contentType === 'IFRAME' ? null : topicData.content.videoUrl,
+                pdfUrl: topicData.content.contentType === 'IFRAME' ? null : topicData.content.pdfUrl,
+                textContent: topicData.content.contentType === 'IFRAME' 
+                  ? (topicData.content.url || topicData.content.textContent) 
+                  : topicData.content.textContent
+              };
+
               await prisma.topicContent.upsert({
                 where: { topicId: existingTopic.id },
-                update: {
-                  contentType: topicData.content.contentType as any,
-                  url: topicData.content.url,
-                  videoUrl: topicData.content.videoUrl,
-                  pdfUrl: topicData.content.pdfUrl,
-                  textContent: topicData.content.textContent
-                },
+                update: contentUpdate,
                 create: {
                   topicId: existingTopic.id,
-                  contentType: topicData.content.contentType as any,
-                  url: topicData.content.url,
-                  videoUrl: topicData.content.videoUrl,
-                  pdfUrl: topicData.content.pdfUrl,
-                  textContent: topicData.content.textContent
+                  ...contentUpdate
                 }
               });
               console.log(`          ✅ Updated existing topic: ${topicData.name}`);

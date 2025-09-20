@@ -39,6 +39,7 @@ export type DemoTopic = {
 type DemoChapter = {
   id: string;
   name: string;
+  isLocked?: boolean; // New field for chapter locking
   topics: DemoTopic[];
 };
 
@@ -48,8 +49,9 @@ type DemoSubject = {
   icon: string;
   color: string;
   isLocked: boolean;
+  price?: number; // Price in paisa
+  currency?: string;
   chapters: DemoChapter[];
-  price?: number; 
 };
 
 type DemoClass = {
@@ -200,19 +202,24 @@ export default function DemoClassPage() {
     }
   }, [classId]);
 
-  const handleTopicClick = (topic: DemoTopic) => {
-    // For demo: Check if this is the first topic (only enabled topic)
+  const handleTopicClick = (topic: DemoTopic, chapterIndex: number) => {
+    // For demo: Check if this chapter is locked (first chapter is free)
     if (selectedSubjectData) {
-      const isFirstTopic = selectedSubjectData.chapters[0]?.topics[0]?.id === topic.id;
+      const chapter = selectedSubjectData.chapters[chapterIndex];
       
-      if (!isFirstTopic) {
-        // Show subscription dialog for locked topics
+      console.log('Topic clicked:', topic.name);
+      console.log('Chapter:', chapter.name, 'isLocked:', chapter?.isLocked);
+      
+      if (chapter?.isLocked) {
+        console.log('Showing subscription dialog for locked chapter');
+        // Show subscription dialog for locked chapters
         setShowPaymentDialog(true);
         return;
       }
     }
     
-    // Game-based learning: Allow playing the enabled topic
+    console.log('Playing topic:', topic.name);
+    // Game-based learning: Allow playing any topic in unlocked chapters
     setSelectedTopic(topic);
     setIsPlayerOpen(true);
   };
@@ -246,25 +253,63 @@ export default function DemoClassPage() {
     // Note: Don't close the player dialog here
   };
 
+  const handleTopicIncomplete = () => {
+    if (selectedTopic) {
+      console.log(`Demo: Marking topic ${selectedTopic.id} as incomplete`);
+      setCompletedTopics(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(selectedTopic.id);
+        return newSet;
+      });
+    }
+  };
+
   const handleNextTopic = () => {
     if (selectedSubjectData && selectedTopic) {
-      // For demo: Only allow access to the first topic
-      const isFirstTopic = selectedSubjectData.chapters[0]?.topics[0]?.id === selectedTopic.id;
+      // Find current topic and get next topic
+      let foundTopic = false;
+      let nextTopic = null;
+      let nextChapterIndex = -1;
       
-      if (isFirstTopic) {
-        // Demo users trying to access next topic should see subscription dialog
-        setShowPaymentDialog(true);
-        handlePlayerClose(); // Close the player to show the subscription dialog
-        return;
+      for (let chapterIndex = 0; chapterIndex < selectedSubjectData.chapters.length; chapterIndex++) {
+        const chapter = selectedSubjectData.chapters[chapterIndex];
+        for (let topicIndex = 0; topicIndex < chapter.topics.length; topicIndex++) {
+          const topic = chapter.topics[topicIndex];
+          
+          if (foundTopic) {
+            nextTopic = topic;
+            nextChapterIndex = chapterIndex;
+            break;
+          }
+          
+          if (topic.id === selectedTopic.id) {
+            foundTopic = true;
+          }
+        }
+        if (nextTopic) break;
       }
       
-      // This shouldn't happen in demo since only first topic is enabled,
-      // but just in case, close the player
-      handlePlayerClose();
+      // Check if next topic is in a locked chapter
+      if (nextTopic && nextChapterIndex >= 0) {
+        const nextChapter = selectedSubjectData.chapters[nextChapterIndex];
+        if (nextChapter?.isLocked) {
+          // Demo users trying to access locked chapter should see subscription dialog
+          setShowPaymentDialog(true);
+          handlePlayerClose(); // Close the player to show the subscription dialog
+          return;
+        }
+        
+        // Play next topic if in unlocked chapter
+        setSelectedTopic(nextTopic);
+      } else {
+        // No more topics available
+        handlePlayerClose();
+      }
     }
   };
 
   const handlePaymentDialogClose = () => {
+    console.log('Closing payment dialog');
     setShowPaymentDialog(false);
   };
 
@@ -557,7 +602,20 @@ export default function DemoClassPage() {
                                     {chapterIndex + 1}
                                   </div>
                                   <div>
-                                    <h3 className="text-xl">{chapter.name}</h3>
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="text-xl">{chapter.name}</h3>
+                                      {chapter.isLocked && (
+                                        <Badge variant="secondary" className="gap-1">
+                                          <Lock className="h-3 w-3" />
+                                          Locked
+                                        </Badge>
+                                      )}
+                                      {chapterIndex === 0 && (
+                                        <Badge variant="default" className="bg-green-600">
+                                          Free
+                                        </Badge>
+                                      )}
+                                    </div>
                                     <p className="text-sm text-muted-foreground">{chapter.topics.length} topics</p>
                                   </div>
                                 </div>
@@ -570,14 +628,13 @@ export default function DemoClassPage() {
 
                             {/* Topics Grid */}
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {chapter.topics.map((topic: DemoTopic, topicIndex) => {
+                              {chapter.topics.map((topic: DemoTopic) => {
                                 const isCompleted = topic.completed || completedTopics.has(topic.id);
                                 
-                                // For demo: Only enable the very first topic of the first chapter
-                                const isFirstTopic = chapterIndex === 0 && topicIndex === 0;
-                                const isDisabled = !isFirstTopic;
+                                // For demo: Enable all topics in first chapter, disable others
+                                const isDisabled = chapter.isLocked || false;
                                 
-                                // Game-based learning - students can play any topic/game
+                                // Game-based learning - students can play any topic/game in unlocked chapters
                                 const dbTopic = convertTopicForItem(topic);
                                 
                                 // Get rating for this topic
@@ -591,7 +648,8 @@ export default function DemoClassPage() {
                                     isDisabled={isDisabled}
                                     userRating={topicRating?.userRating}
                                     hasRated={topicRating?.hasRated}
-                                    onClick={() => handleTopicClick(topic)}
+                                    onClick={() => handleTopicClick(topic, chapterIndex)}
+                                    onLockedClick={() => setShowPaymentDialog(true)}
                                   />
                                 );
                               })}
@@ -712,12 +770,14 @@ export default function DemoClassPage() {
             name: demoClass.name,
             description: demoClass.description || '',
             price: demoClass.price || 29900,
+            currency: demoClass.currency || 'INR',
             subjects: demoClass.subjects?.map(subject => ({
               id: subject.id,
               name: subject.name,
               icon: subject.icon || '📚',
               color: subject.color || 'from-blue-500 to-blue-600',
-              price: subject.price,
+              price: subject.price || 7500, // Default subject price if not set
+              currency: subject.currency || 'INR',
               chapters: subject.chapters || []
             })) || []
           }}
@@ -727,6 +787,23 @@ export default function DemoClassPage() {
             // Reload the page to refresh access information
             window.location.reload();
           }}
+        />
+      )}
+
+      {/* Content Player for Demo */}
+      {selectedTopic && (
+        <ContentPlayer
+          topic={convertToDbTopic(selectedTopic)}
+          isOpen={isPlayerOpen}
+          onClose={handlePlayerClose}
+          onComplete={handleTopicComplete}
+          onIncomplete={handleTopicIncomplete}
+          onNext={handleNextTopic}
+          isCompleted={selectedTopic.completed || completedTopics.has(selectedTopic.id)}
+          onDifficultyRate={handleDifficultyRate}
+          isDemo={true}
+          demoContent={convertDemoContentToTopicContent(selectedTopic)}
+          isDemoLimitReached={false}
         />
       )}
     </div>

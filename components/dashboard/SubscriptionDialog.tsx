@@ -46,6 +46,7 @@ interface Subject {
   icon: string;
   color: string;
   price?: number; // Price in paisa
+  currency?: string; // Currency (INR, USD, etc.)
   isSubscribed?: boolean; // Whether user already has this subject
   subscriptionType?: 'school' | 'class_subscription' | 'subject_subscription'; // How they have access
   chapters: Array<{
@@ -60,6 +61,7 @@ interface ClassData {
   name: string;
   description: string;
   price: number;
+  currency?: string; // Currency (INR, USD, etc.)
   subjects: Subject[];
 }
 

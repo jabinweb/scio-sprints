@@ -179,6 +179,13 @@ export default function ClassPage() {
     }
   };
 
+  const handleTopicIncomplete = async () => {
+    if (selectedTopic) {
+      console.log(`Dashboard: Marking topic ${selectedTopic.id} as incomplete`);
+      await markTopicComplete(selectedTopic.id, false);
+    }
+  };
+
   const handlePlayerClose = () => {
     setIsPlayerOpen(false);
     setSelectedTopic(null);
@@ -538,6 +545,7 @@ export default function ClassPage() {
         isOpen={isPlayerOpen}
         onClose={handlePlayerClose}
         onComplete={handleTopicComplete}
+        onIncomplete={handleTopicIncomplete}
         onNext={handleNextTopic}
         onDifficultyRate={handleDifficultyRate}
         isCompleted={selectedTopic ? (userProgress.get(selectedTopic.id) || false) : false}
