@@ -400,7 +400,7 @@ export default function DemoClassPage() {
 
   // Convert demo topic content to TopicContent format for ContentPlayer
   const convertDemoContentToTopicContent = (demoTopic: DemoTopic) => {
-    return {
+    const convertedContent = {
       contentType: demoTopic.content.type,
       url: demoTopic.content.url,
       videoUrl: demoTopic.content.videoUrl,
@@ -408,7 +408,8 @@ export default function DemoClassPage() {
       textContent: demoTopic.content.textContent,
       iframeHtml: demoTopic.content.iframeHtml,
       widgetConfig: demoTopic.content.widgetConfig
-    };
+    };    
+    return convertedContent;
   };
 
   return (
