@@ -80,6 +80,7 @@ model TopicContent {
   videoUrl     String?
   pdfUrl       String?
   textContent  String?
+  iframeHtml   String?     @db.Text
   widgetConfig Json?
   created_at   DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")

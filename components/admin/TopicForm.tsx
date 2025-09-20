@@ -14,6 +14,7 @@ interface TopicContentData {
   videoUrl?: string;
   pdfUrl?: string;
   textContent?: string;
+  iframeHtml?: string;
   widgetConfig?: Record<string, unknown>;
 }
 
@@ -51,6 +52,7 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
       videoUrl: '',
       pdfUrl: '',
       textContent: '',
+      iframeHtml: '',
     }
   });
   const [loading, setLoading] = useState(false);
@@ -87,6 +89,7 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
         videoUrl: parsedContent?.videoUrl || '',
         pdfUrl: parsedContent?.pdfUrl || '',
         textContent: parsedContent?.textContent || '',
+        iframeHtml: parsedContent?.iframeHtml || '',
         widgetConfig: parsedContent?.widgetConfig || undefined,
       };
 
@@ -114,6 +117,7 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
           videoUrl: '',
           pdfUrl: '',
           textContent: '',
+          iframeHtml: '',
         }
       });
     }
@@ -124,7 +128,7 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
     
     // Basic validation for iframe content
     if (formData.content?.contentType === 'iframe') {
-      const iframeContent = formData.content?.textContent || '';
+      const iframeContent = formData.content?.iframeHtml || '';
       if (iframeContent && !iframeContent.includes('<iframe')) {
         alert('Please enter valid iframe HTML code starting with <iframe');
         return;
@@ -305,11 +309,11 @@ export function TopicForm({ isOpen, onClose, onSubmit, initialData, mode, chapte
 
           {formData.content?.contentType === 'iframe' && (
             <div>
-              <Label htmlFor="textContent">IFrame HTML</Label>
+              <Label htmlFor="iframeHtml">IFrame HTML</Label>
               <Textarea
-                id="textContent"
-                value={formData.content?.textContent || ''}
-                onChange={(e) => updateContentData('textContent', e.target.value)}
+                id="iframeHtml"
+                value={formData.content?.iframeHtml || ''}
+                onChange={(e) => updateContentData('iframeHtml', e.target.value)}
                 rows={4}
                 placeholder='<iframe allow="fullscreen; autoplay" allowfullscreen width="795" height="690" frameborder="0" src="https://example.com/embed"></iframe>'
               />

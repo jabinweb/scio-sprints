@@ -1,5 +1,6 @@
 import { PrismaClient, TopicType, ContentType } from '@prisma/client';
 import fs from 'fs';
+import csv from 'csv-parser';
 import path from 'path';
 
 const prisma = new PrismaClient();
@@ -17,6 +18,25 @@ interface CSVRow {
   content_url: string;
 }
 
+interface ProcessedData {
+  classes: Map<string, {
+    subjects: Map<string, {
+      order: number;
+      chapters: Map<string, {
+        order: number;
+        topics: Array<{
+          name: string;
+          type: string;
+          description: string;
+          contentType: string;
+          contentUrl: string;
+          order: number;
+        }>;
+      }>;
+    }>;
+  }>;
+}
+
 // Helper functions to convert types to database enums
 function convertToTopicType(type: string): TopicType {
   switch (type.toUpperCase()) {
@@ -25,6 +45,20 @@ function convertToTopicType(type: string): TopicType {
     case 'EXERCISE': return TopicType.EXERCISE;
     case 'AUDIO': return TopicType.AUDIO;
     default: return TopicType.INTERACTIVE;
+  }
+}
+
+function convertToContentType(type: string): ContentType {
+  switch (type.toUpperCase()) {
+    case 'VIDEO': return ContentType.VIDEO;
+    case 'IFRAME': return ContentType.IFRAME;
+    case 'HTML': return ContentType.IFRAME; // Map HTML to IFRAME
+    case 'AUDIO': return ContentType.EXTERNAL_LINK; // Map AUDIO to EXTERNAL_LINK
+    case 'PDF': return ContentType.PDF;
+    case 'TEXT': return ContentType.TEXT;
+    case 'INTERACTIVE_WIDGET': return ContentType.INTERACTIVE_WIDGET;
+    case 'EXTERNAL_LINK': return ContentType.EXTERNAL_LINK;
+    default: return ContentType.IFRAME;
   }
 }
 
@@ -48,356 +82,224 @@ function getSubjectIcon(subjectName: string): string {
   if (name.includes('math') || name.includes('mathematics')) return '🔢';
   if (name.includes('science')) return '🔬';
   if (name.includes('social') || name.includes('history')) return '🏛️';
-  if (name.includes('hindi')) return '📖';
-  return '📝'; // Default icon
+  if (name.includes('hindi')) return '🇮🇳';
+  return '📖'; // Default icon
 }
 
-function parseCSV(csvContent: string): CSVRow[] {
-  const lines = csvContent.split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
-  const rows: CSVRow[] = [];
-  
-  let currentRow = '';
-  let insideQuotes = false;
-  
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line.trim()) continue;
-    
-    currentRow += (currentRow ? '\n' : '') + line;
-    
-    // Count quotes to determine if we're inside a quoted field
-    let quoteCount = 0;
-    for (const char of line) {
-      if (char === '"') quoteCount++;
-    }
-    
-    // If odd number of quotes, we're either entering or leaving a quoted section
-    if (quoteCount % 2 === 1) {
-      insideQuotes = !insideQuotes;
-    }
-    
-    // If we're not inside quotes, this row is complete
-    if (!insideQuotes) {
-      const values: string[] = [];
-      let currentValue = '';
-      let quotedField = false;
-      
-      for (let j = 0; j < currentRow.length; j++) {
-        const char = currentRow[j];
-        
-        if (char === '"') {
-          if (quotedField && currentRow[j + 1] === '"') {
-            // Handle escaped quotes
-            currentValue += '"';
-            j++; // Skip next quote
-          } else {
-            quotedField = !quotedField;
-          }
-        } else if (char === ',' && !quotedField) {
-          values.push(currentValue.trim());
-          currentValue = '';
-        } else {
-          currentValue += char;
-        }
-      }
-      
-      // Add the last value
-      values.push(currentValue.trim());
-      
-      if (values.length === headers.length) {
-        const row = {} as CSVRow;
-        headers.forEach((header, index) => {
-          (row as any)[header] = values[index];
-        });
-        rows.push(row);
-      }
-      
-      currentRow = ''; // Reset for next row
+// Subject price mapping based on our previous price structure
+const getSubjectPrice = (className: string, subjectName: string): number => {
+  // Prices in paisa (₹1 = 100 paisa)
+  if (subjectName.toLowerCase().includes('english')) {
+    if (className === 'Class 4' || className === 'Class 5') {
+      return 24900; // ₹249
+    } else {
+      return 29900; // ₹299
     }
   }
-  
-  return rows;
+  return 29900; // ₹299 for all other subjects
+};
+
+// Function to parse CSV and organize data
+async function parseCSV(): Promise<ProcessedData> {
+  return new Promise((resolve, reject) => {
+    const csvPath = path.join(__dirname, 'bulk-uploader.csv');
+    const data: ProcessedData = {
+      classes: new Map()
+    };
+
+    console.log('📁 Reading CSV file from:', csvPath);
+
+    fs.createReadStream(csvPath)
+      .pipe(csv())
+      .on('data', (row: CSVRow) => {
+        const className = row.class_name.trim();
+        const subjectName = row.subject_name.trim();
+        const chapterName = row.chapter_name.trim();
+
+        // Initialize class if it doesn't exist
+        if (!data.classes.has(className)) {
+          data.classes.set(className, { subjects: new Map() });
+        }
+
+        const classData = data.classes.get(className)!;
+
+        // Initialize subject if it doesn't exist
+        if (!classData.subjects.has(subjectName)) {
+          classData.subjects.set(subjectName, {
+            order: parseInt(row.subject_order) || 1,
+            chapters: new Map()
+          });
+        }
+
+        const subjectData = classData.subjects.get(subjectName)!;
+
+        // Initialize chapter if it doesn't exist
+        if (!subjectData.chapters.has(chapterName)) {
+          subjectData.chapters.set(chapterName, {
+            order: parseInt(row.chapter_order) || 1,
+            topics: []
+          });
+        }
+
+        const chapterData = subjectData.chapters.get(chapterName)!;
+
+        // Add topic to chapter
+        chapterData.topics.push({
+          name: row.topic_name.trim(),
+          type: row.topic_type.trim(),
+          description: row.topic_description.trim(),
+          contentType: row.content_type.trim(),
+          contentUrl: row.content_url.trim(),
+          order: chapterData.topics.length + 1
+        });
+      })
+      .on('end', () => {
+        console.log('✅ CSV parsing completed successfully');
+        resolve(data);
+      })
+      .on('error', (error) => {
+        console.error('❌ Error parsing CSV:', error);
+        reject(error);
+      });
+  });
 }
 
+// Function to clear existing data
+async function clearExistingData() {
+  console.log('🗑️ Clearing existing data...');
+  
+  try {
+    // Delete in correct order to avoid foreign key constraints
+    await prisma.topicContent.deleteMany();
+    console.log('   ✅ Cleared topic content');
+    
+    await prisma.topic.deleteMany();
+    console.log('   ✅ Cleared topics');
+    
+    await prisma.chapter.deleteMany();
+    console.log('   ✅ Cleared chapters');
+    
+    await prisma.subject.deleteMany();
+    console.log('   ✅ Cleared subjects');
+    
+    // Keep classes but could clear them too if needed
+    // await prisma.class.deleteMany();
+    // console.log('   ✅ Cleared classes');
+    
+    console.log('🎯 Database cleared successfully');
+  } catch (error) {
+    console.error('❌ Error clearing database:', error);
+    throw error;
+  }
+}
+
+// Main bulk upload function
 async function bulkUploadFromCSV() {
-  console.log('🌱 Starting bulk upload from CSV (preserving existing data)...\n');
+  console.log('🚀 Starting bulk upload from CSV...\n');
 
   try {
-    // Read the CSV file
-    const csvPath = path.join(process.cwd(), 'scripts', 'bulk-uploader.csv');
-    const csvContent = fs.readFileSync(csvPath, 'utf8');
-    const rows = parseCSV(csvContent);
+    // Step 1: Parse CSV data
+    const processedData = await parseCSV();
 
-    console.log(`📋 Processing ${rows.length} topics from CSV...\n`);
+    // Step 2: Clear existing data
+    await clearExistingData();
 
-    // Group data by class, subject, chapter for processing
-    const classMap = new Map<string, {
-      name: string;
-      subjects: Map<string, {
-        name: string;
-        order: number;
-        chapters: Map<string, {
-          name: string;
-          order: number;
-          topics: Array<{
-            name: string;
-            type: string;
-            description: string;
-            contentType: string;
-            contentUrl: string;
-            order: number;
-          }>;
-        }>;
-      }>;
-    }>();
+    // Step 3: Create/update classes and insert new data
+    console.log('\n📊 Creating database entries...\n');
 
-    // Parse and group the CSV data
-    let topicCounter = 1;
-    for (const row of rows) {
-      const className = row.class_name;
-      const subjectName = row.subject_name;
-      const chapterName = row.chapter_name;
-      
-      if (!classMap.has(className)) {
-        classMap.set(className, {
-          name: className,
-          subjects: new Map()
-        });
-      }
-      
-      const classData = classMap.get(className)!;
-      
-      if (!classData.subjects.has(subjectName)) {
-        classData.subjects.set(subjectName, {
-          name: subjectName,
-          order: parseInt(row.subject_order),
-          chapters: new Map()
-        });
-      }
-      
-      const subjectData = classData.subjects.get(subjectName)!;
-      
-      if (!subjectData.chapters.has(chapterName)) {
-        subjectData.chapters.set(chapterName, {
-          name: chapterName,
-          order: parseInt(row.chapter_order),
-          topics: []
-        });
-      }
-      
-      const chapterData = subjectData.chapters.get(chapterName)!;
-      chapterData.topics.push({
-        name: row.topic_name,
-        type: row.topic_type,
-        description: row.topic_description,
-        contentType: row.content_type,
-        contentUrl: row.content_url,
-        order: topicCounter++
+    for (const [className, classData] of processedData.classes) {
+      console.log(`🏫 Processing ${className}...`);
+
+      // Find or create class
+      let dbClass = await prisma.class.findFirst({
+        where: { name: className }
       });
-      
-      // Debug log to check content_url
-      if (topicCounter <= 5) {
-        console.log(`Debug - Topic: ${row.topic_name}`);
-        console.log(`Debug - Content URL: ${row.content_url?.substring(0, 100)}...`);
-      }
-    }
 
-    // Process each class
-    for (const [className, classData] of classMap) {
-      console.log(`📚 Creating/updating class: ${className}...`);
-
-      // Check if class exists, then update or create
-      const existingClass = await prisma.class.findFirst({
-        where: { 
-          OR: [
-            { name: className },
-            { name: className.replace('CBSE : ', '') }, // Handle CBSE prefix
-            { name: `CBSE : ${className}` } // Handle missing CBSE prefix
-          ]
+      if (!dbClass) {
+        // Determine class price based on our price structure
+        let classPrice = 69900; // Default ₹699 for Class 4-5
+        if (['Class 6', 'Class 7', 'Class 8'].includes(className)) {
+          classPrice = 89900; // ₹899 for Class 6-8
         }
-      });
 
-      let createdClass;
-      if (existingClass) {
-        createdClass = await prisma.class.update({
-          where: { id: existingClass.id },
+        dbClass = await prisma.class.create({
           data: {
-            name: existingClass.name, // Keep existing name
-            description: `Educational content for ${existingClass.name}`,
-            price: 29900, // Default price
+            name: className,
+            description: `Educational content for ${className}`,
+            price: classPrice,
             currency: 'INR',
             isActive: true
           }
         });
-        console.log(`  ✅ Updated existing class: ${existingClass.name}`);
+        console.log(`   ✅ Created class: ${className} (₹${classPrice / 100})`);
       } else {
-        // Clean the class name for new classes
-        const cleanClassName = className.replace('CBSE : ', '');
-        createdClass = await prisma.class.create({
-          data: {
-            name: cleanClassName,
-            description: `Educational content for ${cleanClassName}`,
-            price: 29900, // Default price
-            currency: 'INR',
-            isActive: true
-          }
-        });
-        console.log(`  ✅ Created new class: ${cleanClassName}`);
+        console.log(`   ℹ️ Using existing class: ${className}`);
       }
 
-        // Process subjects
-        for (const [subjectName, subjectData] of classData.subjects) {
-          // Clean subject name (remove "Class X : " prefix)
-          const cleanSubjectName = subjectName.replace(/^Class \d+ : /, '');
-          console.log(`    📖 Creating/updating subject: ${cleanSubjectName}`);
+      // Process subjects
+      for (const [subjectName, subjectData] of classData.subjects) {
+        const subjectPrice = getSubjectPrice(className, subjectName);
+        const subjectColor = getSubjectColor(subjectName);
+        const subjectIcon = getSubjectIcon(subjectName);
 
-          const existingSubject = await prisma.subject.findFirst({
-            where: {
-              name: cleanSubjectName,
-              classId: createdClass.id
-            }
-          });
-
-          let createdSubject;
-          if (existingSubject) {
-            createdSubject = await prisma.subject.update({
-              where: { id: existingSubject.id },
-              data: {
-                icon: getSubjectIcon(cleanSubjectName),
-                color: getSubjectColor(cleanSubjectName),
-                price: 7500, // Default subject price
-                currency: 'INR',
-                orderIndex: subjectData.order,
-                isLocked: false
-              }
-            });
-            console.log(`      ✅ Updated existing subject: ${cleanSubjectName} (${getSubjectColor(cleanSubjectName)})`);
-          } else {
-            createdSubject = await prisma.subject.create({
-              data: {
-                name: cleanSubjectName,
-                icon: getSubjectIcon(cleanSubjectName),
-                color: getSubjectColor(cleanSubjectName),
-                price: 7500, // Default subject price
-                currency: 'INR',
-                orderIndex: subjectData.order,
-                classId: createdClass.id,
-                isLocked: false
-              }
-            });
-            console.log(`      ✅ Created new subject: ${cleanSubjectName} (${getSubjectColor(cleanSubjectName)})`);
-          }        // Process chapters
-        for (const [chapterName, chapterData] of subjectData.chapters) {
-          console.log(`      📝 Creating/updating chapter: ${chapterName}`);
-
-          const existingChapter = await prisma.chapter.findFirst({
-            where: {
-              name: chapterName,
-              subjectId: createdSubject.id
-            }
-          });
-
-          let createdChapter;
-          if (existingChapter) {
-            createdChapter = await prisma.chapter.update({
-              where: { id: existingChapter.id },
-              data: {
-                orderIndex: chapterData.order
-              }
-            });
-            console.log(`        ✅ Updated existing chapter: ${chapterName}`);
-          } else {
-            createdChapter = await prisma.chapter.create({
-              data: {
-                name: chapterName,
-                orderIndex: chapterData.order,
-                subjectId: createdSubject.id
-              }
-            });
-            console.log(`        ✅ Created new chapter: ${chapterName}`);
+        const dbSubject = await prisma.subject.create({
+          data: {
+            name: subjectName,
+            classId: dbClass.id,
+            orderIndex: subjectData.order,
+            icon: subjectIcon,
+            color: subjectColor,
+            price: subjectPrice,
+            currency: 'INR',
+            isLocked: false
           }
+        });
+
+        console.log(`     📚 Created subject: ${subjectName} (₹${subjectPrice / 100})`);
+
+        // Process chapters
+        for (const [chapterName, chapterData] of subjectData.chapters) {
+          const dbChapter = await prisma.chapter.create({
+            data: {
+              name: chapterName,
+              subjectId: dbSubject.id,
+              orderIndex: chapterData.order
+            }
+          });
+
+          console.log(`       📖 Created chapter: ${chapterName}`);
 
           // Process topics
           for (const topicData of chapterData.topics) {
-            console.log(`        🎯 Creating/updating topic: ${topicData.name}`);
-
-            const existingTopic = await prisma.topic.findFirst({
-              where: {
+            const dbTopic = await prisma.topic.create({
+              data: {
                 name: topicData.name,
-                chapterId: createdChapter.id
+                description: topicData.description,
+                chapterId: dbChapter.id,
+                orderIndex: topicData.order,
+                type: convertToTopicType(topicData.type),
+                duration: "5 min" // Default duration
               }
             });
 
-            if (existingTopic) {
-              // Update existing topic
-              await prisma.topic.update({
-                where: { id: existingTopic.id },
-                data: {
-                  type: convertToTopicType(topicData.type),
-                  duration: '10-15 mins', // Default duration
-                  orderIndex: topicData.order,
-                  description: topicData.description
-                }
-              });
+            // Create topic content
+            await prisma.topicContent.create({
+              data: {
+                topicId: dbTopic.id,
+                contentType: convertToContentType(topicData.contentType),
+                url: topicData.contentUrl
+              }
+            });
 
-              // Update topic content - always store iframe HTML in textContent
-              await prisma.topicContent.upsert({
-                where: { topicId: existingTopic.id },
-                update: {
-                  contentType: ContentType.IFRAME,
-                  textContent: topicData.contentUrl, // Store the complete iframe HTML here
-                  url: null,
-                  videoUrl: null,
-                  pdfUrl: null,
-                  widgetConfig: undefined
-                },
-                create: {
-                  topicId: existingTopic.id,
-                  contentType: ContentType.IFRAME,
-                  textContent: topicData.contentUrl, // Store the complete iframe HTML here
-                  url: null,
-                  videoUrl: null,
-                  pdfUrl: null,
-                  widgetConfig: undefined
-                }
-              });
-              
-              console.log(`          ✅ Updated existing topic: ${topicData.name} with iframe content`);
-            } else {
-              // Create new topic with content
-              await prisma.topic.create({
-                data: {
-                  name: topicData.name,
-                  type: convertToTopicType(topicData.type),
-                  duration: '10-15 mins', // Default duration
-                  orderIndex: topicData.order,
-                  description: topicData.description,
-                  chapterId: createdChapter.id,
-                  content: {
-                    create: {
-                      contentType: ContentType.IFRAME,
-                      textContent: topicData.contentUrl, // Store the complete iframe HTML here
-                      url: null,
-                      videoUrl: null,
-                      pdfUrl: null,
-                      widgetConfig: undefined
-                    }
-                  }
-                }
-              });
-              console.log(`          ✅ Created new topic: ${topicData.name} with iframe content`);
-            }
+            console.log(`         🎯 Created topic: ${topicData.name}`);
           }
         }
       }
 
-      console.log(`✅ ${className} processed with ${classData.subjects.size} subjects\n`);
+      console.log(`   ✅ Completed ${className}: ${classData.subjects.size} subjects\n`);
     }
 
-    console.log('\n🎉 Bulk upload completed successfully!');
-
-    // Summary
+    // Final verification
     const classCount = await prisma.class.count();
     const subjectCount = await prisma.subject.count();
     const chapterCount = await prisma.chapter.count();

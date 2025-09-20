@@ -12,6 +12,7 @@ interface TopicContent {
   videoUrl?: string;
   pdfUrl?: string;
   textContent?: string;
+  iframeHtml?: string;
   widgetConfig?: object;
 }
 
@@ -340,11 +341,11 @@ export function ContentPlayer({
                   </pre>
                 )}
               </div>
-            ) : topicContent?.contentType?.toLowerCase() === 'iframe' && topicContent.textContent ? (
+            ) : topicContent?.contentType?.toLowerCase() === 'iframe' && topicContent.iframeHtml ? (
               <div className="w-full h-full bg-gray-900 overflow-hidden">
                 <div 
                   dangerouslySetInnerHTML={{ 
-                    __html: topicContent.textContent
+                    __html: topicContent.iframeHtml
                       // More aggressive iframe dimension overrides
                       .replace(/width\s*=\s*["']\d+["']/gi, 'width="100%"')
                       .replace(/height\s*=\s*["']\d+["']/gi, 'height="100%"')

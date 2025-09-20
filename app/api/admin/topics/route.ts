@@ -50,6 +50,7 @@ export async function GET(request: Request) {
           videoUrl: topic.content.videoUrl,
           pdfUrl: topic.content.pdfUrl,
           textContent: topic.content.textContent,
+          iframeHtml: topic.content.iframeHtml,
           widgetConfig: topic.content.widgetConfig,
         };
       }
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
             videoUrl: content.videoUrl || null,
             pdfUrl: content.pdfUrl || null,
             textContent: content.textContent || null,
+            iframeHtml: content.iframeHtml || null,
             widgetConfig: content.widgetConfig || null,
             created_at: new Date(),
             updatedAt: new Date(),
@@ -160,6 +162,7 @@ export async function PUT(request: Request) {
             videoUrl: content.videoUrl || null,
             pdfUrl: content.pdfUrl || null,
             textContent: content.textContent || null,
+            iframeHtml: content.iframeHtml || null,
             widgetConfig: content.widgetConfig || null,
             updatedAt: new Date(),
           }
@@ -175,6 +178,7 @@ export async function PUT(request: Request) {
             videoUrl: content.videoUrl || null,
             pdfUrl: content.pdfUrl || null,
             textContent: content.textContent || null,
+            iframeHtml: content.iframeHtml || null,
             widgetConfig: content.widgetConfig || null,
             created_at: new Date(),
             updatedAt: new Date(),

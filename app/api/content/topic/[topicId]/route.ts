@@ -104,6 +104,7 @@ export async function GET(
         videoUrl: topicWithContent.content.videoUrl,
         pdfUrl: topicWithContent.content.pdfUrl,
         textContent: topicWithContent.content.textContent,
+        iframeHtml: topicWithContent.content.iframeHtml,
         widgetConfig: topicWithContent.content.widgetConfig
       }
     });
