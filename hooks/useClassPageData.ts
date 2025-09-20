@@ -76,7 +76,7 @@ export function useClassPageData(classId: string): UseClassPageDataResult {
           setAccessType(data.accessType);
           setAccessMessage(
             data.hasFullAccess 
-              ? `Full access via ${data.accessType}`
+              ? 'Full Access'
               : data.subjectAccess.some((s: SubjectAccessData) => s.hasAccess)
               ? 'Partial access - some subjects available'
               : 'Limited access'
