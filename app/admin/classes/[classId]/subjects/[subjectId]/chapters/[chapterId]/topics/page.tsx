@@ -13,6 +13,7 @@ interface TopicContentData {
   videoUrl?: string;
   pdfUrl?: string;
   textContent?: string;
+  iframeHtml?: string;
   widgetConfig?: Record<string, unknown>;
 }
 
@@ -108,6 +109,7 @@ export default function TopicsPage() {
           videoUrl: '',
           pdfUrl: '',
           textContent: '',
+          iframeHtml: '',
         };
       }
     } else if (topic.content && typeof topic.content === 'object') {
@@ -118,6 +120,7 @@ export default function TopicsPage() {
         videoUrl: topic.content.videoUrl || '',
         pdfUrl: topic.content.pdfUrl || '',
         textContent: topic.content.textContent || '',
+        iframeHtml: topic.content.iframeHtml || '',
         widgetConfig: topic.content.widgetConfig || undefined,
       };
       console.log('Content is object, normalized:', parsedContent);
@@ -129,6 +132,7 @@ export default function TopicsPage() {
         videoUrl: '',
         pdfUrl: '',
         textContent: '',
+        iframeHtml: '',
       };
       console.log('No content, using default:', parsedContent);
     }

@@ -72,12 +72,12 @@ export async function GET(request: Request) {
             completed: false, // For demo, all topics start as not completed
             content: {
               type: topic.content?.contentType || 'TEXT',
-              value: topic.content?.textContent || topic.content?.url || '',
+              value: topic.content?.iframeHtml || topic.content?.textContent || topic.content?.url || '',
               url: topic.content?.url,
               videoUrl: topic.content?.videoUrl,
               pdfUrl: topic.content?.pdfUrl,
               textContent: topic.content?.textContent,
-              iframeHtml: topic.content?.textContent, // Assuming iframe content is stored in textContent
+              iframeHtml: topic.content?.iframeHtml,
               widgetConfig: topic.content?.widgetConfig
             }
           }))

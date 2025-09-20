@@ -3,6 +3,7 @@
 import { ArrowRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from "@/components/ui/card";
+import Link from 'next/link';
 
 export function Hero() {
   return (
@@ -57,20 +58,24 @@ export function Hero() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 mb-12 sm:mb-16 animate-fade-in">
-            <Button 
+                        <Button
+              asChild
               size="lg"
               className="bg-brand-blue hover:bg-brand-blue-dark text-white text-lg h-12 px-8 rounded-full"
-              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
             >
+              <Link href="#games">
               Get Started <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              asChild
+              variant="outline"
               size="lg"
               className="border-white/30 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 text-lg h-12 px-8 rounded-full"
-              onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              <Play className="mr-2 h-4 w-4" /> Watch Demo
+              <Link href="/demo">
+              <Play className="mr-2 h-4 w-4" /> Try Demo
+              </Link>
             </Button>
           </div>
           

@@ -406,6 +406,7 @@ export default function DemoClassPage() {
       videoUrl: demoTopic.content.videoUrl,
       pdfUrl: demoTopic.content.pdfUrl,
       textContent: demoTopic.content.textContent,
+      iframeHtml: demoTopic.content.iframeHtml,
       widgetConfig: demoTopic.content.widgetConfig
     };
   };
@@ -677,6 +678,7 @@ export default function DemoClassPage() {
         isOpen={isPlayerOpen}
         onClose={handlePlayerClose}
         onComplete={handleTopicComplete}
+        onIncomplete={handleTopicIncomplete}
         onNext={handleNextTopic}
         onDifficultyRate={handleDifficultyRate}
         isCompleted={selectedTopic ? (selectedTopic.completed || completedTopics.has(selectedTopic.id)) : false}
@@ -787,23 +789,6 @@ export default function DemoClassPage() {
             // Reload the page to refresh access information
             window.location.reload();
           }}
-        />
-      )}
-
-      {/* Content Player for Demo */}
-      {selectedTopic && (
-        <ContentPlayer
-          topic={convertToDbTopic(selectedTopic)}
-          isOpen={isPlayerOpen}
-          onClose={handlePlayerClose}
-          onComplete={handleTopicComplete}
-          onIncomplete={handleTopicIncomplete}
-          onNext={handleNextTopic}
-          isCompleted={selectedTopic.completed || completedTopics.has(selectedTopic.id)}
-          onDifficultyRate={handleDifficultyRate}
-          isDemo={true}
-          demoContent={convertDemoContentToTopicContent(selectedTopic)}
-          isDemoLimitReached={false}
         />
       )}
     </div>
