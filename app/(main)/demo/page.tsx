@@ -140,8 +140,8 @@ export default function DemoPage() {
                 <Star className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-100">Interactive Demo - ScioSprints Learning Platform</h3>
-                <p className="text-sm text-blue-100">Experience our learning platform with sample content across all classes</p>
+                <h3 className="font-semibold text-gray-100">Try ScioSprints</h3>
+                <p className="text-sm text-blue-100">Experience our learning platform with sample content across all classes.</p>
               </div>
             </div>
             <Button 
@@ -206,7 +206,7 @@ export default function DemoPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-blue-100 text-sm">Available Classes</p>
-                      <p className="text-3xl text-gray-200 font-bold">{classes.length}</p>
+                      <p className="text-3xl text-gray-200 font-bold">5</p>
                     </div>
                     <BookOpen className="w-10 h-10 text-blue-200" />
                   </div>
@@ -216,7 +216,7 @@ export default function DemoPage() {
                     <div>
                       <p className="text-green-100 text-sm">Total Subjects</p>
                       <p className="text-3xl text-gray-200 font-bold">
-                        {classes.reduce((acc, cls) => acc + cls.subjectCount, 0)}
+                        18
                       </p>
                     </div>
                     <Users className="w-10 h-10 text-green-200" />
@@ -225,11 +225,9 @@ export default function DemoPage() {
                 <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-purple-100 text-sm">Average Progress</p>
+                      <p className="text-purple-100 text-sm">Total Activities</p>
                       <p className="text-3xl text-gray-200 font-bold">
-                        {classes.length > 0 
-                          ? Math.round(classes.reduce((acc, cls) => acc + calculateClassProgress(cls), 0) / classes.length)
-                          : 0}%
+                        1000+
                       </p>
                     </div>
                     <Star className="w-10 h-10 text-purple-200" />
@@ -242,9 +240,9 @@ export default function DemoPage() {
           {/* Class Cards Section */}
           <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Demo Classes</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Try out our activities</h2>
               <p className="text-gray-600">
-                Explore our interactive learning platform with real content from different grade levels
+                Click on any class and play the activities based on the lesson content.
               </p>
             </div>
 
