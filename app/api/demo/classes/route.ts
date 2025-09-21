@@ -69,6 +69,7 @@ export async function GET(request: Request) {
             type: topic.type,
             duration: topic.duration || '5 min',
             description: topic.description,
+            difficulty: topic.difficulty || 'BEGINNER',
             completed: false, // For demo, all topics start as not completed
             content: {
               type: topic.content?.contentType || 'TEXT',

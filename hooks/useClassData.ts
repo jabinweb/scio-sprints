@@ -29,6 +29,7 @@ export interface Topic {
   type: string;
   duration: string | null;
   description?: string | null;
+  difficulty?: string;
   orderIndex: number;
   content?: TopicContent;
 }

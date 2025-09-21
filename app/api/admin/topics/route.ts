@@ -25,6 +25,16 @@ const convertTopicType = (type: string): 'VIDEO' | 'INTERACTIVE' | 'EXERCISE' | 
   }
 };
 
+// Helper function to convert difficulty to database enum
+const convertDifficultyLevel = (difficulty: string): 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' => {
+  switch (difficulty?.toUpperCase()) {
+    case 'BEGINNER': return 'BEGINNER';
+    case 'INTERMEDIATE': return 'INTERMEDIATE';
+    case 'ADVANCED': return 'ADVANCED';
+    default: return 'BEGINNER';
+  }
+};
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -73,7 +83,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { name, type, duration, orderIndex, chapterId, content } = await request.json();
+    const { name, type, duration, difficulty, orderIndex, chapterId, content } = await request.json();
     
     if (!name || !type || !chapterId) {
       return NextResponse.json({ error: 'Missing required fields: name, type, and chapterId are required' }, { status: 400 });
@@ -86,6 +96,7 @@ export async function POST(request: Request) {
         name,
         type: convertTopicType(type), // Convert to proper enum
         duration: duration && duration.trim() !== '' ? duration : null, // Handle empty duration
+        difficulty: convertDifficultyLevel(difficulty || 'BEGINNER'), // Convert to proper enum with default
         orderIndex: orderIndex || 0,
         chapterId,
         created_at: new Date(),
@@ -126,7 +137,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const { id, name, type, duration, orderIndex, content } = await request.json();
+    const { id, name, type, duration, difficulty, orderIndex, content } = await request.json();
     
     if (!id) {
       return NextResponse.json({ error: 'Topic ID is required' }, { status: 400 });
@@ -139,6 +150,7 @@ export async function PUT(request: Request) {
         name,
         type: convertTopicType(type), // Convert to proper enum
         duration: duration && duration.trim() !== '' ? duration : null, // Handle empty duration
+        difficulty: convertDifficultyLevel(difficulty || 'BEGINNER'), // Convert to proper enum with default
         orderIndex,
         updatedAt: new Date(),
       }

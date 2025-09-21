@@ -83,7 +83,7 @@ export function Hero() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl mx-auto px-4 animate-fade-in">
             {[
               { number: '40+', label: 'Game Formats' },
-              { number: '4000+', label: 'Curriculum-Aligned Games' },
+              { number: '1000+', label: 'Curriculum-Aligned Activities' },
               { number: '100+', label: 'HOTS Challenges' }
             ].map((stat, index) => (
               <Card key={index} className="bg-white/5 backdrop-blur-sm border-white/10 overflow-hidden group">

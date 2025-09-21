@@ -24,6 +24,7 @@ export type DemoTopic = {
   type: string;
   duration: string;
   description?: string;
+  difficulty?: string;
   completed: boolean;
   content: {
     type: string;
@@ -84,6 +85,7 @@ const convertTopicForItem = (topic: DemoTopic): DbTopic => {
     type: getTopicType(topic.type),
     duration: topic.duration,
     description: topic.description,
+    difficulty: topic.difficulty || 'BEGINNER',
     orderIndex: 0,
     content: {
       contentType: topic.content.type,
@@ -116,6 +118,7 @@ const convertToDbTopic = (topic: DemoTopic): DbTopic => {
     type: getTopicType(topic.type),
     duration: topic.duration,
     description: topic.description,
+    difficulty: topic.difficulty || 'BEGINNER',
     orderIndex: 0,
     content: {
       contentType: topic.content.type,

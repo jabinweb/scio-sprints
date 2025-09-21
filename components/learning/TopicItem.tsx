@@ -15,6 +15,39 @@ const getTopicIcon = (contentType: string | undefined) => {
   }
 };
 
+const getDifficultyConfig = (difficulty?: string) => {
+  switch (difficulty?.toUpperCase()) {
+    case 'BEGINNER':
+      return { 
+        label: 'Beginner', 
+        bgColor: 'bg-green-100', 
+        textColor: 'text-green-700', 
+        borderColor: 'border-green-200' 
+      };
+    case 'INTERMEDIATE':
+      return { 
+        label: 'Intermediate', 
+        bgColor: 'bg-yellow-100', 
+        textColor: 'text-yellow-700', 
+        borderColor: 'border-yellow-200' 
+      };
+    case 'ADVANCED':
+      return { 
+        label: 'Advanced', 
+        bgColor: 'bg-red-100', 
+        textColor: 'text-red-700', 
+        borderColor: 'border-red-200' 
+      };
+    default:
+      return { 
+        label: 'Beginner', 
+        bgColor: 'bg-green-100', 
+        textColor: 'text-green-700', 
+        borderColor: 'border-green-200' 
+      };
+  }
+};
+
 interface TopicItemProps {
   topic: DbTopic;
   isCompleted: boolean;
@@ -35,6 +68,7 @@ export function TopicItem({
   onLockedClick
 }: TopicItemProps) {
   const contentType = topic.content?.contentType;
+  const difficultyConfig = getDifficultyConfig(topic.difficulty);
   
   const handleClick = () => {
     if (isDisabled && onLockedClick) {
@@ -56,7 +90,7 @@ export function TopicItem({
       onClick={handleClick}
     >
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1">
           <div className={`p-2 rounded-lg ${
             isDisabled 
               ? 'bg-gray-200' 
@@ -66,8 +100,13 @@ export function TopicItem({
           }`}>
             {isDisabled ? <Lock className="h-4 w-4 text-gray-500" /> : getTopicIcon(contentType)}
           </div>
-          <div className={`font-medium text-xs ${isDisabled ? 'text-gray-500' : 'text-gray-700'}`}>
-            {topic.name}
+          <div className="flex flex-col gap-1 flex-1">
+            <div className={`font-medium text-xs ${isDisabled ? 'text-gray-500' : 'text-gray-700'}`}>
+              {topic.name}
+            </div>
+            <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${difficultyConfig.bgColor} ${difficultyConfig.textColor} ${difficultyConfig.borderColor}`}>
+              {difficultyConfig.label}
+            </div>
           </div>
         </div>
         {isDisabled ? (
