@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, Star, Zap, BookOpen } from 'lucide-react';
+import { CheckCircle, Star, Zap, BookOpen, LogIn } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -70,17 +72,21 @@ interface SubscriptionDialogProps {
   onClose: () => void;
   classData: ClassData;
   onSubscribe: (type: 'class' | 'subject', options: { classId?: number; subjectId?: string; amount: number }) => void;
+  disableAutoRedirect?: boolean; // Optional prop to disable automatic redirection
 }
 
 export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   open,
   onClose,
   classData,
-  onSubscribe
+  onSubscribe,
+  disableAutoRedirect = false
 }) => {
   const { data: session } = useSession();
+  const router = useRouter();
   const user = session?.user;
   const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set());
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   
   // Check if user has class subscription (all subjects subscribed via class_subscription)
   const hasClassSubscription = classData.subjects.every(subject => 
@@ -106,6 +112,24 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Handle login redirect
+  const handleLoginRequired = () => {
+    // Store subscription intent for after login
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pendingSubscription', JSON.stringify({
+        timestamp: Date.now(),
+        classId: classData.id,
+        returnUrl: window.location.href
+      }));
+    }
+    
+    // Close the dialog and redirect to login
+    onClose();
+    signIn('google', { 
+      callbackUrl: window.location.href // Return to current page after login
+    });
+  };
+
   const classPrice = classData.price / 100; // Convert from paisa to rupees
   
   // Calculate total price for selected subjects using their individual prices
@@ -130,7 +154,12 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   };
 
   const handleClassSubscribe = async () => {
-    if (!user) return;
+    // Check if user is logged in first
+    if (!user) {
+      handleLoginRequired();
+      return;
+    }
+    
     setIsProcessing(true);
     
     try {
@@ -161,6 +190,8 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
         description: `${classData.name} - Full Access`,
         order_id: orderData.orderId,
         handler: async (paymentResponse: RazorpayResponse) => {
+          setIsProcessingPayment(true);
+          
           // Verify payment
           const verifyResponse = await fetch('/api/payment/class/verify', {
             method: 'POST',
@@ -175,6 +206,15 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           if (verifyResponse.ok) {
             onSubscribe('class', { classId: classData.id, amount: classData.price });
             onClose();
+            
+            // Fallback redirection in case onSubscribe doesn't handle it
+            if (!disableAutoRedirect) {
+              setTimeout(() => {
+                router.push(`/dashboard/class/${classData.id}`);
+              }, 1000);
+            }
+          } else {
+            setIsProcessingPayment(false);
           }
         },
         prefill: {
@@ -217,7 +257,13 @@ Would you like to refresh the page now?`;
   };
 
   const handleSubjectSubscribe = async () => {
-    if (!user || selectedSubjects.size === 0) return;
+    // Check if user is logged in first
+    if (!user) {
+      handleLoginRequired();
+      return;
+    }
+    
+    if (selectedSubjects.size === 0) return;
     setIsProcessing(true);
     
     try {
@@ -252,6 +298,8 @@ Would you like to refresh the page now?`;
         description: `${subject?.name} - Individual Subject Access`,
         order_id: orderData.orderId,
         handler: async (paymentResponse: RazorpayResponse) => {
+          setIsProcessingPayment(true);
+          
           // Verify payment
           const verifyResponse = await fetch('/api/payment/subject/verify', {
             method: 'POST',
@@ -264,8 +312,17 @@ Would you like to refresh the page now?`;
           });
           
           if (verifyResponse.ok) {
-            onSubscribe('subject', { subjectId, amount: subject?.price || 7500 });
+            onSubscribe('subject', { classId: classData.id, subjectId, amount: subject?.price || 7500 });
             onClose();
+            
+            // Fallback redirection in case onSubscribe doesn't handle it
+            if (!disableAutoRedirect) {
+              setTimeout(() => {
+                router.push(`/dashboard/class/${classData.id}?subject=${subjectId}`);
+              }, 1000);
+            }
+          } else {
+            setIsProcessingPayment(false);
           }
         },
         prefill: {
@@ -296,6 +353,21 @@ Would you like to refresh the page now?`;
             Subscribe to {classData.name}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Login Notice for Guest Users */}
+        {!user && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-3">
+              <LogIn className="h-5 w-5 text-blue-600" />
+              <div>
+                <h4 className="font-medium text-blue-900">Login Required</h4>
+                <p className="text-sm text-blue-700">
+                  Please login to subscribe and access premium content. We&apos;ll bring you back here after login.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <Tabs value={subscriptionType} onValueChange={(value) => setSubscriptionType(value as 'class' | 'subjects')} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -424,12 +496,18 @@ Would you like to refresh the page now?`;
                     disabled={isProcessing}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-3"
                   >
-                    {isProcessing 
-                      ? 'Processing...' 
-                      : isUpgradeScenario 
-                        ? `Upgrade to Full Access - ₹${classPrice}` 
-                        : `Subscribe for ₹${classPrice}`
-                    }
+                    {!user ? (
+                      <span className="flex items-center gap-2">
+                        <LogIn className="h-4 w-4" />
+                        Login to Subscribe - ₹{classPrice}
+                      </span>
+                    ) : isProcessing ? (
+                      'Processing...'
+                    ) : isUpgradeScenario ? (
+                      `Upgrade to Full Access - ₹${classPrice}`
+                    ) : (
+                      `Subscribe for ₹${classPrice}`
+                    )}
                   </Button>
                 </CardContent>
               </Card>
@@ -564,7 +642,16 @@ Would you like to refresh the page now?`;
                             disabled={isProcessing || selectedSubjects.size === 0}
                             className="bg-purple-600 hover:bg-purple-700"
                           >
-                            {isProcessing ? 'Processing...' : `Subscribe for ₹${selectedSubjectsPrice}`}
+                            {!user ? (
+                              <span className="flex items-center gap-2">
+                                <LogIn className="h-4 w-4" />
+                                Login to Subscribe
+                              </span>
+                            ) : isProcessing ? (
+                              'Processing...'
+                            ) : (
+                              `Subscribe for ₹${selectedSubjectsPrice}`
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -596,10 +683,29 @@ Would you like to refresh the page now?`;
           <Button variant="outline" onClick={onClose}>
             Maybe Later
           </Button>
-          <div className="text-sm text-gray-500">
-            💳 Test Mode - Use card: 4111 1111 1111 1111
-          </div>
+          
+          {!user ? (
+            <Button onClick={handleLoginRequired} className="bg-green-600 hover:bg-green-700">
+              <LogIn className="h-4 w-4 mr-2" />
+              Login to Subscribe
+            </Button>
+          ) : (
+            <div className="text-sm text-gray-500">
+              💳 Test Mode - Use card: 4111 1111 1111 1111
+            </div>
+          )}
         </div>
+        
+        {/* Processing overlay */}
+        {isProcessingPayment && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Processing Payment...</h3>
+              <p className="text-gray-600">Please wait while we process your payment and redirect you.</p>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

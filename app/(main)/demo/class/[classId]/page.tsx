@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BookOpen, Clock, CheckCircle, Lock, Star, Trophy } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, CheckCircle, Lock, Star, Trophy, ChevronDown, ChevronRight } from 'lucide-react';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
 import type { DbTopic } from '@/hooks/useClassData';
 import { TopicItem } from '@/components/learning/TopicItem';
@@ -14,6 +14,7 @@ import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
 import { 
   handleTopicCompletion
 } from '@/lib/topic-progression';
+import { useSession } from 'next-auth/react';
 
 // Types for demo data (similar to static data but from API)
 
@@ -132,6 +133,7 @@ export default function DemoClassPage() {
   const router = useRouter();
   const params = useParams();
   const classId = params.classId as string;
+  const { data: session, status } = useSession();
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedTopic, setSelectedTopic] = useState<DemoTopic | null>(null);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
@@ -144,6 +146,7 @@ export default function DemoClassPage() {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [topicRatings, setTopicRatings] = useState<Record<string, { userRating: number; hasRated: boolean }>>({});
   const [demoStartTime] = useState<number>(Date.now());
+  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
   
   // Get selected subject data
   const selectedSubjectData = demoClass?.subjects.find(s => s.id === selectedSubject);
@@ -192,6 +195,38 @@ export default function DemoClassPage() {
       fetchDemoData();
     }
   }, [classId]);
+
+  // Check for pending subscription after login
+  useEffect(() => {
+    // Only check if user is authenticated and page has loaded
+    if (status === 'authenticated' && session && typeof window !== 'undefined') {
+      const pendingSubscription = localStorage.getItem('pendingSubscription');
+      
+      if (pendingSubscription) {
+        try {
+          const parsed = JSON.parse(pendingSubscription);
+          
+          // Check if the pending subscription is for this class and not too old (5 minutes)
+          const isValidPending = parsed.classId === parseInt(classId) && 
+                                (Date.now() - parsed.timestamp) < 300000; // 5 minutes
+          
+          if (isValidPending) {
+            // Clear the pending subscription
+            localStorage.removeItem('pendingSubscription');
+            
+            // Trigger subscription dialog after a short delay to ensure UI is ready
+            setTimeout(() => {
+              setShowPaymentDialog(true);
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Error parsing pending subscription:', error);
+          // Clear invalid data
+          localStorage.removeItem('pendingSubscription');
+        }
+      }
+    }
+  }, [status, session, classId]);
 
   useEffect(() => {
     // Auto-select first unlocked subject when data is loaded
@@ -242,6 +277,18 @@ export default function DemoClassPage() {
   const handlePlayerClose = () => {
     setIsPlayerOpen(false);
     setSelectedTopic(null);
+  };
+
+  const toggleChapter = (chapterId: string) => {
+    setExpandedChapters(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(chapterId)) {
+        newSet.delete(chapterId);
+      } else {
+        newSet.add(chapterId);
+      }
+      return newSet;
+    });
   };
 
   const handleTopicComplete = () => {
@@ -453,10 +500,11 @@ export default function DemoClassPage() {
             <Button 
               variant="secondary" 
               onClick={() => router.push('/demo')}
-              className="gap-2 w-fit"
+              className="gap-2 w-fit text-sm sm:text-base"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Classes
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Back to Classes</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           </div>
         </div>
@@ -465,111 +513,111 @@ export default function DemoClassPage() {
       {/* Enhanced Header */}
       <div className="relative overflow-hidden bg-white border-b border-gray-200">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-indigo-600/5" />
-        <div className="relative max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg">
-              <BookOpen className="w-8 h-8 text-white" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl sm:rounded-2xl shadow-lg mx-auto sm:mx-0">
+              <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+            <div className="text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                   {demoClass.name}
                 </h1>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100 w-fit mx-auto sm:mx-0">
                   Demo Version
                 </Badge>
               </div>
-              <p className="text-gray-600">{demoClass.description}</p>
-              <p className="text-sm text-green-600 mt-1">Try our interactive learning experience!</p>
+              <p className="text-gray-600 text-sm sm:text-base">{demoClass.description}</p>
+              <p className="text-xs sm:text-sm text-green-600 mt-1">Try our interactive learning experience!</p>
             </div>
           </div>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-sm">Subjects</p>
-                  <p className="text-3xl font-bold text-gray-200">{demoClass.subjects.filter(s => !s.isLocked).length}</p>
+                  <p className="text-blue-100 text-xs sm:text-sm">Subjects</p>
+                  <p className="text-xl sm:text-3xl font-bold text-gray-200">{demoClass.subjects.filter(s => !s.isLocked).length}</p>
                 </div>
-                <BookOpen className="w-10 h-10 text-blue-200" />
+                <BookOpen className="w-6 h-6 sm:w-10 sm:h-10 text-blue-200" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 text-white">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm">Chapters</p>
-                  <p className="text-3xl font-bold text-gray-200">
+                  <p className="text-green-100 text-xs sm:text-sm">Chapters</p>
+                  <p className="text-xl sm:text-3xl font-bold text-gray-200">
                     {demoClass.subjects.reduce((acc, s) => acc + s.chapters.length, 0)}
                   </p>
                 </div>
-                <Clock className="w-10 h-10 text-green-200" />
+                <Clock className="w-6 h-6 sm:w-10 sm:h-10 text-green-200" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm">Progress</p>
-                  <p className="text-3xl font-bold text-gray-200">
+                  <p className="text-purple-100 text-xs sm:text-sm">Progress</p>
+                  <p className="text-xl sm:text-3xl font-bold text-gray-200">
                     {selectedSubject ? getSubjectProgress(selectedSubject) : 0}%
                   </p>
                 </div>
-                <Trophy className="w-10 h-10 text-purple-200" />
+                <Trophy className="w-6 h-6 sm:w-10 sm:h-10 text-purple-200" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 text-white">
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-orange-100 text-sm">Completed</p>
-                  <p className="text-3xl font-bold text-gray-200">{completedTopics.size}</p>
+                  <p className="text-orange-100 text-xs sm:text-sm">Completed</p>
+                  <p className="text-xl sm:text-3xl font-bold text-gray-200">{completedTopics.size}</p>
                 </div>
-                <CheckCircle className="w-10 h-10 text-orange-200" />
+                <CheckCircle className="w-6 h-6 sm:w-10 sm:h-10 text-orange-200" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Subject Content</h2>
-          <p className="text-gray-600">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Subject Content</h2>
+          <p className="text-sm sm:text-base text-gray-600">
             Explore the interactive learning materials and track your progress
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
           {/* Subject Sidebar */}
-          <div className="lg:col-span-1">
-              <Card className="sticky top-6">
-                <CardHeader>
-                  <CardTitle className="text-lg">Subjects</CardTitle>
+          <div className="lg:col-span-1 order-1">
+              <Card className="lg:sticky lg:top-6">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Subjects</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 sm:space-y-3">
                   {demoClass.subjects.map((subject) => (
                     <div
                       key={subject.id}
-                      className={`p-3 rounded-xl cursor-pointer transition-all ${
+                      className={`p-3 sm:p-4 rounded-lg sm:rounded-xl cursor-pointer transition-all ${
                         selectedSubject === subject.id 
                           ? `bg-gradient-to-r ${subject.color} text-white shadow-lg` 
                           : 'bg-gray-50 hover:bg-gray-100'
                       } ${subject.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={() => !subject.isLocked && setSelectedSubject(subject.id)}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{subject.icon}</span>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{subject.name}</div>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <span className="text-lg sm:text-xl">{subject.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm sm:text-base truncate">{subject.name}</div>
                           <div className={`text-xs ${selectedSubject === subject.id ? 'text-white/80' : 'text-muted-foreground'}`}>
                             {subject.chapters.length} chapters
                           </div>
                         </div>
                         {subject.isLocked ? (
-                          <Lock className="h-4 w-4" />
+                          <Lock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                         ) : (
-                          <div className="text-right">
+                          <div className="text-right flex-shrink-0">
                             <div className="text-xs font-medium">{getSubjectProgress(subject.id)}%</div>
-                            <div className="w-8 h-1 bg-white/30 rounded-full mt-1">
+                            <div className="w-6 sm:w-8 h-1 bg-white/30 rounded-full mt-1">
                               <div 
                                 className="h-full bg-white rounded-full transition-all"
                                 style={{ width: `${getSubjectProgress(subject.id)}%` }}
@@ -599,66 +647,84 @@ export default function DemoClassPage() {
             </div>
 
             {/* Main Content Area */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 order-2">
               {selectedSubjectData ? (
                 <Card className="overflow-hidden">
                   <CardHeader className={`bg-gradient-to-r ${selectedSubjectData.color} text-white`}>
-                    <CardTitle className="flex items-center gap-3">
-                      <span className="text-3xl">{selectedSubjectData.icon}</span>
-                      <div>
-                        <h2 className="text-2xl">{selectedSubjectData.name}</h2>
-                        <p className="text-white/80">{selectedSubjectData.chapters.length} chapters to explore</p>
+                    <CardTitle className="flex flex-row justify-between sm:items-center gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl sm:text-3xl">{selectedSubjectData.icon}</span>
+                        <div>
+                          <h2 className="text-xl sm:text-2xl">{selectedSubjectData.name}</h2>
+                          <p className="text-white/80 text-sm sm:text-base">{selectedSubjectData.chapters.length} chapters to explore</p>
+                        </div>
                       </div>
-                      <div className="ml-auto text-right">
-                        <div className="text-2xl font-bold">{getSubjectProgress(selectedSubjectData.id)}%</div>
+                      <div className="text-left sm:text-right sm:ml-auto">
+                        <div className="text-xl sm:text-2xl font-bold">{getSubjectProgress(selectedSubjectData.id)}%</div>
                         <div className="text-sm text-white/80">Complete</div>
                       </div>
                     </CardTitle>
                   </CardHeader>
 
                   <CardContent className="p-0">
-                    {/* ...existing code for chapter grid... */}
-                    <div className="p-6 space-y-6">
+                    {/* Chapters */}
+                    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                       {selectedSubjectData.chapters.map((chapter, chapterIndex) => {
                         const chapterProgress = Math.round(
                           (chapter.topics.filter(t => t.completed).length / chapter.topics.length) * 100
                         );
+                        const isExpanded = expandedChapters.has(chapter.id);
                         
                         return (
-                          <div key={chapter.id} className="border border-gray-200 rounded-2xl overflow-hidden">
-                            <div className="bg-gray-50 px-6 py-4 border-b">
-                              <div className="flex items-center justify-between">
+                          <div key={chapter.id} className="border border-gray-200 rounded-xl sm:rounded-2xl overflow-hidden">
+                            <div 
+                              className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-b cursor-pointer hover:bg-gray-100 transition-colors"
+                              onClick={() => toggleChapter(chapter.id)}
+                            >
+                              <div className="flex flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
                                 <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${selectedSubjectData.color} text-white flex items-center justify-center text-sm font-bold`}>
+                                  <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r ${selectedSubjectData.color} text-white flex items-center justify-center text-xs sm:text-sm font-bold`}>
                                     {chapterIndex + 1}
                                   </div>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <h3 className="text-xl">{chapter.name}</h3>
-                                      {chapter.isLocked && (
-                                        <Badge variant="secondary" className="gap-1">
-                                          <Lock className="h-3 w-3" />
-                                          Locked
-                                        </Badge>
-                                      )}
-                                      {chapterIndex === 0 && (
-                                        <Badge variant="default" className="bg-green-600">
-                                          Free
-                                        </Badge>
-                                      )}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                      <h3 className="text-lg sm:text-xl font-semibold truncate">{chapter.name}</h3>
+                                      <div className="flex gap-1 sm:gap-2">
+                                        {chapter.isLocked && (
+                                          <Badge variant="secondary" className="gap-1 text-xs">
+                                            <Lock className="h-3 w-3" />
+                                            Locked
+                                          </Badge>
+                                        )}
+                                        {chapterIndex === 0 && (
+                                          <Badge variant="default" className="bg-green-600 text-xs">
+                                            Free
+                                          </Badge>
+                                        )}
+                                      </div>
                                     </div>
-                                    <p className="text-sm text-muted-foreground">{chapter.topics.length} topics</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">{chapter.topics.length} topics</p>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-sm font-medium">{chapterProgress}%</div>
-                                  <Progress value={chapterProgress} className="w-20 h-2" />
+                                <div className="flex items-center gap-3">
+                                  <div className="text-right flex-shrink-0">
+                                    <div className="text-sm font-medium">{chapterProgress}%</div>
+                                    <Progress value={chapterProgress} className="w-16 sm:w-20 h-2" />
+                                  </div>
+                                  <div className="p-1 rounded-full hover:bg-gray-200 transition-colors">
+                                    {isExpanded ? (
+                                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4 text-gray-500" />
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Topics Grid */}
-                            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {/* Topics Grid - Only show when expanded */}
+                            {isExpanded && (
+                              <div className="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                               {chapter.topics.map((topic: DemoTopic) => {
                                 const isCompleted = topic.completed || completedTopics.has(topic.id);
                                 
@@ -684,7 +750,8 @@ export default function DemoClassPage() {
                                   />
                                 );
                               })}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -692,10 +759,12 @@ export default function DemoClassPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="p-12 text-center">
-                  <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-600 mb-2">Select a Subject</h3>
-                  <p className="text-muted-foreground">Choose a subject from the sidebar to start exploring</p>
+                <Card className="p-8 sm:p-12 text-center">
+                  <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-base sm:text-lg font-medium text-gray-600 mb-2">Select a Subject</h3>
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    Choose a subject from above to start exploring
+                  </p>
                 </Card>
               )}
             </div>
@@ -797,6 +866,7 @@ export default function DemoClassPage() {
        <SubscriptionDialog
           open={showPaymentDialog}
           onClose={handlePaymentDialogClose}
+          disableAutoRedirect={true}
           classData={{
             id: demoClass.id,
             name: demoClass.name,
@@ -816,8 +886,18 @@ export default function DemoClassPage() {
           onSubscribe={(type, options) => {
             console.log('Subscription success:', type, options);
             handlePaymentDialogClose();
-            // Reload the page to refresh access information
-            window.location.reload();
+            
+            // Redirect to appropriate page based on subscription type
+            if (type === 'class' && options.classId) {
+              // Redirect to the full class dashboard
+              router.push(`/dashboard/class/${options.classId}`);
+            } else if (type === 'subject' && options.subjectId && options.classId) {
+              // Redirect to the class dashboard with the specific subject
+              router.push(`/dashboard/class/${options.classId}?subject=${options.subjectId}`);
+            } else {
+              // Fallback: reload the page to refresh access information
+              window.location.reload();
+            }
           }}
         />
       )}
