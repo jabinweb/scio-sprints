@@ -228,6 +228,22 @@ model Payment {
   @@map("payments")
 }
 
+model FormResponse {
+  id        String            @id @default(cuid())
+  formType  FormType          @default(CONTACT)
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String            @db.Text
+  metadata  Json?             // For additional form-specific data
+  status    FormResponseStatus @default(UNREAD)
+  created_at DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  @@map("form_responses")
+}
+
 model AdminSettings {
   id          String   @id @default(cuid())
   key         String   @unique
@@ -481,6 +497,20 @@ enum AnnouncementType {
   MAINTENANCE
   PROMOTION
   WARNING
+}
+
+enum FormType {
+  CONTACT
+  SUPPORT
+  FEEDBACK
+  GENERAL
+}
+
+enum FormResponseStatus {
+  UNREAD
+  READ
+  REPLIED
+  ARCHIVED
 }
 
 model TopicDifficultyRating {

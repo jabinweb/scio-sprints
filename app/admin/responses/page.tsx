@@ -4,40 +4,50 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2, RefreshCw, AlertCircle, Download, Search } from 'lucide-react';
+import { Trash2, RefreshCw, AlertCircle, Download, Search, Mail, Phone, MessageSquare, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 
-interface Signup {
+interface FormResponse {
   id: string;
+  formType: 'CONTACT' | 'DEMO' | 'SUPPORT';
   name: string;
   email: string;
-  school: string;
-  role: string;
-  timestamp: string;
-  status?: string;
-  updatedAt?: string;
+  phone?: string;
+  subject?: string;
+  message?: string;
+  metadata?: Record<string, unknown>;
+  status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  createdAt: string;
+  updatedAt: string;
 }
 
 const statusOptions = [
-  { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'contacted', label: 'Contacted', color: 'bg-blue-100 text-blue-800' },
-  { value: 'demo-scheduled', label: 'Demo Scheduled', color: 'bg-purple-100 text-purple-800' },
-  { value: 'demo-completed', label: 'Demo Completed', color: 'bg-green-100 text-green-800' },
-  { value: 'not-interested', label: 'Not Interested', color: 'bg-red-100 text-red-800' },
-  { value: 'follow-up', label: 'Follow-up Required', color: 'bg-orange-100 text-orange-800' },
+  { value: 'PENDING', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'IN_PROGRESS', label: 'In Progress', color: 'bg-blue-100 text-blue-800' },
+  { value: 'RESOLVED', label: 'Resolved', color: 'bg-green-100 text-green-800' },
+  { value: 'CLOSED', label: 'Closed', color: 'bg-gray-100 text-gray-800' },
+];
+
+const formTypeOptions = [
+  { value: 'all', label: 'All Forms' },
+  { value: 'CONTACT', label: 'Contact Forms' },
+  { value: 'DEMO', label: 'Demo Requests' },
+  { value: 'SUPPORT', label: 'Support Requests' },
 ];
 
 export default function ResponsesPage() {
   const { data: session, status } = useSession();
   const user = session?.user;
-  const userRole = user?.role; // Get actual role from session
+  const userRole = user?.role;
   const authLoading = status === 'loading';
-  const [signups, setSignups] = useState<Signup[]>([]);
+  const [responses, setResponses] = useState<FormResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterFormType, setFilterFormType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   // Enhanced admin check
   const isAdmin = user && userRole === 'ADMIN';
@@ -60,11 +70,11 @@ export default function ResponsesPage() {
           const responsesData = await responsesResponse.json();
           
           // Ensure we always set an array
-          setSignups(Array.isArray(responsesData) ? responsesData : []);
+          setResponses(Array.isArray(responsesData) ? responsesData : []);
           setDataFetched(true);
         } catch (error) {
           console.error('Error fetching form responses:', error);
-          setSignups([]);
+          setResponses([]);
           setDataFetched(true);
         } finally {
           setLoading(false);
@@ -79,16 +89,16 @@ export default function ResponsesPage() {
     }
   }, [isAdmin, isLoadingAuth, dataFetched, user, userRole]);
 
-  const deleteResponse = async (signupId: string) => {
+  const deleteResponse = async (responseId: string) => {
     if (!confirm('Are you sure you want to delete this form response?')) return;
     
     try {
-      const response = await fetch(`/api/admin/responses?id=${signupId}`, {
+      const response = await fetch(`/api/admin/responses?id=${responseId}`, {
         method: 'DELETE',
       });
       
       if (response.ok) {
-        setSignups(signups.filter(signup => signup.id !== signupId));
+        setResponses(responses.filter(resp => resp.id !== responseId));
       }
     } catch (error) {
       console.error('Error deleting form response:', error);
@@ -97,13 +107,17 @@ export default function ResponsesPage() {
 
   const exportToCSV = () => {
     const csvContent = [
-      ['Name', 'Email', 'School/Institution', 'Role', 'Date'],
-      ...signups.map(signup => [
-        signup.name,
-        signup.email,
-        signup.school,
-        signup.role,
-        new Date(signup.timestamp).toLocaleDateString()
+      ['Type', 'Name', 'Email', 'Phone', 'Subject', 'Message', 'Status', 'Created', 'Updated'],
+      ...responses.map(response => [
+        response.formType,
+        response.name,
+        response.email,
+        response.phone || '',
+        response.subject || '',
+        response.message?.replace(/"/g, '""') || '',
+        response.status,
+        new Date(response.createdAt).toLocaleString(),
+        new Date(response.updatedAt).toLocaleString()
       ])
     ];
 
@@ -125,10 +139,10 @@ export default function ResponsesPage() {
     try {
       const responsesResponse = await fetch('/api/admin/responses');
       const responsesData = await responsesResponse.json();
-      setSignups(Array.isArray(responsesData) ? responsesData : []);
+      setResponses(Array.isArray(responsesData) ? responsesData : []);
     } catch (error) {
       console.error('Error refreshing data:', error);
-      setSignups([]);
+      setResponses([]);
     } finally {
       setLoading(false);
     }
@@ -143,8 +157,8 @@ export default function ResponsesPage() {
       });
       
       if (response.ok) {
-        setSignups(signups.map(signup => 
-          signup.id === responseId ? { ...signup, status: newStatus, updatedAt: new Date().toISOString() } : signup
+        setResponses(responses.map(resp => 
+          resp.id === responseId ? { ...resp, status: newStatus as FormResponse['status'], updatedAt: new Date().toISOString() } : resp
         ));
       }
     } catch (error) {
@@ -152,7 +166,7 @@ export default function ResponsesPage() {
     }
   };
 
-  const getStatusBadge = (status?: string) => {
+  const getStatusBadge = (status: string) => {
     const statusConfig = statusOptions.find(opt => opt.value === status) || statusOptions[0];
     return (
       <Badge className={statusConfig.color}>
@@ -161,29 +175,58 @@ export default function ResponsesPage() {
     );
   };
 
-  // Filter responses based on search term
-  const filteredSignups = useMemo(() => {
-    if (!searchTerm.trim()) return signups;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return signups.filter(signup => 
-      signup.name?.toLowerCase().includes(searchLower) ||
-      signup.email?.toLowerCase().includes(searchLower) ||
-      signup.school?.toLowerCase().includes(searchLower) ||
-      signup.role?.toLowerCase().includes(searchLower) ||
-      signup.status?.toLowerCase().includes(searchLower)
+  const getFormTypeBadge = (formType: string) => {
+    const colors = {
+      CONTACT: 'bg-blue-100 text-blue-800',
+      DEMO: 'bg-purple-100 text-purple-800',
+      SUPPORT: 'bg-orange-100 text-orange-800'
+    };
+    return (
+      <Badge className={colors[formType as keyof typeof colors] || 'bg-gray-100 text-gray-800'}>
+        {formType}
+      </Badge>
     );
-  }, [signups, searchTerm]);
+  };
+
+  // Filter responses based on search term and filters
+  const filteredResponses = useMemo(() => {
+    let filtered = responses;
+    
+    // Filter by form type
+    if (filterFormType !== 'all') {
+      filtered = filtered.filter(resp => resp.formType === filterFormType);
+    }
+    
+    // Filter by status
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(resp => resp.status === filterStatus);
+    }
+    
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(resp => 
+        resp.name?.toLowerCase().includes(searchLower) ||
+        resp.email?.toLowerCase().includes(searchLower) ||
+        resp.subject?.toLowerCase().includes(searchLower) ||
+        resp.message?.toLowerCase().includes(searchLower) ||
+        resp.formType?.toLowerCase().includes(searchLower) ||
+        resp.status?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return filtered;
+  }, [responses, searchTerm, filterFormType, filterStatus]);
 
   // Calculate status stats
   const statusStats = useMemo(() => {
     const stats: Record<string, number> = {};
-    filteredSignups.forEach(signup => {
-      const status = signup.status || 'pending';
+    filteredResponses.forEach(response => {
+      const status = response.status || 'PENDING';
       stats[status] = (stats[status] || 0) + 1;
     });
     return stats;
-  }, [filteredSignups]);
+  }, [filteredResponses]);
 
   // Show loading while checking auth and role
   if (isLoadingAuth) {
@@ -245,32 +288,59 @@ export default function ResponsesPage() {
           </div>
         </div>
 
-        {/* Search Bar */}
+        {/* Search and Filter Bar */}
         <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search by name, email, school, role, or status..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-10"
-              />
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search by name, email, subject, message..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-10"
+                />
+              </div>
+              <Select value={filterFormType} onValueChange={setFilterFormType}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by form type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{Array.isArray(signups) ? signups.length : 0}</div>
+              <div className="text-2xl font-bold">{Array.isArray(responses) ? responses.length : 0}</div>
               {searchTerm && (
                 <p className="text-xs text-muted-foreground">
-                  {filteredSignups.length} matching
+                  {filteredResponses.length} matching
                 </p>
               )}
             </CardContent>
@@ -281,43 +351,34 @@ export default function ResponsesPage() {
               <CardTitle className="text-sm font-medium">Pending</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{statusStats.pending || 0}</div>
+              <div className="text-2xl font-bold">{statusStats.PENDING || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contacted</CardTitle>
+              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{statusStats.contacted || 0}</div>
+              <div className="text-2xl font-bold">{statusStats.IN_PROGRESS || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Demo Scheduled</CardTitle>
+              <CardTitle className="text-sm font-medium">Resolved</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{statusStats['demo-scheduled'] || 0}</div>
+              <div className="text-2xl font-bold">{statusStats.RESOLVED || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CardTitle className="text-sm font-medium">Closed</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{statusStats['demo-completed'] || 0}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Follow-up</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statusStats['follow-up'] || 0}</div>
+              <div className="text-2xl font-bold">{statusStats.CLOSED || 0}</div>
             </CardContent>
           </Card>
         </div>
@@ -329,39 +390,76 @@ export default function ResponsesPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Array.isArray(filteredSignups) && filteredSignups.map((signup) => (
-                <div key={signup.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold">{signup.name}</h3>
-                      {getStatusBadge(signup.status)}
+              {Array.isArray(filteredResponses) && filteredResponses.map((response) => (
+                <div key={response.id} className="flex flex-col lg:flex-row lg:items-center justify-between p-6 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex-1 space-y-3">
+                    {/* Header with name and badges */}
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h3 className="font-semibold text-lg">{response.name}</h3>
+                      {getFormTypeBadge(response.formType)}
+                      {getStatusBadge(response.status)}
                     </div>
-                    <p className="text-sm text-muted-foreground">{signup.email}</p>
-                    <div className="flex items-center gap-4 mt-1">
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-medium">School:</span> {signup.school}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-medium">Role:</span> {signup.role}
-                      </p>
+                    
+                    {/* Contact Information */}
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-4 w-4" />
+                        <a href={`mailto:${response.email}`} className="text-blue-600 hover:underline">
+                          {response.email}
+                        </a>
+                      </div>
+                      {response.phone && (
+                        <div className="flex items-center gap-1">
+                          <Phone className="h-4 w-4" />
+                          <a href={`tel:${response.phone}`} className="text-blue-600 hover:underline">
+                            {response.phone}
+                          </a>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4 mt-1">
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-medium">Submitted:</span> {new Date(signup.timestamp).toLocaleString()}
-                      </p>
-                      {signup.updatedAt && (
-                        <p className="text-sm text-muted-foreground">
-                          <span className="font-medium">Updated:</span> {new Date(signup.updatedAt).toLocaleString()}
+
+                    {/* Subject and Message */}
+                    {response.subject && (
+                      <div>
+                        <span className="font-medium text-sm text-gray-700">Subject:</span>
+                        <p className="text-gray-600 mt-1">{response.subject}</p>
+                      </div>
+                    )}
+                    
+                    {response.message && (
+                      <div>
+                        <div className="flex items-center gap-1 mb-1">
+                          <MessageSquare className="h-4 w-4" />
+                          <span className="font-medium text-sm text-gray-700">Message:</span>
+                        </div>
+                        <p className="text-gray-600 text-sm max-w-2xl">
+                          {response.message.length > 200 
+                            ? `${response.message.substring(0, 200)}...` 
+                            : response.message
+                          }
                         </p>
+                      </div>
+                    )}
+
+                    {/* Timestamps */}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>Created: {new Date(response.createdAt).toLocaleString()}</span>
+                      </div>
+                      {response.updatedAt !== response.createdAt && (
+                        <span>Updated: {new Date(response.updatedAt).toLocaleString()}</span>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 mt-4 lg:mt-0 lg:ml-4">
                     <Select
-                      value={signup.status || 'pending'}
-                      onValueChange={(value) => updateResponseStatus(signup.id, value)}
+                      value={response.status}
+                      onValueChange={(value) => updateResponseStatus(response.id, value)}
                     >
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[140px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -375,19 +473,21 @@ export default function ResponsesPage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => deleteResponse(signup.id)}
+                      onClick={() => deleteResponse(response.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               ))}
-              {filteredSignups.length === 0 && searchTerm && (
+              
+              {filteredResponses.length === 0 && (searchTerm || filterFormType !== 'all' || filterStatus !== 'all') && (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">No responses found matching &quot;{searchTerm}&quot;</p>
+                  <p className="text-muted-foreground">No responses found matching your filters.</p>
                 </div>
               )}
-              {(!Array.isArray(signups) || signups.length === 0) && !searchTerm && (
+              
+              {(!Array.isArray(responses) || responses.length === 0) && !searchTerm && filterFormType === 'all' && filterStatus === 'all' && (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">No form responses found.</p>
                 </div>
