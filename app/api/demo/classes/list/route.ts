@@ -55,6 +55,7 @@ export async function GET() {
         icon: subject.icon,
         color: subject.color,
         isLocked: subject.isLocked,
+        price: subject.price,
         chapters: subject.chapters.map(chapter => ({
           id: chapter.id,
           name: chapter.name,

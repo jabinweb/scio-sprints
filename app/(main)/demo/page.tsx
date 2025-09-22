@@ -23,6 +23,7 @@ interface DemoClass {
     icon: string;
     color: string;
     isLocked: boolean;
+    price: number;
     chapters: Array<{
       id: string;
       name: string;
@@ -113,7 +114,7 @@ export default function DemoPage() {
         name: subject.name,
         icon: subject.icon,
         color: subject.color,
-        price: Math.floor(demoClass.price * 0.3), // 30% of class price for individual subjects
+        price: subject.price, 
         isSubscribed: false,
         subscriptionType: undefined,
         chapters: subject.chapters.map(chapter => ({
