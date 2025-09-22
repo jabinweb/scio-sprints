@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
 import { prisma } from '@/lib/prisma';
+import { createPaymentOrder } from '@/lib/payment-service';
 
 export async function POST(req: Request) {
   try {
@@ -58,65 +58,42 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // Fetch payment settings
-    const settings = await prisma.adminSettings.findMany({
-      where: {
-        key: {
-          in: ['paymentMode', 'razorpayTestKeyId', 'razorpayKeyId', 'razorpayTestKeySecret', 'razorpayKeySecret']
-        }
-      },
-      select: {
-        key: true,
-        value: true
-      }
+    // Create payment order using unified service
+    const orderResult = await createPaymentOrder({
+      userId: userId,
+      amount: classData.price || 0,
+      currency: classData.currency || 'INR',
+      description: `${classData.name} - Class Subscription`
     });
 
-    if (!settings.length) {
-      console.error('Error fetching settings: No settings found');
-      return NextResponse.json({ error: 'Payment configuration not found' }, { status: 500 });
-    }
-
-    const settingsObj = settings.reduce((acc: Record<string, string>, setting: { key: string; value: string }) => {
-      acc[setting.key] = setting.value;
-      return acc;
-    }, {} as Record<string, string>);
-
-    const paymentMode = settingsObj.paymentMode || 'test';
-    const keyId = paymentMode === 'test' ? settingsObj.razorpayTestKeyId : settingsObj.razorpayKeyId;
-    const keySecret = paymentMode === 'test' ? settingsObj.razorpayTestKeySecret : settingsObj.razorpayKeySecret;
-
-    if (!keyId || !keySecret) {
+    if (!orderResult) {
       return NextResponse.json({ 
-        error: `Razorpay ${paymentMode} credentials not configured` 
+        error: 'Payment order creation failed' 
       }, { status: 500 });
     }
 
-    const razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
-    });
-
-    const orderAmount = classData.price || 0; // Handle null price
-    
-    const order = await razorpay.orders.create({
-      amount: orderAmount, // Already in paisa
-      currency: classData.currency,
-      receipt: `cls_${classId.toString().slice(0, 8)}_${Date.now().toString().slice(-8)}`,
-      notes: {
-        classId: classId.toString(),
-        userId: userId,
+    // Format response based on gateway
+    if (orderResult.gateway === 'RAZORPAY') {
+      return NextResponse.json({
+        orderId: orderResult.orderData.id,
+        amount: orderResult.orderData.amount,
+        currency: orderResult.orderData.currency,
+        keyId: orderResult.orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        classId: classId,
         className: classData.name,
-      },
-    });
-
-    return NextResponse.json({
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      keyId: keyId,
-      classId: classId,
-      className: classData.name,
-    });
+        gateway: orderResult.gateway
+      });
+    } else if (orderResult.gateway === 'CASHFREE') {
+      return NextResponse.json({
+        orderId: orderResult.orderData.order_id,
+        amount: orderResult.orderData.order_amount * 100, // Convert back to paise for frontend
+        currency: orderResult.orderData.order_currency,
+        payment_session_id: orderResult.orderData.payment_session_id,
+        classId: classId,
+        className: classData.name,
+        gateway: orderResult.gateway
+      });
+    }
   } catch (error) {
     console.error('Class payment creation error:', error);
     return NextResponse.json({ error: 'Payment creation failed' }, { status: 500 });

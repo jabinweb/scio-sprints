@@ -1,60 +1,75 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import Razorpay from 'razorpay';
+import { NextRequest, NextResponse } from 'next/server';
+import { createPaymentOrder } from '@/lib/payment-service';
 
-export async function POST(request: Request) {
+// Payment gateway types
+const PAYMENT_GATEWAYS = ['RAZORPAY', 'CASHFREE'] as const;
+
+export async function POST(request: NextRequest) {
   try {
-    const { amount, currency, userId } = await request.json();
+    const body = await request.json();
+    const { userId, amount, currency = 'INR', description, gateway } = body;
 
-    // Fetch Razorpay keys from environment variables and validate
-    const key_id = process.env.RAZORPAY_KEY_ID;
-    const key_secret = process.env.RAZORPAY_KEY_SECRET;
-
-    if (!key_id || !key_secret) {
-      console.error('Missing Razorpay key_id or key_secret in environment variables');
+    // Validate required fields
+    if (!userId || !amount) {
       return NextResponse.json(
-        { error: 'Payment gateway not configured. Please contact support.' },
-        { status: 500 }
+        { error: 'User ID and amount are required' },
+        { status: 400 }
       );
     }
 
-    const razorpay = new Razorpay({
-      key_id,
-      key_secret,
-    });
+    // Validate amount
+    if (typeof amount !== 'number' || amount <= 0) {
+      return NextResponse.json(
+        { error: 'Amount must be a positive number' },
+        { status: 400 }
+      );
+    }
 
-    // Create Razorpay order
-    const order = await razorpay.orders.create({
+    // Validate gateway if provided
+    if (gateway && !PAYMENT_GATEWAYS.includes(gateway)) {
+      return NextResponse.json(
+        { error: 'Invalid payment gateway specified' },
+        { status: 400 }
+      );
+    }
+
+    // Create payment order using the payment service
+    const paymentOrder = await createPaymentOrder({
+      userId,
       amount,
       currency,
-      receipt: `order_${Date.now()}`,
+      description,
+      gateway,
     });
 
-    // Create payment record in Prisma
-    try {
-      await prisma.payment.create({
-        data: {
-          userId: userId,
-          razorpayOrderId: order.id,
-          amount: amount,
-          currency: currency,
-          status: 'PENDING',
-          description: 'Premium Learning Subscription',
-        }
-      });
-    } catch (error) {
-      console.error('Error creating payment record:', error);
-      return NextResponse.json(
-        { error: 'Payment record creation failed' },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({
+      success: true,
+      data: paymentOrder,
+    });
 
-    return NextResponse.json({ orderId: order.id });
   } catch (error) {
     console.error('Payment order creation error:', error);
+    
+    // Handle specific error types
+    if (error instanceof Error) {
+      if (error.message.includes('Payment gateway not enabled') || 
+          error.message.includes('not configured')) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 503 }
+        );
+      }
+      
+      if (error.message.includes('User not found')) {
+        return NextResponse.json(
+          { error: 'Invalid user ID' },
+          { status: 404 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to create payment order' },
       { status: 500 }
     );
   }

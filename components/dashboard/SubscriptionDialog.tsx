@@ -1,5 +1,27 @@
 'use client';
 
+// Type declarations for Cashfree SDK
+declare module '@cashfreepayments/cashfree-js' {
+  export function load(config: {
+    mode: 'sandbox' | 'production';
+  }): Promise<{
+    checkout: (options: {
+      paymentSessionId: string;
+      redirectTarget: string;
+    }) => Promise<{
+      error?: { message: string };
+      paymentDetails?: {
+        paymentId?: string;
+        orderId?: string;
+        status?: string;
+        amount?: number;
+        currency?: string;
+      };
+      redirect?: boolean;
+    }>;
+  }>;
+}
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
@@ -38,6 +60,19 @@ declare global {
   interface Window {
     Razorpay: new (options: RazorpayOptions) => {
       open: () => void;
+    };
+    Cashfree: {
+      checkout: (options: { paymentSessionId: string; redirectTarget: string }) => Promise<{
+        error?: { message: string };
+        paymentDetails?: {
+          paymentId?: string;
+          orderId?: string;
+          status?: string;
+          amount?: number;
+          currency?: string;
+        };
+        redirect?: boolean;
+      }>;
     };
   }
 }
@@ -87,6 +122,23 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   const user = session?.user;
   const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set());
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState<{
+    show: boolean;
+    type: 'class' | 'subject';
+    details?: {
+      classId?: string;
+      subjectId?: string;
+      amount?: number;
+      subscriptionName?: string;
+    };
+  }>({ show: false, type: 'class' });
+  
+  const [paymentError, setPaymentError] = useState<{
+    show: boolean;
+    type: 'error' | 'cancelled' | 'failed' | 'dropped';
+    message: string;
+    canRetry: boolean;
+  }>({ show: false, type: 'error', message: '', canRetry: true });
   
   // Check if user has class subscription (all subjects subscribed via class_subscription)
   const hasClassSubscription = classData.subjects.every(subject => 
@@ -153,6 +205,68 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     setSelectedSubjects(newSelected);
   };
 
+  // Helper function to handle payment errors gracefully
+  const handlePaymentError = (error: any, context: string) => {
+    console.log(`Payment ${context}:`, error);
+    setIsProcessingPayment(false);
+    setIsProcessing(false);
+    
+    let errorType: 'error' | 'cancelled' | 'failed' | 'dropped' = 'error';
+    let message = 'Payment failed. Please try again.';
+    let canRetry = true;
+    
+    // Handle Cashfree error states
+    if (error?.message) {
+      const errorMsg = error.message.toLowerCase();
+      
+      if (errorMsg.includes('user dropped') || errorMsg.includes('user closed') || errorMsg.includes('cancelled') || errorMsg.includes('aborted')) {
+        errorType = 'cancelled';
+        message = 'Payment was cancelled. You can try again whenever you\'re ready.';
+        canRetry = true;
+      } else if (errorMsg.includes('failed') || errorMsg.includes('declined') || errorMsg.includes('insufficient')) {
+        errorType = 'failed';
+        message = 'Payment was declined. Please check your payment details and try again.';
+        canRetry = true;
+      } else if (errorMsg.includes('timeout') || errorMsg.includes('network')) {
+        errorType = 'error';
+        message = 'Payment timed out due to network issues. Please check your connection and try again.';
+        canRetry = true;
+      } else if (errorMsg.includes('flagged')) {
+        errorType = 'error';
+        message = 'Payment was flagged for security review. Please contact support if this persists.';
+        canRetry = false;
+      }
+    }
+    
+    // Handle Razorpay error states
+    if (error?.code) {
+      switch (error.code) {
+        case 'PAYMENT_CANCELLED':
+          errorType = 'cancelled';
+          message = 'Payment was cancelled. You can try again whenever you\'re ready.';
+          break;
+        case 'PAYMENT_FAILED':
+          errorType = 'failed';
+          message = 'Payment failed. Please try a different payment method.';
+          break;
+        case 'NETWORK_ERROR':
+          errorType = 'error';
+          message = 'Network error occurred. Please check your connection and try again.';
+          break;
+        default:
+          errorType = 'error';
+          message = error.description || 'Payment failed. Please try again.';
+      }
+    }
+    
+    setPaymentError({
+      show: true,
+      type: errorType,
+      message,
+      canRetry
+    });
+  };
+
   const handleClassSubscribe = async () => {
     // Check if user is logged in first
     if (!user) {
@@ -176,13 +290,89 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       const orderData = await response.json();
       if (!response.ok) throw new Error(orderData.error);
       
-      // Check if Razorpay is loaded
-      if (!window.Razorpay) {
-        throw new Error('Payment system not available. Please refresh the page and try again.');
-      }
-      
-      // Initialize Razorpay payment
-      const razorpay = new window.Razorpay({
+      // Handle different payment gateways
+      if (orderData.gateway === 'CASHFREE') {
+        // Handle Cashfree payment using JS SDK
+        if (!window.Cashfree) {
+          // Initialize Cashfree SDK if not loaded
+          const { load } = await import('@cashfreepayments/cashfree-js');
+          window.Cashfree = await load({
+            mode: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
+          });
+        }
+        
+        const checkoutOptions = {
+          paymentSessionId: orderData.payment_session_id,
+          redirectTarget: "_modal",
+        };
+        
+        const result = await window.Cashfree.checkout(checkoutOptions);
+        
+        if (result.error) {
+          handlePaymentError(result.error, 'Cashfree checkout error or user cancelled');
+          return; // Exit gracefully instead of throwing
+        }
+        
+        if (result.paymentDetails) {
+          setIsProcessingPayment(true);
+          
+          // Verify Cashfree payment using unified verification
+          const verifyResponse = await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentId: orderData.orderId,
+              orderId: orderData.orderId,
+              gateway: 'CASHFREE',
+              paymentDetails: result.paymentDetails,
+              metadata: {
+                type: 'class_subscription',
+                classId: classData.id,
+                userId: user.id
+              }
+            })
+          });
+          
+          if (verifyResponse.ok) {
+            // Clear processing state first
+            setIsProcessingPayment(false);
+            
+            // Show success message instead of immediate redirect
+            setPaymentSuccess({
+              show: true,
+              type: 'class',
+              details: {
+                classId: classData.id.toString(),
+                amount: classData.price,
+                subscriptionName: `${classData.name} - Full Access`
+              }
+            });
+            
+            // Delay onSubscribe call to allow success message to show
+            setTimeout(() => {
+              onSubscribe('class', { classId: classData.id, amount: classData.price });
+              
+              // Delayed redirect with success message
+              if (!disableAutoRedirect) {
+                setTimeout(() => {
+                  router.push(`/dashboard/class/${classData.id}`);
+                }, 1000);
+              }
+            }, 2000); // Wait 2 seconds before calling onSubscribe
+          } else {
+            setIsProcessingPayment(false);
+            throw new Error('Payment verification failed');
+          }
+        }
+        
+      } else {
+        // Handle Razorpay payment (default)
+        if (!window.Razorpay) {
+          throw new Error('Payment system not available. Please refresh the page and try again.');
+        }
+        
+        // Initialize Razorpay payment
+        const razorpay = new window.Razorpay({
         key: orderData.keyId,
         amount: orderData.amount,
         currency: orderData.currency,
@@ -192,26 +382,45 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
         handler: async (paymentResponse: RazorpayResponse) => {
           setIsProcessingPayment(true);
           
-          // Verify payment
-          const verifyResponse = await fetch('/api/payment/class/verify', {
+          // Verify payment using unified verification
+          const verifyResponse = await fetch('/api/payment/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              ...paymentResponse,
-              userId: user.id,
-              classId: classData.id
+              paymentId: orderData.orderId,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_signature: paymentResponse.razorpay_signature,
+              metadata: {
+                type: 'class_subscription',
+                classId: classData.id,
+                userId: user.id
+              }
             })
           });
           
           if (verifyResponse.ok) {
-            onSubscribe('class', { classId: classData.id, amount: classData.price });
-            onClose();
+            // Clear processing state first
+            setIsProcessingPayment(false);
             
-            // Fallback redirection in case onSubscribe doesn't handle it
+            // Show success message instead of immediate redirect
+            setPaymentSuccess({
+              show: true,
+              type: 'class',
+              details: {
+                classId: classData.id.toString(),
+                amount: classData.price,
+                subscriptionName: `${classData.name} - Full Access`
+              }
+            });
+            
+            onSubscribe('class', { classId: classData.id, amount: classData.price });
+            
+            // Delayed redirect with success message
             if (!disableAutoRedirect) {
               setTimeout(() => {
                 router.push(`/dashboard/class/${classData.id}`);
-              }, 1000);
+              }, 3000); // Increased to 3 seconds to show success message
             }
           } else {
             setIsProcessingPayment(false);
@@ -225,6 +434,7 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       });
       
       razorpay.open();
+      } // Close else block for Razorpay payment
     } catch (error) {
       console.error('Payment error:', error);
       
@@ -246,10 +456,10 @@ Would you like to refresh the page now?`;
           }
           onClose();
         } else {
-          alert(`Payment error: ${error.message}`);
+          handlePaymentError(error, 'class subscription');
         }
       } else {
-        alert('An unexpected error occurred. Please try again.');
+        handlePaymentError(error, 'class subscription - unknown error');
       }
     } finally {
       setIsProcessing(false);
@@ -284,13 +494,85 @@ Would you like to refresh the page now?`;
       const orderData = await response.json();
       if (!response.ok) throw new Error(orderData.error);
       
-      // Check if Razorpay is loaded
-      if (!window.Razorpay) {
-        throw new Error('Payment system not available. Please refresh the page and try again.');
-      }
-      
-      // Initialize Razorpay payment
-      const razorpay = new window.Razorpay({
+      // Handle different payment gateways
+      if (orderData.gateway === 'CASHFREE') {
+        // Handle Cashfree payment using JS SDK
+        if (!window.Cashfree) {
+          // Initialize Cashfree SDK if not loaded
+          const { load } = await import('@cashfreepayments/cashfree-js');
+          window.Cashfree = await load({
+            mode: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
+          });
+        }
+        
+        const checkoutOptions = {
+          paymentSessionId: orderData.payment_session_id,
+          redirectTarget: "_modal",
+        };
+        
+        const result = await window.Cashfree.checkout(checkoutOptions);
+        
+        if (result.error) {
+          handlePaymentError(result.error, 'Cashfree subject subscription error or user cancelled');
+          return; // Exit gracefully instead of throwing
+        }
+        
+        if (result.redirect) {
+          // Payment successful, verify on backend
+          const verifyResponse = await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentId: orderData.payment_session_id,
+              paymentDetails: result.paymentDetails,
+              metadata: {
+                type: 'subject_subscription',
+                subjectId: subjectId,
+                userId: user.id
+              }
+            })
+          });
+          
+          if (verifyResponse.ok) {
+            // Clear processing state first
+            setIsProcessingPayment(false);
+            
+            // Show success message instead of immediate redirect
+            setPaymentSuccess({
+              show: true,
+              type: 'subject',
+              details: {
+                classId: classData.id.toString(),
+                subjectId: subjectId,
+                amount: subject?.price || 7500,
+                subscriptionName: `${subject?.name} - Individual Subject Access`
+              }
+            });
+            
+            // Delay onSubscribe call to allow success message to show
+            setTimeout(() => {
+              onSubscribe('subject', { classId: classData.id, subjectId, amount: subject?.price || 7500 });
+              
+              if (!disableAutoRedirect) {
+                setTimeout(() => {
+                  router.push(`/dashboard/class/${classData.id}?subject=${subjectId}`);
+                }, 1000);
+              }
+            }, 2000); // Wait 2 seconds before calling onSubscribe
+          } else {
+            setIsProcessingPayment(false);
+            throw new Error('Payment verification failed');
+          }
+        }
+        
+      } else {
+        // Handle Razorpay payment (default)
+        if (!window.Razorpay) {
+          throw new Error('Payment system not available. Please refresh the page and try again.');
+        }
+        
+        // Initialize Razorpay payment
+        const razorpay = new window.Razorpay({
         key: orderData.keyId,
         amount: orderData.amount,
         currency: orderData.currency,
@@ -301,25 +583,46 @@ Would you like to refresh the page now?`;
           setIsProcessingPayment(true);
           
           // Verify payment
-          const verifyResponse = await fetch('/api/payment/subject/verify', {
+          // Verify payment using unified verification
+          const verifyResponse = await fetch('/api/payment/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              ...paymentResponse,
-              userId: user.id,
-              subjectId
+              paymentId: orderData.orderId,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_signature: paymentResponse.razorpay_signature,
+              metadata: {
+                type: 'subject_subscription',
+                subjectId: subjectId,
+                userId: user.id
+              }
             })
           });
           
           if (verifyResponse.ok) {
+            // Clear processing state first
+            setIsProcessingPayment(false);
+            
+            // Show success message instead of immediate redirect
+            setPaymentSuccess({
+              show: true,
+              type: 'subject',
+              details: {
+                classId: classData.id.toString(),
+                subjectId: subjectId,
+                amount: subject?.price || 7500,
+                subscriptionName: `${subject?.name} - Individual Subject Access`
+              }
+            });
+            
             onSubscribe('subject', { classId: classData.id, subjectId, amount: subject?.price || 7500 });
-            onClose();
             
             // Fallback redirection in case onSubscribe doesn't handle it
             if (!disableAutoRedirect) {
               setTimeout(() => {
                 router.push(`/dashboard/class/${classData.id}?subject=${subjectId}`);
-              }, 1000);
+              }, 3000); // Increased to 3 seconds to show success message
             }
           } else {
             setIsProcessingPayment(false);
@@ -333,8 +636,10 @@ Would you like to refresh the page now?`;
       });
       
       razorpay.open();
+      } // Close else block for Razorpay payment
     } catch (error) {
       console.error('Subject payment error:', error);
+      handlePaymentError(error, 'subject subscription');
     } finally {
       setIsProcessing(false);
     }
@@ -354,8 +659,54 @@ Would you like to refresh the page now?`;
           </DialogTitle>
         </DialogHeader>
 
+        {/* Payment Success Message */}
+        {paymentSuccess.show && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-shrink-0">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-green-900">Payment Successful!</h3>
+                <p className="text-sm text-green-700">
+                  Your subscription has been activated successfully.
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setPaymentSuccess({ show: false, type: 'class' });
+                  onClose();
+                }}
+                className="text-green-600 hover:text-green-700 hover:bg-green-100"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="bg-white rounded-lg p-4 border border-green-100">
+              <h4 className="font-medium text-gray-900 mb-2">Subscription Details:</h4>
+              <div className="space-y-1 text-sm text-gray-600">
+                <p><span className="font-medium">Service:</span> {paymentSuccess.details?.subscriptionName}</p>
+                <p><span className="font-medium">Amount:</span> ₹{((paymentSuccess.details?.amount || 0) / 100).toFixed(2)}</p>
+                <p><span className="font-medium">Status:</span> <span className="text-green-600 font-medium">Active</span></p>
+              </div>
+            </div>
+            
+            <div className="mt-4 flex items-center gap-2 text-sm text-green-700">
+              <span>Redirecting to your dashboard in a few seconds...</span>
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Login Notice for Guest Users */}
-        {!user && (
+        {!user && !paymentSuccess.show && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <div className="flex items-center gap-3">
               <LogIn className="h-5 w-5 text-blue-600" />
@@ -369,6 +720,9 @@ Would you like to refresh the page now?`;
           </div>
         )}
 
+        {/* Main subscription content - hide when showing success message */}
+        {!paymentSuccess.show && (
+        <>
         <Tabs value={subscriptionType} onValueChange={(value) => setSubscriptionType(value as 'class' | 'subjects')} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="class" className="flex items-center gap-2">
@@ -691,10 +1045,12 @@ Would you like to refresh the page now?`;
             </Button>
           ) : (
             <div className="text-sm text-gray-500">
-              💳 Test Mode - Use card: 4111 1111 1111 1111
+              💳 Test Mode
             </div>
           )}
         </div>
+        </>
+        )} {/* Close main content wrapper */}
         
         {/* Processing overlay */}
         {isProcessingPayment && (

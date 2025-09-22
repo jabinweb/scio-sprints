@@ -29,11 +29,27 @@ export async function GET() {
       subscriptionPrice: '299',
       emailNotifications: 'true',
       maintenanceMode: 'false',
+      
+      // Payment Gateway Selection
+      payment_default_gateway: 'RAZORPAY',
+      
+      // Razorpay Settings
+      payment_razorpay_enabled: 'true',
       paymentMode: 'test',
       razorpayKeyId: '',
       razorpayTestKeyId: '',
       razorpayKeySecret: '',
       razorpayTestKeySecret: '',
+      
+      // Cashfree Settings
+      payment_cashfree_enabled: 'false',
+      payment_cashfree_app_id: '',
+      payment_cashfree_secret_key: '',
+      payment_cashfree_test_app_id: '',
+      payment_cashfree_test_secret_key: '',
+      payment_cashfree_environment: 'SANDBOX',
+      
+      // SMTP Settings
       smtpHost: 'smtp.hostinger.com',
       smtpPort: '587',
       smtpUser: 'info@sciolabs.in',
@@ -114,7 +130,7 @@ export async function PUT(request: Request) {
     // Clear appropriate caches based on what was updated
     const updatedKeys = Object.keys(updates);
     const hasSmtpUpdate = updatedKeys.some(key => key.includes('smtp') || key.includes('email') || key.includes('mail'));
-    const hasPaymentUpdate = updatedKeys.some(key => key.includes('razorpay') || key.includes('payment'));
+    const hasPaymentUpdate = updatedKeys.some(key => key.includes('razorpay') || key.includes('payment') || key.includes('cashfree'));
     
     if (hasSmtpUpdate) {
       clearSmtpCache();
@@ -122,6 +138,7 @@ export async function PUT(request: Request) {
     
     if (hasPaymentUpdate) {
       clearRazorpayCache();
+      // Note: Add clearCashfreeCache() here when implemented
     }
 
     return NextResponse.json({ success: true });

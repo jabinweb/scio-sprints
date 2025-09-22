@@ -1,82 +1,148 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { getRazorpayConfig } from '@/lib/razorpay-global';
+import { verifyRazorpayPayment, verifyCashfreePayment } from '@/lib/payment-service';
 
 export async function POST(req: Request) {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, userId } = await req.json();
+    const body = await req.json();
+    const { paymentId, metadata } = body;
 
-    // Get Razorpay configuration
-    const config = await getRazorpayConfig();
-    
-    if (!config.keySecret) {
-      return NextResponse.json({ 
-        error: `Razorpay ${config.paymentMode} secret not configured` 
-      }, { status: 500 });
+    if (!paymentId) {
+      return NextResponse.json({ error: 'Payment ID is required' }, { status: 400 });
     }
 
-    // Get subscription price from database
-    const subscriptionPriceSetting = await prisma.adminSettings.findFirst({
-      where: { key: 'subscriptionPrice' },
-      select: { value: true }
-    });
+    // Check if this is a Razorpay or Cashfree payment
+    const isRazorpayPayment = body.razorpay_payment_id && body.razorpay_order_id && body.razorpay_signature;
+    const isCashfreePayment = body.orderId;
+    
+    if (!isRazorpayPayment && !isCashfreePayment) {
+      return NextResponse.json({ 
+        error: 'Invalid payment verification request. Missing required parameters.' 
+      }, { status: 400 });
+    }
 
-    // Verify payment signature
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac("sha256", config.keySecret)
-      .update(body.toString())
-      .digest("hex");
+    let payment;
 
-    const isAuthentic = expectedSignature === razorpay_signature;
-
-    if (isAuthentic) {
-      // Get subscription price
-      const subscriptionPrice = parseInt(subscriptionPriceSetting?.value || '29900');
+    // Handle Razorpay payment verification
+    if (isRazorpayPayment) {
+      const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body;
       
-      // Store subscription in database
+      payment = await verifyRazorpayPayment(
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature
+      );
+    }
+    
+    // Handle Cashfree payment verification
+    else if (isCashfreePayment) {
+      // For Cashfree, paymentId is actually the order_id (database payment ID)
+      // We can use it directly to find the payment record
+      payment = await verifyCashfreePayment(paymentId, paymentId);
+    }
+
+    // If payment verification successful, create subscription based on metadata
+    if (payment && payment.status === 'COMPLETED' && metadata) {
       try {
-        await prisma.subscription.create({
-          data: {
-            userId,
-            status: 'ACTIVE',
-            planType: 'premium',
-            amount: subscriptionPrice, // Amount in paisa
-            currency: 'INR',
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        if (metadata.type === 'class_subscription') {
+          // Create class subscription
+          const existingClassSubscription = await prisma.subscription.findFirst({
+            where: {
+              userId: metadata.userId,
+              classId: metadata.classId,
+              subjectId: null, // Class-level subscription
+              status: 'ACTIVE',
+              endDate: { gte: new Date() }
+            }
+          });
+
+          if (!existingClassSubscription) {
+            await prisma.subscription.create({
+              data: {
+                userId: metadata.userId,
+                classId: metadata.classId,
+                subjectId: null, // Class-level subscription
+                status: 'ACTIVE',
+                planType: 'class_subscription',
+                amount: payment.amount,
+                currency: payment.currency,
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+              }
+            });
           }
-        });
+        } else if (metadata.type === 'subject_subscription') {
+          // Create subject subscription
+          const existingSubjectSubscription = await prisma.subscription.findFirst({
+            where: {
+              userId: metadata.userId,
+              subjectId: metadata.subjectId,
+              status: 'ACTIVE',
+              endDate: { gte: new Date() }
+            }
+          });
+
+          if (!existingSubjectSubscription) {
+            await prisma.subscription.create({
+              data: {
+                userId: metadata.userId,
+                subjectId: metadata.subjectId,
+                status: 'ACTIVE',
+                planType: 'subject_subscription',
+                amount: payment.amount,
+                currency: payment.currency,
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+              }
+            });
+          }
+        }
       } catch (subscriptionError) {
         console.error('Error creating subscription:', subscriptionError);
         return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });
       }
-
-      // Store payment record
-      try {
-        await prisma.payment.create({
-          data: {
-            userId,
-            razorpayPaymentId: razorpay_payment_id,
-            razorpayOrderId: razorpay_order_id,
-            amount: subscriptionPrice,
-            currency: 'INR',
-            status: 'COMPLETED',
-            description: 'Premium Subscription',
-          }
-        });
-      } catch (paymentError) {
-        console.error('Error creating payment record:', paymentError);
-        // Don't return error as subscription is already created
-      }
-
-      return NextResponse.json({ verified: true });
-    } else {
-      return NextResponse.json({ verified: false }, { status: 400 });
     }
+
+    // If payment verification successful, return success
+    if (payment && payment.status === 'COMPLETED') {
+      return NextResponse.json({ 
+        verified: true,
+        payment: {
+          id: payment.id,
+          status: payment.status,
+          amount: payment.amount,
+          gateway: payment.gateway
+        }
+      });
+    } else {
+      return NextResponse.json({ 
+        verified: false,
+        error: 'Payment verification failed'
+      }, { status: 400 });
+    }
+
   } catch (error) {
     console.error('Payment verification error:', error);
-    return NextResponse.json({ error: 'Payment verification failed' }, { status: 500 });
+    
+    // Handle specific error types
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid payment signature') || 
+          error.message.includes('Payment status:')) {
+        return NextResponse.json({ 
+          verified: false,
+          error: error.message 
+        }, { status: 400 });
+      }
+      
+      if (error.message.includes('not configured')) {
+        return NextResponse.json({ 
+          error: 'Payment gateway not configured' 
+        }, { status: 503 });
+      }
+    }
+
+    return NextResponse.json({ 
+      error: 'Payment verification failed' 
+    }, { status: 500 });
   }
 }

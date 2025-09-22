@@ -210,9 +210,13 @@ model Subscription {
 model Payment {
   id                String        @id @default(cuid())
   userId            String
+  gateway           PaymentGateway @default(RAZORPAY)
   razorpayPaymentId String?       @unique
   razorpayOrderId   String?
   razorpaySignature String?
+  cashfreePaymentId String?       @unique
+  cashfreeOrderId   String?
+  cashfreeSignature String?
   amount            Int
   currency          String        @default("INR")
   status            PaymentStatus @default(PENDING)
@@ -426,6 +430,11 @@ enum PaymentStatus {
   FAILED
   REFUNDED
   CANCELLED
+}
+
+enum PaymentGateway {
+  RAZORPAY
+  CASHFREE
 }
 
 enum ContentPageType {

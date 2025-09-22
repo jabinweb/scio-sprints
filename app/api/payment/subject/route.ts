@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createRazorpayInstance, validateRazorpayConfig, getRazorpayConfig } from '@/lib/razorpay-global';
+import { createPaymentOrder } from '@/lib/payment-service';
 
 interface PaymentRequest {
   subjectId: string;
@@ -72,44 +72,42 @@ export async function POST(request: Request) {
     // Get subject price (use subject's own price field)
     const subjectPrice = amount || subject.price || 7500; // Default to ₹75 if not set
 
-    // Validate Razorpay configuration
-    const validation = await validateRazorpayConfig();
-    if (!validation.valid) {
-      console.error('Razorpay configuration error:', validation.error);
-      return NextResponse.json({ error: validation.error }, { status: 500 });
-    }
+    // Create payment order using unified service
+    const orderResult = await createPaymentOrder({
+      userId: userId,
+      amount: subjectPrice,
+      currency: 'INR',
+      description: `${subject.name} - Subject Subscription`
+    });
 
-    // Create Razorpay instance with global configuration
-    const razorpay = await createRazorpayInstance();
-    if (!razorpay) {
+    if (!orderResult) {
       return NextResponse.json({ 
-        error: 'Failed to initialize Razorpay instance' 
+        error: 'Payment order creation failed' 
       }, { status: 500 });
     }
 
-    const order = await razorpay.orders.create({
-      amount: subjectPrice,
-      currency: 'INR',
-      receipt: `subj_${subjectId.slice(0, 8)}_${Date.now().toString().slice(-8)}`,
-      notes: {
-        subjectId: subjectId.toString(),
-        userId: userId,
+    // Format response based on gateway
+    if (orderResult.gateway === 'RAZORPAY') {
+      return NextResponse.json({
+        orderId: orderResult.orderData.id,
+        amount: orderResult.orderData.amount,
+        currency: orderResult.orderData.currency,
+        keyId: orderResult.orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        subjectId: subjectId,
         subjectName: subject.name,
-        type: 'subject_subscription'
-      }
-    });
-
-    // Get the configuration to return the key ID
-    const config = await getRazorpayConfig();
-
-    return NextResponse.json({
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      keyId: config.keyId,
-      subjectId: subjectId,
-      subjectName: subject.name,
-    });
+        gateway: orderResult.gateway
+      });
+    } else if (orderResult.gateway === 'CASHFREE') {
+      return NextResponse.json({
+        orderId: orderResult.orderData.order_id,
+        amount: orderResult.orderData.order_amount * 100, // Convert back to paise for frontend
+        currency: orderResult.orderData.order_currency,
+        payment_session_id: orderResult.orderData.payment_session_id,
+        subjectId: subjectId,
+        subjectName: subject.name,
+        gateway: orderResult.gateway
+      });
+    }
 
   } catch (error) {
     console.error('Subject payment creation error:', error);

@@ -34,11 +34,27 @@ interface AppSettings {
   subscriptionPrice: string; // Changed to string to handle form inputs better
   emailNotifications: boolean;
   maintenanceMode: boolean;
+  
+  // Payment Gateway Selection
+  payment_default_gateway: 'RAZORPAY' | 'CASHFREE';
+  
+  // Razorpay Settings
+  payment_razorpay_enabled: boolean;
   razorpayKeyId: string;
   razorpayKeySecret: string;
   razorpayTestKeyId: string;
   razorpayTestKeySecret: string;
   paymentMode: 'test' | 'live';
+  
+  // Cashfree Settings
+  payment_cashfree_enabled: boolean;
+  payment_cashfree_app_id: string;
+  payment_cashfree_secret_key: string;
+  payment_cashfree_test_app_id: string;
+  payment_cashfree_test_secret_key: string;
+  payment_cashfree_environment: 'SANDBOX' | 'PRODUCTION';
+  
+  // SMTP Settings
   smtpHost: string;
   smtpPort: string;
   smtpUser: string;
@@ -61,11 +77,27 @@ export default function SettingsPage() {
     subscriptionPrice: '299',
     emailNotifications: true,
     maintenanceMode: false,
+    
+    // Payment Gateway Selection
+    payment_default_gateway: 'RAZORPAY',
+    
+    // Razorpay Settings
+    payment_razorpay_enabled: true,
     razorpayKeyId: '',
     razorpayKeySecret: '',
     razorpayTestKeyId: '',
     razorpayTestKeySecret: '',
     paymentMode: 'test',
+    
+    // Cashfree Settings
+    payment_cashfree_enabled: false,
+    payment_cashfree_app_id: '',
+    payment_cashfree_secret_key: '',
+    payment_cashfree_test_app_id: '',
+    payment_cashfree_test_secret_key: '',
+    payment_cashfree_environment: 'SANDBOX',
+    
+    // SMTP Settings
     smtpHost: 'smtp.hostinger.com',
     smtpPort: '587',
     smtpUser: 'info@sciolabs.in',
@@ -80,6 +112,8 @@ export default function SettingsPage() {
   const [showPasswords, setShowPasswords] = useState({
     razorpayKeySecret: false,
     razorpayTestKeySecret: false,
+    payment_cashfree_secret_key: false,
+    payment_cashfree_test_secret_key: false,
     smtpPass: false,
   });
 
@@ -108,11 +142,27 @@ export default function SettingsPage() {
             subscriptionPrice: String(data.subscriptionPrice || '299'),
             emailNotifications: Boolean(data.emailNotifications ?? true),
             maintenanceMode: Boolean(data.maintenanceMode ?? false),
+            
+            // Payment Gateway Selection
+            payment_default_gateway: (data.payment_default_gateway as 'RAZORPAY' | 'CASHFREE') || 'RAZORPAY',
+            
+            // Razorpay Settings
+            payment_razorpay_enabled: Boolean(data.payment_razorpay_enabled ?? true),
             razorpayKeyId: data.razorpayKeyId || '',
             razorpayKeySecret: data.razorpayKeySecret || '',
             razorpayTestKeyId: data.razorpayTestKeyId || '',
             razorpayTestKeySecret: data.razorpayTestKeySecret || '',
             paymentMode: (data.paymentMode === 'live' ? 'live' : 'test') as 'test' | 'live',
+            
+            // Cashfree Settings
+            payment_cashfree_enabled: Boolean(data.payment_cashfree_enabled ?? false),
+            payment_cashfree_app_id: data.payment_cashfree_app_id || '',
+            payment_cashfree_secret_key: data.payment_cashfree_secret_key || '',
+            payment_cashfree_test_app_id: data.payment_cashfree_test_app_id || '',
+            payment_cashfree_test_secret_key: data.payment_cashfree_test_secret_key || '',
+            payment_cashfree_environment: (data.payment_cashfree_environment as 'SANDBOX' | 'PRODUCTION') || 'SANDBOX',
+            
+            // SMTP Settings
             smtpHost: data.smtpHost || 'smtp.hostinger.com',
             smtpPort: data.smtpPort || '587',
             smtpUser: data.smtpUser || 'info@sciolabs.in',
@@ -352,141 +402,380 @@ export default function SettingsPage() {
 
           {/* Payment Settings */}
           <TabsContent value="payment" className="space-y-6">
+            {/* Payment Gateway Selection */}
             <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-t-lg">
+              <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <CreditCard className="h-6 w-6" />
                   Payment Gateway Configuration
-                  <Badge className="bg-white/20 text-white border-white/20">Razorpay</Badge>
                 </CardTitle>
-                <p className="text-orange-100 mt-2">Configure Razorpay payment gateway settings</p>
+                <p className="text-purple-100 mt-2">Choose and configure your payment gateway</p>
               </CardHeader>
-              <CardContent className="p-8 space-y-8">
-                {/* Payment Mode Selection */}
-                <div className="border-l-4 border-orange-500 pl-6">
-                  <div className="p-4 bg-orange-50 rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Mode</h3>
+              <CardContent className="p-8 space-y-6">
+                {/* Default Gateway Selection */}
+                {/* <div className="border-l-4 border-purple-500 pl-6">
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Default Payment Gateway</h3>
                     <RadioGroup 
-                      value={settings.paymentMode} 
-                      onValueChange={(value: 'test' | 'live') => handleInputChange('paymentMode', value)}
+                      value={settings.payment_default_gateway} 
+                      onValueChange={(value: 'RAZORPAY' | 'CASHFREE') => handleInputChange('payment_default_gateway', value)}
                       className="flex gap-6"
                     >
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="test" id="test" />
-                        <Label htmlFor="test" className="text-gray-700">Test Mode</Label>
+                        <RadioGroupItem value="RAZORPAY" id="razorpay-default" />
+                        <Label htmlFor="razorpay-default" className="text-gray-700">Razorpay</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="live" id="live" />
-                        <Label htmlFor="live" className="text-gray-700">Live Mode</Label>
+                        <RadioGroupItem value="CASHFREE" id="cashfree-default" />
+                        <Label htmlFor="cashfree-default" className="text-gray-700">Cashfree</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div> */}
+
+                {/* Important Notice */}
+                {/* <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-100 p-2 rounded-full">
+                      <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-blue-900">Single Gateway Policy</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Only one payment gateway can be active at a time. This ensures compatibility with existing frontend components and provides a consistent payment experience.
+                      </p>
+                    </div>
+                  </div>
+                </div> */}
+
+                {/* Gateway Selection */}
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-900">Active Payment Gateway</h4>
+                    <p className="text-sm text-gray-600 mb-4">Select which payment gateway to use (only one can be active at a time)</p>
+                    <RadioGroup 
+                      value={settings.payment_default_gateway} 
+                      onValueChange={(value: 'RAZORPAY' | 'CASHFREE') => {
+                        // When changing gateway, update the default and enable/disable accordingly
+                        handleInputChange('payment_default_gateway', value);
+                        if (value === 'RAZORPAY') {
+                          handleInputChange('payment_razorpay_enabled', true);
+                          handleInputChange('payment_cashfree_enabled', false);
+                        } else {
+                          handleInputChange('payment_razorpay_enabled', false);
+                          handleInputChange('payment_cashfree_enabled', true);
+                        }
+                      }}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-center space-x-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                        <RadioGroupItem value="RAZORPAY" id="razorpay-active" />
+                        <Label htmlFor="razorpay-active" className="flex-1">
+                          <div>
+                            <h5 className="font-medium text-gray-900">Razorpay</h5>
+                            <p className="text-sm text-gray-600">Popular payment gateway with extensive India coverage</p>
+                          </div>
+                        </Label>
+                        {settings.payment_default_gateway === 'RAZORPAY' && (
+                          <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <RadioGroupItem value="CASHFREE" id="cashfree-active" />
+                        <Label htmlFor="cashfree-active" className="flex-1">
+                          <div>
+                            <h5 className="font-medium text-gray-900">Cashfree</h5>
+                            <p className="text-sm text-gray-600">Modern payment gateway with competitive rates</p>
+                          </div>
+                        </Label>
+                        {settings.payment_default_gateway === 'CASHFREE' && (
+                          <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>
+                        )}
                       </div>
                     </RadioGroup>
                   </div>
                 </div>
-
-                {/* Test Keys */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-blue-500 pl-4">
-                    Test Environment Keys
-                  </h3>
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="razorpayTestKeyId" className="text-gray-700 font-medium">Test Key ID</Label>
-                      <Input
-                        id="razorpayTestKeyId"
-                        value={settings.razorpayTestKeyId}
-                        onChange={(e) => handleInputChange('razorpayTestKeyId', e.target.value)}
-                        className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm"
-                        placeholder="rzp_test_..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="razorpayTestKeySecret" className="text-gray-700 font-medium">Test Key Secret</Label>
-                      <div className="relative">
-                        <Input
-                          id="razorpayTestKeySecret"
-                          type={showPasswords.razorpayTestKeySecret ? "text" : "password"}
-                          value={settings.razorpayTestKeySecret}
-                          onChange={(e) => handleInputChange('razorpayTestKeySecret', e.target.value)}
-                          className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm pr-10"
-                          placeholder="Enter test key secret"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
-                          onClick={() => togglePasswordVisibility('razorpayTestKeySecret')}
-                        >
-                          {showPasswords.razorpayTestKeySecret ? 
-                            <EyeOff className="h-4 w-4 text-gray-500" /> : 
-                            <Eye className="h-4 w-4 text-gray-500" />
-                          }
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live Keys */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-red-500 pl-4">
-                    Live Environment Keys
-                  </h3>
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="razorpayKeyId" className="text-gray-700 font-medium">Live Key ID</Label>
-                      <Input
-                        id="razorpayKeyId"
-                        value={settings.razorpayKeyId}
-                        onChange={(e) => handleInputChange('razorpayKeyId', e.target.value)}
-                        className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm"
-                        placeholder="rzp_live_..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="razorpayKeySecret" className="text-gray-700 font-medium">Live Key Secret</Label>
-                      <div className="relative">
-                        <Input
-                          id="razorpayKeySecret"
-                          type={showPasswords.razorpayKeySecret ? "text" : "password"}
-                          value={settings.razorpayKeySecret}
-                          onChange={(e) => handleInputChange('razorpayKeySecret', e.target.value)}
-                          className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm pr-10"
-                          placeholder="Enter live key secret"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
-                          onClick={() => togglePasswordVisibility('razorpayKeySecret')}
-                        >
-                          {showPasswords.razorpayKeySecret ? 
-                            <EyeOff className="h-4 w-4 text-gray-500" /> : 
-                            <Eye className="h-4 w-4 text-gray-500" />
-                          }
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Configuration Tips */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <Shield className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-blue-800 mb-2">Security Tips</h4>
-                      <ul className="text-sm text-blue-700 space-y-1">
-                        <li>• Always use test mode during development</li>
-                        <li>• Keep your API keys secure and never share them</li>
-                        <li>• Switch to live mode only when ready for production</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
+
+            {/* Razorpay Configuration */}
+            {settings.payment_default_gateway === 'RAZORPAY' && (
+              <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-t-lg">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <CreditCard className="h-6 w-6" />
+                    Razorpay Configuration
+                    <Badge className="bg-white/20 text-white border-white/20">Razorpay</Badge>
+                  </CardTitle>
+                  <p className="text-orange-100 mt-2">Configure Razorpay payment gateway settings</p>
+                </CardHeader>
+                <CardContent className="p-8 space-y-8">
+                  {/* Payment Mode Selection */}
+                  <div className="border-l-4 border-orange-500 pl-6">
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Mode</h3>
+                      <RadioGroup 
+                        value={settings.paymentMode} 
+                        onValueChange={(value: 'test' | 'live') => handleInputChange('paymentMode', value)}
+                        className="flex gap-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="test" id="test" />
+                          <Label htmlFor="test" className="text-gray-700">Test Mode</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="live" id="live" />
+                          <Label htmlFor="live" className="text-gray-700">Live Mode</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </div>
+                    {/* Test Keys */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-blue-500 pl-4">
+                      Test Environment Keys
+                    </h3>
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="razorpayTestKeyId" className="text-gray-700 font-medium">Test Key ID</Label>
+                        <Input
+                          id="razorpayTestKeyId"
+                          value={settings.razorpayTestKeyId}
+                          onChange={(e) => handleInputChange('razorpayTestKeyId', e.target.value)}
+                          className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm"
+                          placeholder="rzp_test_..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="razorpayTestKeySecret" className="text-gray-700 font-medium">Test Key Secret</Label>
+                        <div className="relative">
+                          <Input
+                            id="razorpayTestKeySecret"
+                            type={showPasswords.razorpayTestKeySecret ? "text" : "password"}
+                            value={settings.razorpayTestKeySecret}
+                            onChange={(e) => handleInputChange('razorpayTestKeySecret', e.target.value)}
+                            className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm pr-10"
+                            placeholder="Enter test key secret"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                            onClick={() => togglePasswordVisibility('razorpayTestKeySecret')}
+                          >
+                            {showPasswords.razorpayTestKeySecret ? 
+                              <EyeOff className="h-4 w-4 text-gray-500" /> : 
+                              <Eye className="h-4 w-4 text-gray-500" />
+                            }
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live Keys */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-red-500 pl-4">
+                      Live Environment Keys
+                    </h3>
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="razorpayKeyId" className="text-gray-700 font-medium">Live Key ID</Label>
+                        <Input
+                          id="razorpayKeyId"
+                          value={settings.razorpayKeyId}
+                          onChange={(e) => handleInputChange('razorpayKeyId', e.target.value)}
+                          className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm"
+                          placeholder="rzp_live_..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="razorpayKeySecret" className="text-gray-700 font-medium">Live Key Secret</Label>
+                        <div className="relative">
+                          <Input
+                            id="razorpayKeySecret"
+                            type={showPasswords.razorpayKeySecret ? "text" : "password"}
+                            value={settings.razorpayKeySecret}
+                            onChange={(e) => handleInputChange('razorpayKeySecret', e.target.value)}
+                            className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm pr-10"
+                            placeholder="Enter live key secret"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                            onClick={() => togglePasswordVisibility('razorpayKeySecret')}
+                          >
+                            {showPasswords.razorpayKeySecret ? 
+                              <EyeOff className="h-4 w-4 text-gray-500" /> : 
+                              <Eye className="h-4 w-4 text-gray-500" />
+                            }
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Configuration Tips */}
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Shield className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium text-blue-800 mb-2">Security Tips</h4>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          <li>• Always use test mode during development</li>
+                          <li>• Keep your API keys secure and never share them</li>
+                          <li>• Switch to live mode only when ready for production</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Cashfree Configuration */}
+            {settings.payment_default_gateway === 'CASHFREE' && (
+              <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-t-lg">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <CreditCard className="h-6 w-6" />
+                    Cashfree Configuration
+                    <Badge className="bg-white/20 text-white border-white/20">Cashfree</Badge>
+                  </CardTitle>
+                  <p className="text-blue-100 mt-2">Configure Cashfree payment gateway settings</p>
+                </CardHeader>
+                <CardContent className="p-8 space-y-8">
+                  {/* Environment Selection */}
+                  <div className="border-l-4 border-blue-500 pl-6">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Environment</h3>
+                      <RadioGroup 
+                        value={settings.payment_cashfree_environment} 
+                        onValueChange={(value: 'SANDBOX' | 'PRODUCTION') => handleInputChange('payment_cashfree_environment', value)}
+                        className="flex gap-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="SANDBOX" id="sandbox" />
+                          <Label htmlFor="sandbox" className="text-gray-700">Sandbox</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="PRODUCTION" id="production" />
+                          <Label htmlFor="production" className="text-gray-700">Production</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </div>
+
+                  {/* Test Keys */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-green-500 pl-4">
+                      Sandbox Environment Keys
+                    </h3>
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="payment_cashfree_test_app_id" className="text-gray-700 font-medium">Sandbox App ID</Label>
+                        <Input
+                          id="payment_cashfree_test_app_id"
+                          value={settings.payment_cashfree_test_app_id}
+                          onChange={(e) => handleInputChange('payment_cashfree_test_app_id', e.target.value)}
+                          className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-sm"
+                          placeholder="Enter sandbox app ID"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="payment_cashfree_test_secret_key" className="text-gray-700 font-medium">Sandbox Secret Key</Label>
+                        <div className="relative">
+                          <Input
+                            id="payment_cashfree_test_secret_key"
+                            type={showPasswords.payment_cashfree_test_secret_key ? "text" : "password"}
+                            value={settings.payment_cashfree_test_secret_key}
+                            onChange={(e) => handleInputChange('payment_cashfree_test_secret_key', e.target.value)}
+                            className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-sm pr-10"
+                            placeholder="Enter sandbox secret key"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                            onClick={() => togglePasswordVisibility('payment_cashfree_test_secret_key')}
+                          >
+                            {showPasswords.payment_cashfree_test_secret_key ? 
+                              <EyeOff className="h-4 w-4 text-gray-500" /> : 
+                              <Eye className="h-4 w-4 text-gray-500" />
+                            }
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Production Keys */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-red-500 pl-4">
+                      Production Environment Keys
+                    </h3>
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="payment_cashfree_app_id" className="text-gray-700 font-medium">Production App ID</Label>
+                        <Input
+                          id="payment_cashfree_app_id"
+                          value={settings.payment_cashfree_app_id}
+                          onChange={(e) => handleInputChange('payment_cashfree_app_id', e.target.value)}
+                          className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-sm"
+                          placeholder="Enter production app ID"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="payment_cashfree_secret_key" className="text-gray-700 font-medium">Production Secret Key</Label>
+                        <div className="relative">
+                          <Input
+                            id="payment_cashfree_secret_key"
+                            type={showPasswords.payment_cashfree_secret_key ? "text" : "password"}
+                            value={settings.payment_cashfree_secret_key}
+                            onChange={(e) => handleInputChange('payment_cashfree_secret_key', e.target.value)}
+                            className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-sm pr-10"
+                            placeholder="Enter production secret key"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                            onClick={() => togglePasswordVisibility('payment_cashfree_secret_key')}
+                          >
+                            {showPasswords.payment_cashfree_secret_key ? 
+                              <EyeOff className="h-4 w-4 text-gray-500" /> : 
+                              <Eye className="h-4 w-4 text-gray-500" />
+                            }
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cashfree Configuration Tips */}
+                  <div className="p-4 bg-cyan-50 border border-cyan-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Shield className="h-5 w-5 text-cyan-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium text-cyan-800 mb-2">Cashfree Setup Tips</h4>
+                        <ul className="text-sm text-cyan-700 space-y-1">
+                          <li>• Use Sandbox environment for testing</li>
+                          <li>• Get your credentials from Cashfree Merchant Dashboard</li>
+                          <li>• Switch to Production only after thorough testing</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Email Settings */}
