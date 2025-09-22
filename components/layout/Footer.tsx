@@ -94,7 +94,10 @@ const Footer = () => {
                 Privacy Policy
               </Link>
               <Link href="/terms" className="text-slate-300 hover:text-blue-300 transition-colors">
-                Terms of Service
+                Terms 
+              </Link>
+              <Link href="/refund" className="text-slate-300 hover:text-blue-300 transition-colors">
+                Refund 
               </Link>
               <Link href="/support" className="text-slate-300 hover:text-teal-300 transition-colors">
                 Support
