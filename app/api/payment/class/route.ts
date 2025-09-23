@@ -84,23 +84,44 @@ export async function POST(req: Request) {
         gateway: orderResult.gateway
       });
     } else if (orderResult.gateway === 'CASHFREE') {
-      // Validate that payment_session_id exists
-      if (!orderResult.orderData.payment_session_id) {
-        console.error('Cashfree payment session ID missing from order data:', orderResult.orderData);
-        return NextResponse.json({ 
-          error: 'Payment session creation failed - missing session ID' 
-        }, { status: 500 });
-      }
-      
-      return NextResponse.json({
+      // For Cashfree, we might have different response structures
+      const cashfreeResponse: {
+        orderId: string;
+        amount: number;
+        currency: string;
+        classId: number;
+        className: string;
+        gateway: string;
+        payment_session_id?: string;
+        checkout_url?: string;
+        payment_link?: string;
+      } = {
         orderId: orderResult.orderData.order_id,
         amount: orderResult.orderData.order_amount * 100, // Convert back to paise for frontend
         currency: orderResult.orderData.order_currency,
-        payment_session_id: orderResult.orderData.payment_session_id,
         classId: classId,
         className: classData.name,
         gateway: orderResult.gateway
-      });
+      };
+      
+      // Add payment_session_id if available
+      if (orderResult.orderData.payment_session_id) {
+        cashfreeResponse.payment_session_id = orderResult.orderData.payment_session_id;
+      }
+      
+      // Add checkout URL if available (alternative to payment_session_id)
+      if (orderResult.orderData.checkout_url) {
+        cashfreeResponse.checkout_url = orderResult.orderData.checkout_url;
+      }
+      
+      // Add payment link if available
+      if (orderResult.orderData.payment_link) {
+        cashfreeResponse.payment_link = orderResult.orderData.payment_link;
+      }
+      
+      console.log('[info] Cashfree payment response:', cashfreeResponse);
+      
+      return NextResponse.json(cashfreeResponse);
     }
   } catch (error) {
     console.error('Class payment creation error:', error);

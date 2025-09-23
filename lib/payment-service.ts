@@ -252,7 +252,7 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
       customer_phone: user.phone || '9999999999',
     },
     order_meta: {
-      return_url: `${config.siteUrl}/payment/cashfree/callback`,
+      return_url: `${config.siteUrl}/dashboard/payments?gateway=cashfree&order_id={order_id}&status={order_status}`,
     },
   };
 
@@ -276,45 +276,24 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
 
     const orderData = await response.json();
     console.log('[info] Cashfree order created successfully:', { order_id: orderData.order_id });
+    console.log('[info] Full Cashfree order response:', JSON.stringify(orderData, null, 2));
     
-    // Create payment session for the order
-    const sessionResponse = await fetch(`${baseUrl}/orders/${orderData.order_id}/payments`, {
-      method: 'POST',
-      headers: {
-        'x-api-version': '2025-01-01',
-        'x-client-id': config.cashfree.appId!,
-        'x-client-secret': config.cashfree.secretKey!,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        order_id: orderData.order_id,
-        payment_methods: {}, // Let Cashfree decide available payment methods
-      }),
-    });
-
-    if (!sessionResponse.ok) {
-      const sessionErrorData = await sessionResponse.json();
-      console.error('[error] Cashfree session creation failed:', {
-        status: sessionResponse.status,
-        error: sessionErrorData,
-        order_id: orderData.order_id
-      });
-      throw new Error(`Cashfree session creation error: ${sessionResponse.status} - ${JSON.stringify(sessionErrorData)}`);
-    }
-
-    const sessionData = await sessionResponse.json();
-    console.log('[info] Cashfree payment session created successfully:', { payment_session_id: sessionData.payment_session_id });
-    
-    // Validate that we received a payment session ID
-    if (!sessionData.payment_session_id) {
-      throw new Error('Cashfree payment session ID not received in response');
+    // In modern Cashfree API, the payment_session_id should be in the order response
+    // If it's not there, we might need to check the response structure or API version
+    if (!orderData.payment_session_id) {
+      console.warn('[warning] No payment_session_id in order response, checking alternative fields...');
+      console.log('[debug] Available fields in response:', Object.keys(orderData));
+      
+      // Some possible alternative field names
+      const possibleFields = ['payment_session_id', 'session_id', 'payment_link', 'checkout_url'];
+      for (const field of possibleFields) {
+        if (orderData[field]) {
+          console.log(`[info] Found ${field}:`, orderData[field]);
+        }
+      }
     }
     
-    // Combine order and session data
-    return {
-      ...orderData,
-      payment_session_id: sessionData.payment_session_id,
-    };
+    return orderData;
   } catch (error) {
     console.error('Cashfree order creation failed:', error);
     throw new Error(`Failed to create Cashfree order: ${error instanceof Error ? error.message : 'Unknown error'}`);
