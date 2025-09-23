@@ -87,45 +87,42 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const startTime = Date.now();
+  
   try {
     const updates = await request.json();
     
-    // Process each setting individually with proper error handling
-    for (const [key, value] of Object.entries(updates)) {
-      try {
-        // First, check if the setting exists
-        const existing = await prisma.adminSettings.findUnique({
-          where: { key },
-          select: { id: true }
-        });
-
-        if (existing) {
-          // Update existing setting
-          await prisma.adminSettings.update({
-            where: { key },
-            data: {
-              value: String(value),
-              updatedAt: new Date()
-            }
-          });
-        } else {
-          // Insert new setting
-          await prisma.adminSettings.create({
-            data: {
-              key,
-              value: String(value),
-              description: `Setting for ${key}`,
-              category: getSettingCategory(key),
-              dataType: 'string',
-              isPublic: false
-            }
-          });
-        }
-      } catch (settingError) {
-        console.error(`Unexpected error processing setting ${key}:`, settingError);
-        continue;
-      }
+    if (!updates || typeof updates !== 'object' || Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No valid updates provided' }, { status: 400 });
     }
+
+    console.log(`[info] Starting settings update for ${Object.keys(updates).length} settings`);
+    
+    // Use a transaction to batch all operations for better performance
+    await prisma.$transaction(async (tx) => {
+      // Use Promise.all to execute all upsert operations in parallel
+      const upsertPromises = Object.entries(updates).map(([key, value]) => {
+        return tx.adminSettings.upsert({
+          where: { key },
+          update: {
+            value: String(value),
+            updatedAt: new Date()
+          },
+          create: {
+            key,
+            value: String(value),
+            description: `Setting for ${key}`,
+            category: getSettingCategory(key),
+            dataType: 'string',
+            isPublic: false
+          }
+        });
+      });
+      
+      await Promise.all(upsertPromises);
+    }, {
+      timeout: 8000 // Set timeout to 8 seconds to stay under Vercel's 10s limit
+    });
 
     // Clear appropriate caches based on what was updated
     const updatedKeys = Object.keys(updates);
@@ -141,10 +138,36 @@ export async function PUT(request: Request) {
       // Note: Add clearCashfreeCache() here when implemented
     }
 
-    return NextResponse.json({ success: true });
+    const duration = Date.now() - startTime;
+    console.log(`[info] Settings update completed successfully in ${duration}ms`);
+    
+    return NextResponse.json({ 
+      success: true, 
+      updated: Object.keys(updates).length,
+      duration: `${duration}ms`
+    });
   } catch (error) {
-    console.error('Error updating settings:', error);
-    return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+    const duration = Date.now() - startTime;
+    console.error(`[error] Error updating settings after ${duration}ms:`, error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('timeout')) {
+        return NextResponse.json({ 
+          error: 'Settings update timed out. Please try saving fewer settings at once.' 
+        }, { status: 408 });
+      }
+      
+      if (error.message.includes('constraint')) {
+        return NextResponse.json({ 
+          error: 'Database constraint violation. Please check your input values.' 
+        }, { status: 400 });
+      }
+    }
+    
+    return NextResponse.json({ 
+      error: 'Failed to update settings. Please try again.' 
+    }, { status: 500 });
   }
 }
 

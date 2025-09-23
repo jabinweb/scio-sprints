@@ -200,16 +200,33 @@ export default function SettingsPage() {
         body: JSON.stringify(apiSettings),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
-        setSaveStatus('Settings saved successfully!');
+        setSaveStatus(`Settings saved successfully! (${result.updated || 'All'} settings updated${result.duration ? ' in ' + result.duration : ''})`);
       } else {
-        setSaveStatus('Error saving settings');
+        // Handle specific error types
+        if (response.status === 408) {
+          setSaveStatus('Request timed out. Try saving fewer settings at once or check your connection.');
+        } else if (response.status === 400) {
+          setSaveStatus(result.error || 'Invalid input values. Please check your settings.');
+        } else {
+          setSaveStatus(result.error || 'Error saving settings. Please try again.');
+        }
       }
       
-      setTimeout(() => setSaveStatus(''), 3000);
+      setTimeout(() => setSaveStatus(''), 5000); // Increased timeout for longer messages
     } catch (error) {
-      setSaveStatus('Error saving settings');
       console.error('Error saving settings:', error);
+      
+      // Check for specific error types
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setSaveStatus('Network error. Please check your connection and try again.');
+      } else if (error instanceof Error && error.name === 'AbortError') {
+        setSaveStatus('Request was cancelled. Please try again.');
+      } else {
+        setSaveStatus('Unexpected error saving settings. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
