@@ -462,7 +462,22 @@ Would you like to refresh the page now?`;
           }
           onClose();
         } else {
-          handlePaymentError(error, 'class subscription');
+          // Provide more helpful error messages based on error type
+          let context = 'class subscription';
+          
+          if (error.message.includes('Network error') || error.message.includes('fetch failed')) {
+            context = 'Network connection issue. Please check your internet connection and try again.';
+          } else if (error.message.includes('timeout')) {
+            context = 'Request timed out. Please check your connection and try again.';
+          } else if (error.message.includes('credentials not configured')) {
+            context = 'Payment gateway configuration issue. Please contact support.';
+          } else if (error.message.includes('DNS resolution')) {
+            context = 'Unable to connect to payment service. Please check your internet connection.';
+          } else if (error.message.includes('Invalid Cashfree')) {
+            context = 'Payment gateway configuration error. Please contact support.';
+          }
+          
+          handlePaymentError(error, context);
         }
       } else {
         handlePaymentError(error, 'class subscription - unknown error');
@@ -651,7 +666,25 @@ Would you like to refresh the page now?`;
       } // Close else block for Razorpay payment
     } catch (error) {
       console.error('Subject payment error:', error);
-      handlePaymentError(error, 'subject subscription');
+      
+      // Provide more helpful error messages based on error type
+      let context = 'subject subscription';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Network error') || error.message.includes('fetch failed')) {
+          context = 'Network connection issue. Please check your internet connection and try again.';
+        } else if (error.message.includes('timeout')) {
+          context = 'Request timed out. Please check your connection and try again.';
+        } else if (error.message.includes('credentials not configured')) {
+          context = 'Payment gateway configuration issue. Please contact support.';
+        } else if (error.message.includes('DNS resolution')) {
+          context = 'Unable to connect to payment service. Please check your internet connection.';
+        } else if (error.message.includes('Invalid Cashfree')) {
+          context = 'Payment gateway configuration error. Please contact support.';
+        }
+      }
+      
+      handlePaymentError(error, context);
     } finally {
       setIsProcessing(false);
     }

@@ -239,6 +239,15 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
     throw new Error('Cashfree credentials not configured');
   }
 
+  // Additional validation
+  if (!config.cashfree.appId || config.cashfree.appId.length < 10) {
+    throw new Error(`Invalid Cashfree App ID: ${config.cashfree.appId ? 'too short' : 'missing'}`);
+  }
+  
+  if (!config.cashfree.secretKey || config.cashfree.secretKey.length < 10) {
+    throw new Error(`Invalid Cashfree Secret Key: ${config.cashfree.secretKey ? 'too short' : 'missing'}`);
+  }
+
   // Get user details for Cashfree order
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -254,14 +263,22 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
     ? 'https://api.cashfree.com/pg' 
     : 'https://sandbox.cashfree.com/pg';
 
-  console.log('[info] Creating Cashfree order with config:', {
-    baseUrl,
-    environment: config.cashfree.environment,
-    hasAppId: !!config.cashfree.appId,
-    hasSecretKey: !!config.cashfree.secretKey,
-    appIdLength: config.cashfree.appId?.length,
-    siteUrl: config.siteUrl
-  });
+
+
+  // Test basic connectivity first
+  try {
+    const connectivityTest = await fetch(baseUrl, { 
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000) // 5 second timeout
+    }).catch(() => null);
+    
+    console.log('[info] Cashfree API connectivity test:', {
+      canConnect: !!connectivityTest,
+      baseUrl
+    });
+  } catch (testError) {
+    console.warn('[warning] Cashfree connectivity test failed, proceeding anyway:', testError);
+  }
 
   const orderRequest = {
     order_amount: amount / 100, // Cashfree expects amount in rupees
@@ -301,10 +318,16 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(orderRequest),
+      signal: AbortSignal.timeout(30000) // 30 second timeout
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+      console.error('[error] Cashfree API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData
+      });
       throw new Error(`Cashfree API error: ${response.status} - ${JSON.stringify(errorData)}`);
     }
 
@@ -329,7 +352,36 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
     
     return orderData;
   } catch (error) {
-    console.error('Cashfree order creation failed:', error);
+    console.error('[error] Cashfree order creation failed:', error);
+    
+    // Provide more specific error information
+    if (error instanceof TypeError) {
+      if (error.message.includes('fetch')) {
+        console.error('[error] Network fetch error - possible causes:', {
+          possibleCauses: [
+            'Network connectivity issues',
+            'DNS resolution failure',
+            'Firewall blocking request',
+            'Invalid API URL',
+            'SSL/TLS certificate issues'
+          ],
+          baseUrl,
+          configuredEnvironment: config.cashfree.environment
+        });
+        throw new Error(`Network error when connecting to Cashfree API: ${error.message}. Check network connectivity and API endpoint.`);
+      }
+    }
+    
+    if (error instanceof Error) {
+      if (error.message.includes('AbortError')) {
+        throw new Error(`Cashfree API request timeout: ${error.message}`);
+      }
+      
+      if (error.message.includes('getaddrinfo ENOTFOUND')) {
+        throw new Error(`DNS resolution failed for Cashfree API: ${baseUrl}. Check internet connectivity.`);
+      }
+    }
+    
     throw new Error(`Failed to create Cashfree order: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
