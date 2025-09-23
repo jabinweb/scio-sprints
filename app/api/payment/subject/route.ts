@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createPaymentOrder } from '@/lib/payment-service';
+import { createPaymentOrder, getPaymentConfig } from '@/lib/payment-service';
 
 interface PaymentRequest {
   subjectId: string;
@@ -106,6 +106,7 @@ export async function POST(request: Request) {
         subjectId: string;
         subjectName: string;
         gateway: string;
+        environment?: string;
         payment_session_id?: string;
         checkout_url?: string;
         payment_link?: string;
@@ -117,6 +118,10 @@ export async function POST(request: Request) {
         subjectName: subject.name,
         gateway: orderResult.gateway
       };
+      
+      // Add environment info for frontend to use correct mode
+      const config = await getPaymentConfig();
+      cashfreeResponse.environment = config.cashfree.environment?.toLowerCase();
       
       // Add payment_session_id if available
       if (orderResult.orderData.payment_session_id) {

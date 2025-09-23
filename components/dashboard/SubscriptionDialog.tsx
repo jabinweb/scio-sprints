@@ -297,9 +297,15 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           // Initialize Cashfree SDK if not loaded
           const { load } = await import('@cashfreepayments/cashfree-js');
           window.Cashfree = await load({
-            mode: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
+            mode: orderData.environment === 'production' ? 'production' : 'sandbox'
           });
         }
+        
+        console.log('[info] Cashfree class payment checkout with:', {
+          environment: orderData.environment,
+          hasPaymentSessionId: !!orderData.payment_session_id,
+          paymentSessionIdLength: orderData.payment_session_id?.length
+        });
         
         const checkoutOptions = {
           paymentSessionId: orderData.payment_session_id,
@@ -501,9 +507,15 @@ Would you like to refresh the page now?`;
           // Initialize Cashfree SDK if not loaded
           const { load } = await import('@cashfreepayments/cashfree-js');
           window.Cashfree = await load({
-            mode: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
+            mode: orderData.environment === 'production' ? 'production' : 'sandbox'
           });
         }
+        
+        console.log('[info] Cashfree subject payment checkout with:', {
+          environment: orderData.environment,
+          hasPaymentSessionId: !!orderData.payment_session_id,
+          paymentSessionIdLength: orderData.payment_session_id?.length
+        });
         
         const checkoutOptions = {
           paymentSessionId: orderData.payment_session_id,

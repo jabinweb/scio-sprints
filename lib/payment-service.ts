@@ -59,6 +59,19 @@ export const getPaymentConfig = async (): Promise<PaymentGatewayConfig> => {
     return acc;
   }, {} as Record<string, string>);
 
+  // Log configuration for debugging (without sensitive data)
+  console.log('[info] Payment config loaded:', {
+    payment_default_gateway: settingsMap.payment_default_gateway,
+    payment_cashfree_enabled: settingsMap.payment_cashfree_enabled,
+    payment_cashfree_environment: settingsMap.payment_cashfree_environment,
+    siteUrl: settingsMap.siteUrl,
+    paymentMode: settingsMap.paymentMode,
+    hasTestAppId: !!settingsMap.payment_cashfree_test_app_id,
+    hasProdAppId: !!settingsMap.payment_cashfree_app_id,
+    hasTestSecret: !!settingsMap.payment_cashfree_test_secret_key,
+    hasProdSecret: !!settingsMap.payment_cashfree_secret_key
+  });
+
   // Determine which Razorpay credentials to use based on payment mode
   const paymentMode = settingsMap.paymentMode || 'test';
   const razorpayKeyId = paymentMode === 'test' 
@@ -241,6 +254,15 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
     ? 'https://api.cashfree.com/pg' 
     : 'https://sandbox.cashfree.com/pg';
 
+  console.log('[info] Creating Cashfree order with config:', {
+    baseUrl,
+    environment: config.cashfree.environment,
+    hasAppId: !!config.cashfree.appId,
+    hasSecretKey: !!config.cashfree.secretKey,
+    appIdLength: config.cashfree.appId?.length,
+    siteUrl: config.siteUrl
+  });
+
   const orderRequest = {
     order_amount: amount / 100, // Cashfree expects amount in rupees
     order_currency: currency,
@@ -257,6 +279,18 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
   };
 
   try {
+    console.log('[info] Sending Cashfree order request:', {
+      url: `${baseUrl}/orders`,
+      headers: {
+        'x-api-version': '2025-01-01',
+        'x-client-id': config.cashfree.appId?.substring(0, 8) + '...',
+        'Content-Type': 'application/json'
+      },
+      orderAmount: orderRequest.order_amount,
+      orderCurrency: orderRequest.order_currency,
+      orderId: orderRequest.order_id
+    });
+    
     // Use the v2025-01-01 API directly with fetch
     const response = await fetch(`${baseUrl}/orders`, {
       method: 'POST',
