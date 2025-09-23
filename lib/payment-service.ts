@@ -15,6 +15,7 @@ interface CreatePaymentOptions {
 
 interface PaymentGatewayConfig {
   defaultGateway: PaymentGateway;
+  siteUrl: string;
   razorpay: {
     enabled: boolean;
     keyId?: string;
@@ -46,7 +47,8 @@ export const getPaymentConfig = async (): Promise<PaymentGatewayConfig> => {
           'payment_cashfree_secret_key',
           'payment_cashfree_test_app_id',
           'payment_cashfree_test_secret_key',
-          'payment_cashfree_environment'
+          'payment_cashfree_environment',
+          'siteUrl'
         ]
       }
     }
@@ -77,6 +79,7 @@ export const getPaymentConfig = async (): Promise<PaymentGatewayConfig> => {
 
   return {
     defaultGateway: (settingsMap.payment_default_gateway as PaymentGateway) || PaymentGateway.RAZORPAY,
+    siteUrl: settingsMap.siteUrl || process.env.NEXTAUTH_URL || 'https://sciolabs.in',
     razorpay: {
       enabled: settingsMap.payment_razorpay_enabled === 'true',
       keyId: razorpayKeyId,
@@ -249,7 +252,7 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
       customer_phone: user.phone || '9999999999',
     },
     order_meta: {
-      return_url: `${process.env.NEXTAUTH_URL}/payment/cashfree/callback`,
+      return_url: `${config.siteUrl}/payment/cashfree/callback`,
     },
   };
 

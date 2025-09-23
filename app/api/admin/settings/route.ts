@@ -24,6 +24,7 @@ export async function GET() {
       // Default values as fallback
       siteName: 'ScioLabs',
       siteDescription: 'Interactive Learning Platform',
+      siteUrl: process.env.NEXTAUTH_URL || 'https://sprints.sciolabs.in',
       contactEmail: 'contact@sciolabs.in',
       supportEmail: 'support@sciolabs.in',
       subscriptionPrice: '299',
@@ -66,6 +67,7 @@ export async function GET() {
     return NextResponse.json({
       siteName: 'ScioLabs',
       siteDescription: 'Interactive Learning Platform',
+      siteUrl: process.env.NEXTAUTH_URL || 'https://sprints.sciolabs.in',
       contactEmail: 'contact@sciolabs.in',
       supportEmail: 'support@sciolabs.in',
       subscriptionPrice: '299',

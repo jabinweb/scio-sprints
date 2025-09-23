@@ -29,6 +29,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 interface AppSettings {
   siteName: string;
   siteDescription: string;
+  siteUrl: string;
   contactEmail: string;
   supportEmail: string;
   subscriptionPrice: string; // Changed to string to handle form inputs better
@@ -72,6 +73,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings>({
     siteName: 'ScioLabs',
     siteDescription: 'Interactive Learning Platform',
+    siteUrl: '',
     contactEmail: 'contact@sciolabs.in',
     supportEmail: 'support@sciolabs.in',
     subscriptionPrice: '299',
@@ -137,6 +139,7 @@ export default function SettingsPage() {
           const safeSettings: AppSettings = {
             siteName: data.siteName || 'ScioLabs',
             siteDescription: data.siteDescription || 'Interactive Learning Platform',
+            siteUrl: data.siteUrl || '',
             contactEmail: data.contactEmail || 'contact@sciolabs.in',
             supportEmail: data.supportEmail || 'support@sciolabs.in',
             subscriptionPrice: String(data.subscriptionPrice || '299'),
@@ -279,7 +282,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8 pt-16">
+        <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
@@ -378,6 +381,20 @@ export default function SettingsPage() {
                       className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="siteUrl" className="text-gray-700 font-medium">Site URL</Label>
+                  <Input
+                    id="siteUrl"
+                    value={settings.siteUrl}
+                    onChange={(e) => handleInputChange('siteUrl', e.target.value)}
+                    placeholder="https://your-domain.com"
+                    className="border-gray-200 focus:border-green-500 focus:ring-green-500 bg-white shadow-sm"
+                  />
+                  <p className="text-sm text-gray-500">
+                    This URL is used for payment callbacks and email links. Must include protocol (http/https).
+                  </p>
                 </div>
                 
                 <div className="space-y-2">

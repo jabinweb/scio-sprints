@@ -165,33 +165,33 @@ async function parseCSV(): Promise<ProcessedData> {
 }
 
 // Function to clear existing data
-async function clearExistingData() {
-  console.log('🗑️ Clearing existing data...');
+// async function clearExistingData() {
+//   console.log('🗑️ Clearing existing data...');
   
-  try {
-    // Delete in correct order to avoid foreign key constraints
-    await prisma.topicContent.deleteMany();
-    console.log('   ✅ Cleared topic content');
+//   try {
+//     // Delete in correct order to avoid foreign key constraints
+//     await prisma.topicContent.deleteMany();
+//     console.log('   ✅ Cleared topic content');
     
-    await prisma.topic.deleteMany();
-    console.log('   ✅ Cleared topics');
+//     await prisma.topic.deleteMany();
+//     console.log('   ✅ Cleared topics');
     
-    await prisma.chapter.deleteMany();
-    console.log('   ✅ Cleared chapters');
+//     await prisma.chapter.deleteMany();
+//     console.log('   ✅ Cleared chapters');
     
-    await prisma.subject.deleteMany();
-    console.log('   ✅ Cleared subjects');
+//     await prisma.subject.deleteMany();
+//     console.log('   ✅ Cleared subjects');
     
-    // Keep classes but could clear them too if needed
-    // await prisma.class.deleteMany();
-    // console.log('   ✅ Cleared classes');
+//     // Keep classes but could clear them too if needed
+//     // await prisma.class.deleteMany();
+//     // console.log('   ✅ Cleared classes');
     
-    console.log('🎯 Database cleared successfully');
-  } catch (error) {
-    console.error('❌ Error clearing database:', error);
-    throw error;
-  }
-}
+//     console.log('🎯 Database cleared successfully');
+//   } catch (error) {
+//     console.error('❌ Error clearing database:', error);
+//     throw error;
+//   }
+// }
 
 // Main bulk upload function
 async function bulkUploadFromCSV() {
@@ -202,7 +202,7 @@ async function bulkUploadFromCSV() {
     const processedData = await parseCSV();
 
     // Step 2: Clear existing data
-    await clearExistingData();
+    // await clearExistingData();
 
     // Step 3: Create/update classes and insert new data
     console.log('\n📊 Creating database entries...\n');
