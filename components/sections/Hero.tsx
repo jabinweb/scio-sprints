@@ -63,7 +63,7 @@ export function Hero() {
               size="lg"
               className="bg-brand-blue hover:bg-brand-blue-dark text-white text-lg h-12 px-8 rounded-full"
             >
-              <Link href="#games">
+              <Link href="#promise">
               Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -73,8 +73,8 @@ export function Hero() {
               size="lg"
               className="border-white/30 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 text-lg h-12 px-8 rounded-full"
             >
-              <Link href="/demo">
-              <Play className="mr-2 h-4 w-4" /> Try Demo
+              <Link href="#games">
+              <Play className="mr-2 h-4 w-4" /> Play Now
               </Link>
             </Button>
           </div>
