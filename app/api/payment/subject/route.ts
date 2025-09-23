@@ -98,6 +98,14 @@ export async function POST(request: Request) {
         gateway: orderResult.gateway
       });
     } else if (orderResult.gateway === 'CASHFREE') {
+      // Validate that payment_session_id exists
+      if (!orderResult.orderData.payment_session_id) {
+        console.error('Cashfree payment session ID missing from order data:', orderResult.orderData);
+        return NextResponse.json({ 
+          error: 'Payment session creation failed - missing session ID' 
+        }, { status: 500 });
+      }
+      
       return NextResponse.json({
         orderId: orderResult.orderData.order_id,
         amount: orderResult.orderData.order_amount * 100, // Convert back to paise for frontend

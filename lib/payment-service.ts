@@ -275,7 +275,46 @@ const createCashfreeOrder = async (paymentId: string, amount: number, currency =
     }
 
     const orderData = await response.json();
-    return orderData;
+    console.log('[info] Cashfree order created successfully:', { order_id: orderData.order_id });
+    
+    // Create payment session for the order
+    const sessionResponse = await fetch(`${baseUrl}/orders/${orderData.order_id}/payments`, {
+      method: 'POST',
+      headers: {
+        'x-api-version': '2025-01-01',
+        'x-client-id': config.cashfree.appId!,
+        'x-client-secret': config.cashfree.secretKey!,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        order_id: orderData.order_id,
+        payment_methods: {}, // Let Cashfree decide available payment methods
+      }),
+    });
+
+    if (!sessionResponse.ok) {
+      const sessionErrorData = await sessionResponse.json();
+      console.error('[error] Cashfree session creation failed:', {
+        status: sessionResponse.status,
+        error: sessionErrorData,
+        order_id: orderData.order_id
+      });
+      throw new Error(`Cashfree session creation error: ${sessionResponse.status} - ${JSON.stringify(sessionErrorData)}`);
+    }
+
+    const sessionData = await sessionResponse.json();
+    console.log('[info] Cashfree payment session created successfully:', { payment_session_id: sessionData.payment_session_id });
+    
+    // Validate that we received a payment session ID
+    if (!sessionData.payment_session_id) {
+      throw new Error('Cashfree payment session ID not received in response');
+    }
+    
+    // Combine order and session data
+    return {
+      ...orderData,
+      payment_session_id: sessionData.payment_session_id,
+    };
   } catch (error) {
     console.error('Cashfree order creation failed:', error);
     throw new Error(`Failed to create Cashfree order: ${error instanceof Error ? error.message : 'Unknown error'}`);
