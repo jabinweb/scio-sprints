@@ -444,6 +444,7 @@ export function DashboardContent() {
         <SubscriptionDialog
           open={showPaymentDialog}
           onClose={handlePaymentDialogClose}
+          disableAutoRedirect={true}
           classData={{
             id: selectedClass.id,
             name: selectedClass.name,
@@ -460,9 +461,15 @@ export function DashboardContent() {
           }}
           onSubscribe={(type, options) => {
             console.log('Subscription success:', type, options);
-            handlePaymentDialogClose();
-            // Reload the page to refresh access information
-            window.location.reload();
+            // Close dialog after success message is shown
+            setTimeout(() => {
+              handlePaymentDialogClose();
+            }, 3000);
+            
+            // Reload the page to refresh access information after dialog closes
+            setTimeout(() => {
+              window.location.reload();
+            }, 3500);
           }}
         />
       )}

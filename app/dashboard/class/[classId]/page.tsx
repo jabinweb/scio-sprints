@@ -506,8 +506,9 @@ export default function ClassPage() {
                           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                             {chapter.topics.map((topic) => {
                               const isCompleted = userProgress.get(topic.id) || false;
+                              const hasSubjectAccess = subjectAccess[selectedSubjectData.id] || false;
                               
-                              // Game-based learning: Students can play any topic/game
+                              // Game-based learning: Students can play any topic/game (if they have access)
                               // Get difficulty rating for this topic
                               const topicRating = topicRatings[topic.id];
                               
@@ -518,7 +519,12 @@ export default function ClassPage() {
                                   isCompleted={isCompleted}
                                   userRating={topicRating?.userRating}
                                   hasRated={topicRating?.hasRated}
+                                  isDisabled={!hasSubjectAccess}
                                   onClick={handleTopicClick}
+                                  onLockedClick={() => {
+                                    console.log(`Topic ${topic.name} is locked - subject access required`);
+                                    setShowSubscriptionManager(true);
+                                  }}
                                 />
                               );
                             })}

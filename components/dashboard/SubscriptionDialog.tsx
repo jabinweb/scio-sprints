@@ -22,7 +22,7 @@ declare module '@cashfreepayments/cashfree-js' {
   }>;
 }
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +37,12 @@ interface RazorpayResponse {
   razorpay_payment_id: string;
   razorpay_order_id: string;
   razorpay_signature: string;
+}
+
+interface PaymentError {
+  message?: string;
+  code?: string;
+  description?: string;
 }
 
 interface RazorpayOptions {
@@ -133,13 +139,6 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     };
   }>({ show: false, type: 'class' });
   
-  const [paymentError, setPaymentError] = useState<{
-    show: boolean;
-    type: 'error' | 'cancelled' | 'failed' | 'dropped';
-    message: string;
-    canRetry: boolean;
-  }>({ show: false, type: 'error', message: '', canRetry: true });
-  
   // Check if user has class subscription (all subjects subscribed via class_subscription)
   const hasClassSubscription = classData.subjects.every(subject => 
     subject.isSubscribed && subject.subscriptionType === 'class_subscription'
@@ -163,6 +162,23 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   );
   
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Auto-close dialog after successful payment
+  useEffect(() => {
+    if (paymentSuccess.show) {
+      const timer = setTimeout(() => {
+        setPaymentSuccess({ show: false, type: 'class' });
+        // Only auto-close if not handled by parent (dashboard will handle its own closing)
+        if (disableAutoRedirect) {
+          // Let parent handle closing timing
+        } else {
+          onClose();
+        }
+      }, 3000); // Close after 3 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [paymentSuccess.show, onClose, disableAutoRedirect]);
 
   // Handle login redirect
   const handleLoginRequired = () => {
@@ -206,65 +222,54 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   };
 
   // Helper function to handle payment errors gracefully
-  const handlePaymentError = (error: any, context: string) => {
+  const handlePaymentError = (error: PaymentError | Error | unknown, context: string) => {
     console.log(`Payment ${context}:`, error);
     setIsProcessingPayment(false);
     setIsProcessing(false);
     
-    let errorType: 'error' | 'cancelled' | 'failed' | 'dropped' = 'error';
     let message = 'Payment failed. Please try again.';
-    let canRetry = true;
     
-    // Handle Cashfree error states
-    if (error?.message) {
-      const errorMsg = error.message.toLowerCase();
-      
-      if (errorMsg.includes('user dropped') || errorMsg.includes('user closed') || errorMsg.includes('cancelled') || errorMsg.includes('aborted')) {
-        errorType = 'cancelled';
-        message = 'Payment was cancelled. You can try again whenever you\'re ready.';
-        canRetry = true;
-      } else if (errorMsg.includes('failed') || errorMsg.includes('declined') || errorMsg.includes('insufficient')) {
-        errorType = 'failed';
-        message = 'Payment was declined. Please check your payment details and try again.';
-        canRetry = true;
-      } else if (errorMsg.includes('timeout') || errorMsg.includes('network')) {
-        errorType = 'error';
-        message = 'Payment timed out due to network issues. Please check your connection and try again.';
-        canRetry = true;
-      } else if (errorMsg.includes('flagged')) {
-        errorType = 'error';
-        message = 'Payment was flagged for security review. Please contact support if this persists.';
-        canRetry = false;
-      }
-    }
-    
-    // Handle Razorpay error states
-    if (error?.code) {
-      switch (error.code) {
-        case 'PAYMENT_CANCELLED':
-          errorType = 'cancelled';
+    // Handle error message extraction with proper type checking
+    if (error && typeof error === 'object') {
+      if ('message' in error && typeof error.message === 'string') {
+        const errorMsg = error.message.toLowerCase();
+        
+        if (errorMsg.includes('user dropped') || errorMsg.includes('user closed') || errorMsg.includes('cancelled') || errorMsg.includes('aborted')) {
           message = 'Payment was cancelled. You can try again whenever you\'re ready.';
-          break;
-        case 'PAYMENT_FAILED':
-          errorType = 'failed';
-          message = 'Payment failed. Please try a different payment method.';
-          break;
-        case 'NETWORK_ERROR':
-          errorType = 'error';
-          message = 'Network error occurred. Please check your connection and try again.';
-          break;
-        default:
-          errorType = 'error';
-          message = error.description || 'Payment failed. Please try again.';
+        } else if (errorMsg.includes('failed') || errorMsg.includes('declined') || errorMsg.includes('insufficient')) {
+          message = 'Payment was declined. Please check your payment details and try again.';
+        } else if (errorMsg.includes('timeout') || errorMsg.includes('network')) {
+          message = 'Payment timed out due to network issues. Please check your connection and try again.';
+        } else if (errorMsg.includes('flagged')) {
+          message = 'Payment was flagged for security review. Please contact support if this persists.';
+        }
+      }
+      
+      // Handle Razorpay error states
+      if ('code' in error && typeof error.code === 'string') {
+        switch (error.code) {
+          case 'PAYMENT_CANCELLED':
+            message = 'Payment was cancelled. You can try again whenever you\'re ready.';
+            break;
+          case 'PAYMENT_FAILED':
+            message = 'Payment failed. Please try a different payment method.';
+            break;
+          case 'NETWORK_ERROR':
+            message = 'Network error occurred. Please check your connection and try again.';
+            break;
+          default:
+            if ('description' in error && typeof error.description === 'string') {
+              message = error.description;
+            }
+        }
       }
     }
     
-    setPaymentError({
-      show: true,
-      type: errorType,
-      message,
-      canRetry
-    });
+    // Show error message in console for debugging
+    console.error(`Payment Error (${context}): ${message}`);
+    
+    // Could add toast notification here instead of state management
+    // For now, the error is logged and UI state is reset
   };
 
   const handleClassSubscribe = async () => {
@@ -354,17 +359,15 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
               }
             });
             
-            // Delay onSubscribe call to allow success message to show
-            setTimeout(() => {
-              onSubscribe('class', { classId: classData.id, amount: classData.price });
-              
-              // Delayed redirect with success message
-              if (!disableAutoRedirect) {
-                setTimeout(() => {
-                  router.push(`/dashboard/class/${classData.id}`);
-                }, 1000);
-              }
-            }, 2000); // Wait 2 seconds before calling onSubscribe
+            // Call onSubscribe immediately to update parent state
+            onSubscribe('class', { classId: classData.id, amount: classData.price });
+            
+            // Handle redirect after success message is shown (if not disabled)
+            if (!disableAutoRedirect) {
+              setTimeout(() => {
+                router.push(`/dashboard/class/${classData.id}`);
+              }, 3500); // Wait for dialog to close first
+            }
           } else {
             setIsProcessingPayment(false);
             throw new Error('Payment verification failed');
@@ -539,18 +542,24 @@ Would you like to refresh the page now?`;
         
         const result = await window.Cashfree.checkout(checkoutOptions);
         
+        console.log('[info] Cashfree subject checkout result:', result);
+        
         if (result.error) {
           handlePaymentError(result.error, 'Cashfree subject subscription error or user cancelled');
           return; // Exit gracefully instead of throwing
         }
         
-        if (result.redirect) {
+        if (result.paymentDetails) {
+          setIsProcessingPayment(true);
+          
           // Payment successful, verify on backend
           const verifyResponse = await fetch('/api/payment/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              paymentId: orderData.payment_session_id,
+              paymentId: orderData.orderId,
+              orderId: orderData.orderId,
+              gateway: 'CASHFREE',
               paymentDetails: result.paymentDetails,
               metadata: {
                 type: 'subject_subscription',
@@ -576,20 +585,23 @@ Would you like to refresh the page now?`;
               }
             });
             
-            // Delay onSubscribe call to allow success message to show
-            setTimeout(() => {
-              onSubscribe('subject', { classId: classData.id, subjectId, amount: subject?.price || 7500 });
-              
-              if (!disableAutoRedirect) {
-                setTimeout(() => {
-                  router.push(`/dashboard/class/${classData.id}?subject=${subjectId}`);
-                }, 1000);
-              }
-            }, 2000); // Wait 2 seconds before calling onSubscribe
+            // Call onSubscribe immediately to update parent state
+            onSubscribe('subject', { classId: classData.id, subjectId, amount: subject?.price || 7500 });
+            
+            // Handle redirect after success message is shown (if not disabled)
+            if (!disableAutoRedirect) {
+              setTimeout(() => {
+                router.push(`/dashboard/class/${classData.id}?subject=${subjectId}`);
+              }, 3500); // Wait for dialog to close first
+            }
           } else {
             setIsProcessingPayment(false);
             throw new Error('Payment verification failed');
           }
+        } else {
+          // Handle unexpected Cashfree result (no paymentDetails or error)
+          console.warn('[warning] Unexpected Cashfree result:', result);
+          handlePaymentError(new Error('Payment completed but no payment details received'), 'Cashfree unexpected result');
         }
         
       } else {
@@ -643,13 +655,14 @@ Would you like to refresh the page now?`;
               }
             });
             
+            // Call onSubscribe immediately to update parent state
             onSubscribe('subject', { classId: classData.id, subjectId, amount: subject?.price || 7500 });
             
-            // Fallback redirection in case onSubscribe doesn't handle it
+            // Handle redirect after success message is shown (if not disabled)
             if (!disableAutoRedirect) {
               setTimeout(() => {
                 router.push(`/dashboard/class/${classData.id}?subject=${subjectId}`);
-              }, 3000); // Increased to 3 seconds to show success message
+              }, 3500); // Wait for dialog to close first
             }
           } else {
             setIsProcessingPayment(false);
@@ -740,7 +753,7 @@ Would you like to refresh the page now?`;
             </div>
             
             <div className="mt-4 flex items-center gap-2 text-sm text-green-700">
-              <span>Redirecting to your dashboard in a few seconds...</span>
+              <span>Closing this dialog in a few seconds...</span>
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
