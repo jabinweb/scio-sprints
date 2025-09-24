@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BookOpen, Lock, Settings } from 'lucide-react';
+import { ArrowLeft, Settings } from 'lucide-react';
 import { useClassPageData } from '@/hooks/useClassPageData';
 import type { DbTopic } from '@/hooks/useClassData';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
 import { useSession } from 'next-auth/react';
 import { ClassSubscriptionManager } from '@/components/dashboard/ClassSubscriptionManager';
-import { TopicItem } from '@/components/learning/TopicItem';
+
 import { ClassPageSkeleton } from '@/components/dashboard/dashboard-class-skeleton';
+import { SubjectContent } from '@/components/learning/SubjectContent';
 import { 
   getNextTopic, 
   isSubjectCompleted,
@@ -395,155 +394,80 @@ export default function ClassPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Subject Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle className="text-lg">Subjects</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {currentClass.subjects.map((subject) => {
-                  const hasSubjectAccess = subjectAccess[subject.id] !== false; // Default to true if not explicitly denied
-                  const isAccessible = !subject.isLocked && hasSubjectAccess;
-                  
-                  return (
-                    <div
-                      key={subject.id}
-                      className={`p-3 rounded-xl transition-all ${
-                        selectedSubject === subject.id 
-                          ? `bg-gradient-to-r ${subject.color} text-white shadow-lg` 
-                          : 'bg-gray-50 hover:bg-gray-100'
-                      } ${!isAccessible ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                      onClick={() => isAccessible && setSelectedSubject(subject.id)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{subject.icon}</span>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm flex items-center gap-2">
-                            {subject.name}
-                            {!hasSubjectAccess && (
-                              <Lock className="h-3 w-3 text-red-500" />
-                            )}
-                          </div>
-                          <div className={`text-xs ${selectedSubject === subject.id ? 'text-white/80' : 'text-muted-foreground'}`}>
-                            {subject.chapters.length} chapters
-                            {!hasSubjectAccess && (
-                              <span className="text-red-500 ml-1">• No access</span>
-                            )}
-                          </div>
-                        </div>
-                        {subject.isLocked ? (
-                          <Lock className="h-4 w-4" />
-                        ) : hasSubjectAccess ? (
-                          <div className="text-right">
-                            <div className="text-xs font-medium">{getSubjectProgress(subject)}%</div>
-                            <div className="w-8 h-1 bg-white/30 rounded-full mt-1">
-                              <div 
-                                className="h-full bg-white rounded-full transition-all"
-                                style={{ width: `${getSubjectProgress(subject)}%` }}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <Lock className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content Area */}
-          <div className="lg:col-span-3">
-            {selectedSubjectData ? (
-              <Card className="overflow-hidden">
-                <CardHeader className={`bg-gradient-to-r ${selectedSubjectData.color} text-white`}>
-                  <CardTitle className="flex items-center gap-3">
-                    <span className="text-3xl">{selectedSubjectData.icon}</span>
-                    <div>
-                      <h2 className="text-2xl text-white">{selectedSubjectData.name}</h2>
-                      <p className="text-white/80">{selectedSubjectData.chapters.length} chapters to explore</p>
-                    </div>
-                    <div className="ml-auto text-right">
-                      <div className="text-2xl font-bold">{getSubjectProgress(selectedSubjectData)}%</div>
-                      <div className="text-sm text-white/80">Complete</div>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-
-                <CardContent className="p-0">
-                  {/* Chapter Grid */}
-                  <div className="p-6 space-y-6">
-                    {selectedSubjectData.chapters.map((chapter, chapterIndex) => {
-                      const chapterProgress = chapter.topics.length > 0 
-                        ? Math.round((chapter.topics.filter(t => userProgress.get(t.id)).length / chapter.topics.length) * 100)
-                        : 0;
-                      
-                      return (
-                        <div key={chapter.id} className="border border-gray-200 rounded-2xl overflow-hidden">
-                          <div className="bg-gray-50 px-6 py-4 border-b">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${selectedSubjectData.color} text-white flex items-center justify-center text-sm font-bold`}>
-                                  {chapterIndex + 1}
-                                </div>
-                                <div>
-                                  <h3 className="text-xl">{chapter.name}</h3>
-                                  <p className="text-sm text-muted-foreground">{chapter.topics.length} topics</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-medium">{chapterProgress}%</div>
-                                <Progress value={chapterProgress} className="w-20 h-2" />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Topics Grid */}
-                          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {chapter.topics.map((topic) => {
-                              const isCompleted = userProgress.get(topic.id) || false;
-                              const hasSubjectAccess = subjectAccess[selectedSubjectData.id] || false;
-                              
-                              // Game-based learning: Students can play any topic/game (if they have access)
-                              // Get difficulty rating for this topic
-                              const topicRating = topicRatings[topic.id];
-                              
-                              return (
-                                <TopicItem
-                                  key={topic.id}
-                                  topic={topic}
-                                  isCompleted={isCompleted}
-                                  userRating={topicRating?.userRating}
-                                  hasRated={topicRating?.hasRated}
-                                  isDisabled={!hasSubjectAccess}
-                                  onClick={handleTopicClick}
-                                  onLockedClick={() => {
-                                    console.log(`Topic ${topic.name} is locked - subject access required`);
-                                    setShowSubscriptionManager(true);
-                                  }}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="p-12 text-center">
-                <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-600 mb-2">Select a Subject</h3>
-                <p className="text-muted-foreground">Choose a subject from the sidebar to start learning</p>
-              </Card>
-            )}
-          </div>
-        </div>
+        <SubjectContent
+          subjects={currentClass.subjects.map((subject) => {
+            const hasSubjectAccess = subjectAccess[subject.id] !== false;
+            return {
+              id: subject.id,
+              name: subject.name,
+              icon: subject.icon,
+              color: subject.color,
+              chapters: subject.chapters.map(chapter => ({
+                id: chapter.id,
+                name: chapter.name,
+                topics: chapter.topics.map(topic => ({
+                  ...topic,
+                  completed: userProgress.get(topic.id) || false
+                })),
+                isLocked: !hasSubjectAccess
+              })),
+              isLocked: subject.isLocked || !hasSubjectAccess
+            };
+          })}
+          selectedSubject={selectedSubject}
+          selectedSubjectData={selectedSubjectData ? {
+            id: selectedSubjectData.id,
+            name: selectedSubjectData.name,
+            icon: selectedSubjectData.icon,
+            color: selectedSubjectData.color,
+            chapters: selectedSubjectData.chapters.map(chapter => ({
+              id: chapter.id,
+              name: chapter.name,
+              topics: chapter.topics.map(topic => ({
+                ...topic,
+                completed: userProgress.get(topic.id) || false
+              })),
+              isLocked: !subjectAccess[selectedSubjectData.id]
+            })),
+            isLocked: selectedSubjectData.isLocked || !subjectAccess[selectedSubjectData.id]
+          } : null}
+          completedTopics={new Set(
+            Array.from(userProgress.entries())
+              .filter(([, completed]) => completed)
+              .map(([topicId]) => topicId)
+          )}
+          topicRatings={topicRatings}
+          useAccordion={true}
+          showUpgradeButton={false}
+          onSubjectSelect={(subjectId) => {
+            const subject = currentClass.subjects.find(s => s.id === subjectId);
+            const hasSubjectAccess = subjectAccess[subjectId] !== false;
+            const isAccessible = !subject?.isLocked && hasSubjectAccess;
+            if (isAccessible) {
+              setSelectedSubject(subjectId);
+            }
+          }}
+          onTopicClick={(topic) => {
+            const hasSubjectAccess = selectedSubjectData && (subjectAccess[selectedSubjectData.id] || false);
+            if (hasSubjectAccess) {
+              // Find the actual DbTopic from the selected subject data
+              const dbTopic = selectedSubjectData.chapters
+                .flatMap(ch => ch.topics)
+                .find(t => t.id === topic.id);
+              if (dbTopic) {
+                handleTopicClick(dbTopic);
+              }
+            }
+          }}
+          onLockedClick={() => {
+            console.log(`Topic is locked - subject access required`);
+            setShowSubscriptionManager(true);
+          }}
+          getSubjectProgress={(subjectId) => {
+            const subject = currentClass.subjects.find(s => s.id === subjectId);
+            return subject ? getSubjectProgress(subject) : 0;
+          }}
+        />
       </div>
 
       <ContentPlayer

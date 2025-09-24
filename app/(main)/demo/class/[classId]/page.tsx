@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BookOpen, Clock, CheckCircle, Lock, Star, Trophy, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, CheckCircle, Star, Trophy } from 'lucide-react';
 import { ContentPlayer } from '@/components/learning/ContentPlayer';
 import type { DbTopic } from '@/hooks/useClassData';
-import { TopicItem } from '@/components/learning/TopicItem';
 import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
+import { SubjectContent } from '@/components/learning/SubjectContent';
 import { 
   handleTopicCompletion
 } from '@/lib/topic-progression';
@@ -65,38 +63,7 @@ type DemoClass = {
   subjects: DemoSubject[];
 };
 
-// Convert demo Topic to DbTopic format for TopicItem compatibility
-const convertTopicForItem = (topic: DemoTopic): DbTopic => {
-  // Map database topic types to expected enum values
-  const getTopicType = (type: string): 'video' | 'interactive' | 'exercise' | 'audio' => {
-    switch (type.toLowerCase()) {
-      case 'video': return 'video';
-      case 'interactive':
-      case 'interactive_widget': return 'interactive';
-      case 'exercise': return 'exercise';
-      case 'audio': return 'audio';
-      default: return 'interactive'; // Default fallback
-    }
-  };
 
-  return {
-    id: topic.id,
-    name: topic.name,
-    type: getTopicType(topic.type),
-    duration: topic.duration,
-    description: topic.description,
-    difficulty: topic.difficulty || 'BEGINNER',
-    orderIndex: 0,
-    content: {
-      contentType: topic.content.type,
-      url: topic.content.url,
-      videoUrl: topic.content.videoUrl,
-      pdfUrl: topic.content.pdfUrl,
-      textContent: topic.content.iframeHtml || topic.content.textContent,
-      widgetConfig: topic.content.widgetConfig,
-    }
-  };
-};
 
 // Convert demo Topic to DbTopic format for ContentPlayer
 const convertToDbTopic = (topic: DemoTopic): DbTopic => {
@@ -149,7 +116,7 @@ export default function DemoClassPage() {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [topicRatings, setTopicRatings] = useState<Record<string, { userRating: number; hasRated: boolean }>>({});
   const [demoStartTime] = useState<number>(Date.now());
-  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
+
   
   // Get selected subject data
   const selectedSubjectData = demoClass?.subjects.find(s => s.id === selectedSubject);
@@ -255,13 +222,16 @@ export default function DemoClassPage() {
     }
   }, [classId]);
 
-  const handleTopicClick = (topic: DemoTopic, chapterIndex: number) => {
+  const handleTopicClick = (topic: DemoTopic | { id: string; name: string; [key: string]: unknown }, chapterIndex?: number) => {
+    // Convert to DemoTopic if needed
+    const demoTopic = topic as DemoTopic;
+    
     // For demo: Check if this chapter is locked (first chapter is free)
-    if (selectedSubjectData) {
+    if (selectedSubjectData && typeof chapterIndex === 'number') {
       const chapter = selectedSubjectData.chapters[chapterIndex];
       
-      console.log('Topic clicked:', topic.name);
-      console.log('Chapter:', chapter.name, 'isLocked:', chapter?.isLocked);
+      console.log('Topic clicked:', demoTopic.name);
+      console.log('Chapter:', chapter?.name, 'isLocked:', chapter?.isLocked);
       
       if (chapter?.isLocked) {
         console.log('Showing subscription dialog for locked chapter');
@@ -271,9 +241,9 @@ export default function DemoClassPage() {
       }
     }
     
-    console.log('Playing topic:', topic.name);
+    console.log('Playing topic:', demoTopic.name);
     // Game-based learning: Allow playing any topic in unlocked chapters
-    setSelectedTopic(topic);
+    setSelectedTopic(demoTopic);
     setIsPlayerOpen(true);
   };
 
@@ -282,17 +252,7 @@ export default function DemoClassPage() {
     setSelectedTopic(null);
   };
 
-  const toggleChapter = (chapterId: string) => {
-    setExpandedChapters(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(chapterId)) {
-        newSet.delete(chapterId);
-      } else {
-        newSet.add(chapterId);
-      }
-      return newSet;
-    });
-  };
+
 
   const handleTopicComplete = () => {
     if (selectedTopic) {
@@ -589,190 +549,47 @@ export default function DemoClassPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
-          {/* Subject Sidebar */}
-          <div className="lg:col-span-1 order-1">
-              <Card className="lg:sticky lg:top-6">
-                <CardHeader className="pb-3 sm:pb-6">
-                  <CardTitle className="text-base sm:text-lg">Subjects</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 sm:space-y-3">
-                  {demoClass.subjects.map((subject) => (
-                    <div
-                      key={subject.id}
-                      className={`p-3 sm:p-4 rounded-lg sm:rounded-xl cursor-pointer transition-all ${
-                        selectedSubject === subject.id 
-                          ? `bg-gradient-to-r ${subject.color} text-white shadow-lg` 
-                          : 'bg-gray-50 hover:bg-gray-100'
-                      } ${subject.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onClick={() => !subject.isLocked && setSelectedSubject(subject.id)}
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <span className="text-lg sm:text-xl">{subject.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm sm:text-base truncate">{subject.name}</div>
-                          <div className={`text-xs ${selectedSubject === subject.id ? 'text-white/80' : 'text-muted-foreground'}`}>
-                            {subject.chapters.length} chapters
-                          </div>
-                        </div>
-                        {subject.isLocked ? (
-                          <Lock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                        ) : (
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-xs font-medium">{getSubjectProgress(subject.id)}%</div>
-                            <div className="w-6 sm:w-8 h-1 bg-white/30 rounded-full mt-1">
-                              <div 
-                                className="h-full bg-white rounded-full transition-all"
-                                style={{ width: `${getSubjectProgress(subject.id)}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {/* Upgrade Now Button */}
-                  <div className="mt-3 lg:mt-4 pt-3 lg:pt-4 border-t border-gray-200">
-                    <Button
-                      onClick={() => setShowPaymentDialog(true)}
-                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-2 lg:py-3 px-3 lg:px-4 rounded-lg lg:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-xs lg:text-sm"
-                    >
-                      <Star className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-                      Upgrade Now
-                    </Button>
-                    <p className="text-xs text-gray-500 text-center mt-1 lg:mt-2">
-                      Unlock all subjects & chapters
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Main Content Area */}
-            <div className="lg:col-span-3 order-2">
-              {selectedSubjectData ? (
-                <Card className="overflow-hidden">
-                  <CardHeader className={`bg-gradient-to-r ${selectedSubjectData.color} text-white`}>
-                    <CardTitle className="flex flex-row justify-between sm:items-center gap-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl sm:text-3xl">{selectedSubjectData.icon}</span>
-                        <div>
-                          <h2 className="text-xl sm:text-2xl">{selectedSubjectData.name}</h2>
-                          <p className="text-white/80 text-sm sm:text-base">{selectedSubjectData.chapters.length} chapters to explore</p>
-                        </div>
-                      </div>
-                      <div className="text-left sm:text-right sm:ml-auto">
-                        <div className="text-xl sm:text-2xl font-bold">{getSubjectProgress(selectedSubjectData.id)}%</div>
-                        <div className="text-sm text-white/80">Complete</div>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-
-                  <CardContent className="p-0">
-                    {/* Chapters */}
-                    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                      {selectedSubjectData.chapters.map((chapter, chapterIndex) => {
-                        const chapterProgress = Math.round(
-                          (chapter.topics.filter(t => t.completed).length / chapter.topics.length) * 100
-                        );
-                        const isExpanded = expandedChapters.has(chapter.id);
-                        
-                        return (
-                          <div key={chapter.id} className="border border-gray-200 rounded-xl sm:rounded-2xl overflow-hidden">
-                            <div 
-                              className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-b cursor-pointer hover:bg-gray-100 transition-colors"
-                              onClick={() => toggleChapter(chapter.id)}
-                            >
-                              <div className="flex flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r ${selectedSubjectData.color} text-white flex items-center justify-center text-xs sm:text-sm font-bold`}>
-                                    {chapterIndex + 1}
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                      <h3 className="text-lg sm:text-xl font-semibold truncate">{chapter.name}</h3>
-                                      <div className="flex gap-1 sm:gap-2">
-                                        {chapter.isLocked && (
-                                          <Badge variant="secondary" className="gap-1 text-xs">
-                                            <Lock className="h-3 w-3" />
-                                            Locked
-                                          </Badge>
-                                        )}
-                                        {chapterIndex === 0 && (
-                                          <Badge variant="default" className="bg-green-600 text-xs">
-                                            Free
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">{chapter.topics.length} topics</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <div className="text-right flex-shrink-0">
-                                    <div className="text-sm font-medium">{chapterProgress}%</div>
-                                    <Progress value={chapterProgress} className="w-16 sm:w-20 h-2" />
-                                  </div>
-                                  <div className="p-1 rounded-full hover:bg-gray-200 transition-colors">
-                                    {isExpanded ? (
-                                      <ChevronDown className="h-4 w-4 text-gray-500" />
-                                    ) : (
-                                      <ChevronRight className="h-4 w-4 text-gray-500" />
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Topics Grid - Only show when expanded */}
-                            {isExpanded && (
-                              <div className="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                              {chapter.topics.map((topic: DemoTopic) => {
-                                const isCompleted = topic.completed || completedTopics.has(topic.id);
-                                
-                                // For demo: Enable all topics in first chapter, disable others
-                                const isDisabled = chapter.isLocked || false;
-                                
-                                // Game-based learning - students can play any topic/game in unlocked chapters
-                                const dbTopic = convertTopicForItem(topic);
-                                
-                                // Get rating for this topic
-                                const topicRating = topicRatings[topic.id];
-                                
-                                return (
-                                  <TopicItem
-                                    key={topic.id}
-                                    topic={dbTopic}
-                                    isCompleted={isCompleted}
-                                    isDisabled={isDisabled}
-                                    userRating={topicRating?.userRating}
-                                    hasRated={topicRating?.hasRated}
-                                    onClick={() => handleTopicClick(topic, chapterIndex)}
-                                    onLockedClick={() => setShowPaymentDialog(true)}
-                                  />
-                                );
-                              })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="p-8 sm:p-12 text-center">
-                  <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-base sm:text-lg font-medium text-gray-600 mb-2">Select a Subject</h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    Choose a subject from above to start exploring
-                  </p>
-                </Card>
-              )}
-            </div>
-          </div>
-        </div>
+        <SubjectContent
+          subjects={demoClass.subjects.map(subject => ({
+            id: subject.id,
+            name: subject.name,
+            icon: subject.icon,
+            color: subject.color,
+            chapters: subject.chapters.map(chapter => ({
+              id: chapter.id,
+              name: chapter.name,
+              topics: chapter.topics,
+              isLocked: chapter.isLocked
+            })),
+            isLocked: subject.isLocked
+          }))}
+          selectedSubject={selectedSubject}
+          selectedSubjectData={selectedSubjectData ? {
+            id: selectedSubjectData.id,
+            name: selectedSubjectData.name,
+            icon: selectedSubjectData.icon,
+            color: selectedSubjectData.color,
+            chapters: selectedSubjectData.chapters.map(chapter => ({
+              id: chapter.id,
+              name: chapter.name,
+              topics: chapter.topics,
+              isLocked: chapter.isLocked
+            })),
+            isLocked: selectedSubjectData.isLocked
+          } : null}
+          completedTopics={completedTopics}
+          topicRatings={topicRatings}
+          useAccordion={true}
+          showUpgradeButton={true}
+          showFreeBadge={true}
+          onSubjectSelect={setSelectedSubject}
+          onTopicClick={handleTopicClick}
+          onLockedClick={() => setShowPaymentDialog(true)}
+          onUpgradeClick={() => setShowPaymentDialog(true)}
+          getSubjectProgress={getSubjectProgress}
+          convertTopicForItem={(topic) => convertToDbTopic(topic as DemoTopic)}
+        />
+      </div>
       
       {/* Demo Content Player */}
       <ContentPlayer
