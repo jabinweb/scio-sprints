@@ -232,7 +232,7 @@ export const SubjectContent: React.FC<SubjectContentProps> = ({
                                   )}
                                 </div>
                               </div>
-                              <p className="text-xs sm:text-sm text-muted-foreground">{chapter.topics.length} topics</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">{chapter.topics.length} activities</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">

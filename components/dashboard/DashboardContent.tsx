@@ -1,14 +1,15 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, BookOpen, Users, Clock, ChevronRight, Star, Play, GraduationCap } from "lucide-react";
+import { LogOut, Star, GraduationCap, BookOpen, Users } from "lucide-react";
 import { useClassData } from '@/hooks/useClassData';
 import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
+import { ClassCard } from '@/components/dashboard/ClassCard';
 import type { DbClass } from '@/hooks/useClassData';
 
 interface ClassWithSubjects {
@@ -40,6 +41,8 @@ interface ClassWithSubjects {
     }>;
   }>;
 }
+
+
 
 export function DashboardContent() {
   const { data: session } = useSession();
@@ -241,179 +244,24 @@ export function DashboardContent() {
             {classes.map((cls) => {
               const safeCls = toClassWithSubjects(cls);
               const progress = calculateClassProgress(safeCls);
-              const subjectCount = safeCls.subjects?.length || 0;
-              const chapterCount = safeCls.subjects?.reduce((acc, s) => acc + (s.chapters?.length || 0), 0) || 0;
 
               return (
-                <Card 
+                <ClassCard
                   key={safeCls.id}
-                  className="group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer bg-white/80 backdrop-blur-sm"
+                  variant="dashboard"
+                  classData={{
+                    id: safeCls.id,
+                    name: safeCls.name,
+                    description: safeCls.description || '',
+                    price: safeCls.price,
+                    schoolAccess: cls.schoolAccess,
+                    subscriptionAccess: cls.subscriptionAccess,
+                    hasPartialAccess: safeCls.hasPartialAccess,
+                    subjects: safeCls.subjects
+                  }}
+                  progress={progress}
                   onClick={() => handleClassClick(safeCls)}
-                >
-                  {/* Access Type Badge */}
-                  <div className="absolute top-4 right-4 z-10">
-                    {cls.schoolAccess ? (
-                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        School Access
-                      </div>
-                    ) : cls.subscriptionAccess ? (
-                      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Full Access
-                      </div>
-                    ) : safeCls.hasPartialAccess ? (
-                      <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        Partial Access
-                      </div>
-                    ) : safeCls.price && safeCls.price > 0 ? (
-                      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
-                        ₹{Math.round(safeCls.price / 100)}
-                      </div>
-                    ) : (
-                      <div className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
-                        Free
-                      </div>
-                    )}
-                  </div>
-
-                  <CardHeader className="relative z-1 pb-4">
-                    {/* Icon Section */}
-                    <div className="relative mb-6">
-                      <div className="w-full h-32 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform duration-500 shadow-lg">
-                        <BookOpen className="h-12 w-12 text-white drop-shadow-lg z-10" />
-                        
-                        {/* Animated background elements */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent" />
-                        <div className="absolute top-2 right-2 w-3 h-3 bg-white/20 rounded-full animate-pulse" />
-                        <div className="absolute bottom-3 left-3 w-2 h-2 bg-white/30 rounded-full animate-pulse delay-300" />
-                        <div className="absolute top-1/2 left-2 w-1.5 h-1.5 bg-white/25 rounded-full animate-pulse delay-700" />
-
-                        {/* Progress indicator */}
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-white/60 rounded-full transition-all duration-1000 ease-out"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Title and Description */}
-                    <div className="space-y-2">
-                      <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors line-clamp-1">
-                        {cls.name}
-                      </CardTitle>
-                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 group-hover:text-gray-700 transition-colors">
-                        {cls.description}
-                      </p>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="relative z-10 space-y-4">
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex items-center gap-2 p-3 bg-white/60 rounded-lg border border-gray-100 group-hover:bg-white/80 transition-colors">
-                        <div className="p-1.5 bg-blue-100 rounded-lg">
-                          <Users className="h-3.5 w-3.5 text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-500 font-medium">Subjects</div>
-                          <div className="text-sm font-bold text-gray-900">{subjectCount}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 p-3 bg-white/60 rounded-lg border border-gray-100 group-hover:bg-white/80 transition-colors">
-                        <div className="p-1.5 bg-purple-100 rounded-lg">
-                          <Clock className="h-3.5 w-3.5 text-purple-600" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-500 font-medium">Chapters</div>
-                          <div className="text-sm font-bold text-gray-900">{chapterCount}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Progress Section */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-medium text-gray-600">Learning Progress</span>
-                        <span className="text-xs font-bold text-gray-900">{progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-1000 ease-out shadow-sm"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Action Button */}
-                    <div className="pt-2">
-                      <div className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                        cls.schoolAccess || cls.subscriptionAccess
-                          ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 group-hover:from-green-100 group-hover:to-emerald-100'
-                          : safeCls.hasPartialAccess
-                          ? 'bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 group-hover:from-purple-100 group-hover:to-violet-100'
-                          : 'bg-gradient-to-r from-gray-50 to-blue-50 border-gray-100 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:border-blue-200'
-                      }`}>
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded-lg transition-colors ${
-                            cls.schoolAccess || cls.subscriptionAccess
-                              ? 'bg-green-100 group-hover:bg-green-200'
-                              : safeCls.hasPartialAccess
-                              ? 'bg-purple-100 group-hover:bg-purple-200'
-                              : 'bg-blue-100 group-hover:bg-blue-200'
-                          }`}>
-                            <Play className={`h-3.5 w-3.5 ${
-                              cls.schoolAccess || cls.subscriptionAccess 
-                                ? 'text-green-600' 
-                                : safeCls.hasPartialAccess 
-                                ? 'text-purple-600' 
-                                : 'text-blue-600'
-                            }`} />
-                          </div>
-                          <span className={`text-sm font-semibold transition-colors ${
-                            cls.schoolAccess || cls.subscriptionAccess
-                              ? 'text-green-700 group-hover:text-green-800'
-                              : safeCls.hasPartialAccess
-                              ? 'text-purple-700 group-hover:text-purple-800'
-                              : 'text-gray-700 group-hover:text-blue-700'
-                          }`}>
-                            {cls.schoolAccess 
-                              ? 'Access via School'
-                              : cls.subscriptionAccess 
-                              ? 'Full Access'
-                              : safeCls.hasPartialAccess
-                              ? 'View Subjects'
-                              : safeCls.price && safeCls.price > 0 
-                              ? `Subscribe for ₹${Math.round(safeCls.price / 100)}`
-                              : 'Start Learning'
-                            }
-                          </span>
-                        </div>
-                        <ChevronRight className={`h-4 w-4 transition-all group-hover:translate-x-1 ${
-                          cls.schoolAccess || cls.subscriptionAccess
-                            ? 'text-green-400 group-hover:text-green-600'
-                            : safeCls.hasPartialAccess
-                            ? 'text-purple-400 group-hover:text-purple-600'
-                            : 'text-gray-400 group-hover:text-blue-600'
-                        }`} />
-                      </div>
-                    </div>
-                  </CardContent>
-
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg" />
-                </Card>
+                />
               );
             })}
           </div>

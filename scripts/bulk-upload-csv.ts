@@ -6,16 +6,17 @@ import path from 'path';
 const prisma = new PrismaClient();
 
 interface CSVRow {
-  class_name: string;
-  subject_name: string;
-  subject_order: string;
-  chapter_name: string;
-  chapter_order: string;
-  topic_name: string;
-  topic_type: string;
-  topic_description: string;
-  content_type: string;
-  content_url: string;
+  class_name?: string;
+  subject_name?: string;
+  subject_order?: string;
+  chapter_name?: string;
+  chapter_order?: string;
+  topic_name?: string;
+  topic_type?: string;
+  topic_description?: string;
+  content_type?: string;
+  content_url?: string;
+  [key: string]: string | undefined;
 }
 
 interface ProcessedData {
@@ -110,11 +111,19 @@ async function parseCSV(): Promise<ProcessedData> {
     console.log('📁 Reading CSV file from:', csvPath);
 
     fs.createReadStream(csvPath)
-      .pipe(csv())
+      .pipe(csv({
+        headers: ['class_name', 'subject_name', 'subject_order', 'chapter_name', 'chapter_order', 'topic_name', 'topic_type', 'topic_description', 'content_type', 'content_url', 'duplicate_class_name', 'duplicate_subject_name', 'duplicate_subject_order', 'duplicate_chapter_name', 'duplicate_chapter_order', 'duplicate_topic_name', 'duplicate_topic_type', 'duplicate_topic_description', 'duplicate_content_type', 'duplicate_content_url']
+      }))
       .on('data', (row: CSVRow) => {
-        const className = row.class_name.trim();
-        const subjectName = row.subject_name.trim();
-        const chapterName = row.chapter_name.trim();
+        // Use only the first set of data (ignore duplicates)
+        const className = row.class_name?.trim();
+        const subjectName = row.subject_name?.trim();
+        const chapterName = row.chapter_name?.trim();
+
+        // Skip if any required field is missing
+        if (!className || !subjectName || !chapterName || !row.topic_name || !row.topic_type || !row.topic_description || !row.content_type || !row.content_url) {
+          return;
+        }
 
         // Initialize class if it doesn't exist
         if (!data.classes.has(className)) {
@@ -126,7 +135,7 @@ async function parseCSV(): Promise<ProcessedData> {
         // Initialize subject if it doesn't exist
         if (!classData.subjects.has(subjectName)) {
           classData.subjects.set(subjectName, {
-            order: parseInt(row.subject_order) || 1,
+            order: parseInt(row.subject_order || '1') || 1,
             chapters: new Map()
           });
         }
@@ -136,7 +145,7 @@ async function parseCSV(): Promise<ProcessedData> {
         // Initialize chapter if it doesn't exist
         if (!subjectData.chapters.has(chapterName)) {
           subjectData.chapters.set(chapterName, {
-            order: parseInt(row.chapter_order) || 1,
+            order: parseInt(row.chapter_order || '1') || 1,
             topics: []
           });
         }
@@ -165,33 +174,33 @@ async function parseCSV(): Promise<ProcessedData> {
 }
 
 // Function to clear existing data
-// async function clearExistingData() {
-//   console.log('🗑️ Clearing existing data...');
+async function clearExistingData() {
+  console.log('🗑️ Clearing existing data...');
   
-//   try {
-//     // Delete in correct order to avoid foreign key constraints
-//     await prisma.topicContent.deleteMany();
-//     console.log('   ✅ Cleared topic content');
+  try {
+    // Delete in correct order to avoid foreign key constraints
+    await prisma.topicContent.deleteMany();
+    console.log('   ✅ Cleared topic content');
     
-//     await prisma.topic.deleteMany();
-//     console.log('   ✅ Cleared topics');
+    await prisma.topic.deleteMany();
+    console.log('   ✅ Cleared topics');
     
-//     await prisma.chapter.deleteMany();
-//     console.log('   ✅ Cleared chapters');
+    await prisma.chapter.deleteMany();
+    console.log('   ✅ Cleared chapters');
     
-//     await prisma.subject.deleteMany();
-//     console.log('   ✅ Cleared subjects');
+    await prisma.subject.deleteMany();
+    console.log('   ✅ Cleared subjects');
     
-//     // Keep classes but could clear them too if needed
-//     // await prisma.class.deleteMany();
-//     // console.log('   ✅ Cleared classes');
+    // Keep classes but could clear them too if needed
+    await prisma.class.deleteMany();
+    console.log('   ✅ Cleared classes');
     
-//     console.log('🎯 Database cleared successfully');
-//   } catch (error) {
-//     console.error('❌ Error clearing database:', error);
-//     throw error;
-//   }
-// }
+    console.log('🎯 Database cleared successfully');
+  } catch (error) {
+    console.error('❌ Error clearing database:', error);
+    throw error;
+  }
+}
 
 // Main bulk upload function
 async function bulkUploadFromCSV() {
@@ -202,7 +211,7 @@ async function bulkUploadFromCSV() {
     const processedData = await parseCSV();
 
     // Step 2: Clear existing data
-    // await clearExistingData();
+    await clearExistingData();
 
     // Step 3: Create/update classes and insert new data
     console.log('\n📊 Creating database entries...\n');
@@ -283,12 +292,28 @@ async function bulkUploadFromCSV() {
             });
 
             // Create topic content
+            const contentType = convertToContentType(topicData.contentType);
+            const contentData: {
+              topicId: string;
+              contentType: ContentType;
+              url?: string;
+              iframeHtml?: string;
+            } = {
+              topicId: dbTopic.id,
+              contentType: contentType
+            };
+
+            // Handle different content types
+            if (contentType === ContentType.IFRAME && topicData.contentUrl.includes('<iframe')) {
+              // It's HTML iframe content
+              contentData.iframeHtml = topicData.contentUrl;
+            } else {
+              // It's a URL
+              contentData.url = topicData.contentUrl;
+            }
+
             await prisma.topicContent.create({
-              data: {
-                topicId: dbTopic.id,
-                contentType: convertToContentType(topicData.contentType),
-                url: topicData.contentUrl
-              }
+              data: contentData
             });
 
             console.log(`         🎯 Created topic: ${topicData.name}`);

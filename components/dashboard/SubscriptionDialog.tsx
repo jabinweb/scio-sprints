@@ -898,7 +898,7 @@ Would you like to refresh the page now?`;
                       </div>
                       <div>
                         <div className="text-lg font-bold text-blue-600">{totalTopics}</div>
-                        <div className="text-xs text-gray-500">Topics</div>
+                        <div className="text-xs text-gray-500">Activities</div>
                       </div>
                     </div>
                   </div>
@@ -1015,7 +1015,7 @@ Would you like to refresh the page now?`;
                                   </div>
                                   <div>
                                     <h4 className="font-medium">{subject.name}</h4>
-                                    <div className="text-xs text-gray-500">{topicCount} topics</div>
+                                    <div className="text-xs text-gray-500">{topicCount} activities</div>
                                   </div>
                                 </div>
                                 <div className="text-right">
@@ -1102,9 +1102,8 @@ Would you like to refresh the page now?`;
               Login to Subscribe
             </Button>
           ) : (
-            <div className="text-sm text-gray-500">
-              💳 Test Mode
-            </div>
+            <>
+            </>
           )}
         </div>
         </>
