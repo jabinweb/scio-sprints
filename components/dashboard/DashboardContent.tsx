@@ -3,9 +3,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button";
-import { LogOut, Star, GraduationCap, BookOpen, Users } from "lucide-react";
+import { Star, GraduationCap, BookOpen, Users } from "lucide-react";
 import { useClassData } from '@/hooks/useClassData';
 import { SubscriptionDialog } from '@/components/dashboard/SubscriptionDialog';
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
@@ -134,7 +134,7 @@ export function DashboardContent() {
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                     Welcome back, {user?.name || user?.email?.split('@')[0] || 'Student'}!
                   </h1>
                   <div className="flex items-center gap-4 mt-1">
@@ -158,14 +158,6 @@ export function DashboardContent() {
                   </div>
                 </div>
               </div>
-              <Button 
-                variant="outline"
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="gap-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </Button>
             </div>
 
             {/* Access Message */}
