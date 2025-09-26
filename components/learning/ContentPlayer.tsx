@@ -358,14 +358,14 @@ export function ContentPlayer({
                 <div 
                   dangerouslySetInnerHTML={{ 
                     __html: topicContent.iframeHtml
-                      // More aggressive iframe dimension overrides
+                      // Responsive iframe dimension overrides that respect the available space
                       .replace(/width\s*=\s*["']\d+["']/gi, 'width="100%"')
                       .replace(/height\s*=\s*["']\d+["']/gi, 'height="100%"')
                       .replace(/frameborder\s*=\s*["']\d+["']/gi, 'frameborder="0"')
                       .replace(/style\s*=\s*["'][^"']*["']/gi, '')
-                      .replace(/<iframe/gi, '<iframe style="width: 100%; height: 100%; border: none; min-height: calc(100vh - 100px);"')
+                      .replace(/<iframe/gi, '<iframe style="width: 100%; height: 100%; border: none;"')
                   }}
-                  className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:min-h-screen [&_iframe]:border-0"
+                  className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:border-0"
                   style={{ width: '100%', height: '100%' }}
                 />
               </div>
