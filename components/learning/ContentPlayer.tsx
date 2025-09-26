@@ -98,6 +98,57 @@ export function ContentPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topic?.id]); // Intentionally only depend on topic ID to avoid resetting on completion changes
 
+  // Handle fullscreen mode on mobile to hide browser address bar
+  useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isOpen && isMobile) {
+      // Request fullscreen on mobile devices
+      const enterFullscreen = async () => {
+        try {
+          const docElement = document.documentElement as HTMLElement & {
+            webkitRequestFullscreen?: () => Promise<void>;
+            msRequestFullscreen?: () => Promise<void>;
+          };
+          
+          if (docElement.requestFullscreen) {
+            await docElement.requestFullscreen();
+          } else if (docElement.webkitRequestFullscreen) {
+            await docElement.webkitRequestFullscreen();
+          } else if (docElement.msRequestFullscreen) {
+            await docElement.msRequestFullscreen();
+          }
+        } catch (error) {
+          console.log('Fullscreen request failed:', error);
+        }
+      };
+
+      // Small delay to ensure dialog is rendered
+      const timer = setTimeout(enterFullscreen, 300);
+      
+      return () => {
+        clearTimeout(timer);
+        // Exit fullscreen when dialog closes
+        const doc = document as Document & {
+          webkitFullscreenElement?: Element;
+          msFullscreenElement?: Element;
+          webkitExitFullscreen?: () => void;
+          msExitFullscreen?: () => void;
+        };
+        
+        if (doc.fullscreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement) {
+          if (doc.exitFullscreen) {
+            doc.exitFullscreen().catch(() => {});
+          } else if (doc.webkitExitFullscreen) {
+            doc.webkitExitFullscreen();
+          } else if (doc.msExitFullscreen) {
+            doc.msExitFullscreen();
+          }
+        }
+      };
+    }
+  }, [isOpen]);
+
   if (!topic) return null;
 
   const handleComplete = () => {
