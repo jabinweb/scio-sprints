@@ -209,7 +209,7 @@ export function ContentPlayer({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 flex flex-col bg-gray-900 text-white border-gray-800 [&>button]:hidden">
+      <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 flex flex-col bg-gray-900 gap-0 text-white border-gray-800 [&>button]:hidden">
         {/* Hidden title for accessibility */}
         <DialogTitle className="sr-only">{topic.name}</DialogTitle>
         
