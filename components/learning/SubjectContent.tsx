@@ -256,41 +256,46 @@ export const SubjectContent: React.FC<SubjectContentProps> = ({
                       {/* Topics Grid - Show when expanded or when accordion is disabled */}
                       {isExpanded && (
                         <div className="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                          {chapter.topics.map((topic: BaseTopic) => {
-                            const isCompleted = topic.completed || completedTopics.has(topic.id);
-                            const isDisabled = chapter.isLocked || false;
-                            
-                            // Get rating for this topic
-                            const topicRating = topicRatings[topic.id];
-                            
-                            // Convert topic for TopicItem - use converter or create default Topic structure
-                            const topicForItem: Topic = convertTopicForItem 
-                              ? convertTopicForItem(topic)
-                              : {
-                                  id: topic.id,
-                                  name: topic.name,
-                                  type: ('type' in topic && typeof topic.type === 'string') ? topic.type : 'INTERACTIVE_WIDGET',
-                                  duration: ('duration' in topic && typeof topic.duration === 'string') ? topic.duration : null,
-                                  orderIndex: ('orderIndex' in topic && typeof topic.orderIndex === 'number') ? topic.orderIndex : 0,
-                                  completed: topic.completed,
-                                  difficulty: ('difficulty' in topic && typeof topic.difficulty === 'string') ? topic.difficulty : undefined,
-                                  description: ('description' in topic && typeof topic.description === 'string') ? topic.description : undefined,
-                                  content: ('content' in topic) ? topic.content as TopicContent : undefined
-                                } as Topic;
-                            
-                            return (
-                              <TopicItem
-                                key={topic.id}
-                                topic={topicForItem}
-                                isCompleted={isCompleted}
-                                isDisabled={isDisabled}
-                                userRating={topicRating?.userRating}
-                                hasRated={topicRating?.hasRated}
-                                onClick={() => onTopicClick(topic, chapterIndex)}
-                                onLockedClick={onLockedClick}
-                              />
-                            );
-                          })}
+                          {[...chapter.topics]
+                            .sort((a, b) => {
+                              const order = { 'BEGINNER': 0, 'INTERMEDIATE': 1, 'ADVANCED': 2 };
+                              type DiffKey = keyof typeof order;
+                              const aDiff = typeof a.difficulty === 'string' ? a.difficulty.toUpperCase() as DiffKey : undefined;
+                              const bDiff = typeof b.difficulty === 'string' ? b.difficulty.toUpperCase() as DiffKey : undefined;
+                              return (aDiff !== undefined ? order[aDiff] : 99) - (bDiff !== undefined ? order[bDiff] : 99);
+                            })
+                            .map((topic: BaseTopic) => {
+                              const isCompleted = topic.completed || completedTopics.has(topic.id);
+                              const isDisabled = chapter.isLocked || false;
+                              // Get rating for this topic
+                              const topicRating = topicRatings[topic.id];
+                              // Convert topic for TopicItem - use converter or create default Topic structure
+                              const topicForItem: Topic = convertTopicForItem 
+                                ? convertTopicForItem(topic)
+                                : {
+                                    id: topic.id,
+                                    name: topic.name,
+                                    type: ('type' in topic && typeof topic.type === 'string') ? topic.type : 'INTERACTIVE_WIDGET',
+                                    duration: ('duration' in topic && typeof topic.duration === 'string') ? topic.duration : null,
+                                    orderIndex: ('orderIndex' in topic && typeof topic.orderIndex === 'number') ? topic.orderIndex : 0,
+                                    completed: topic.completed,
+                                    difficulty: ('difficulty' in topic && typeof topic.difficulty === 'string') ? topic.difficulty : undefined,
+                                    description: ('description' in topic && typeof topic.description === 'string') ? topic.description : undefined,
+                                    content: ('content' in topic) ? topic.content as TopicContent : undefined
+                                  } as Topic;
+                              return (
+                                <TopicItem
+                                  key={topic.id}
+                                  topic={topicForItem}
+                                  isCompleted={isCompleted}
+                                  isDisabled={isDisabled}
+                                  userRating={topicRating?.userRating}
+                                  hasRated={topicRating?.hasRated}
+                                  onClick={() => onTopicClick(topic, chapterIndex)}
+                                  onLockedClick={onLockedClick}
+                                />
+                              );
+                            })}
                         </div>
                       )}
                     </div>
