@@ -68,9 +68,8 @@ export default function ResponsesPage() {
         try {
           const responsesResponse = await fetch('/api/admin/responses');
           const responsesData = await responsesResponse.json();
-          
-          // Ensure we always set an array
-          setResponses(Array.isArray(responsesData) ? responsesData : []);
+          // Use the 'data' property from the API response
+          setResponses(Array.isArray(responsesData.data) ? responsesData.data : []);
           setDataFetched(true);
         } catch (error) {
           console.error('Error fetching form responses:', error);
@@ -139,7 +138,7 @@ export default function ResponsesPage() {
     try {
       const responsesResponse = await fetch('/api/admin/responses');
       const responsesData = await responsesResponse.json();
-      setResponses(Array.isArray(responsesData) ? responsesData : []);
+      setResponses(Array.isArray(responsesData.data) ? responsesData.data : []);
     } catch (error) {
       console.error('Error refreshing data:', error);
       setResponses([]);
