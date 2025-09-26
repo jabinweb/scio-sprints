@@ -1,4 +1,27 @@
-import { PrismaClient, TopicType, ContentType } from '@prisma/client';
+/**
+ * Bulk Upload Script - Complete Data Refresh
+ * 
+ * This script wipes out all existing data and rebuilds everything from CSV.
+ * 
+ * CSV Format (11 columns):
+ * class_name, subje  console.log('🗑️ Clearing existing data...');t_name, subject_order, chapter_name, chapter_order, 
+ * topic_name, topic_type, topic_description, topic_difficulty, content_type, content_url
+ * 
+ * Behavior:
+ * - Clears all existing data (topics, chapters, subjects, classes)
+ * - Creates everything fresh from CSV
+ * - Complete rebuild with difficulty levels
+ * 
+ * Difficulty Values:
+ * - BEGINNER, EASY, BASIC → BEGINNER
+ * - INTERMEDIATE, MEDIUM, MODERATE → INTERMEDIATE  
+ * - ADVANCED, HARD, DIFFICULT, EXPERT → ADVANCED
+ * - Default: BEGINNER (if not provided or invalid)
+ * 
+ * Warning: This will delete all existing educational content!
+ */
+
+import { PrismaClient, TopicType, ContentType, DifficultyLevel } from '@prisma/client';
 import fs from 'fs';
 import csv from 'csv-parser';
 import path from 'path';
@@ -14,6 +37,7 @@ interface CSVRow {
   topic_name?: string;
   topic_type?: string;
   topic_description?: string;
+  topic_difficulty?: string;
   content_type?: string;
   content_url?: string;
   [key: string]: string | undefined;
@@ -29,6 +53,7 @@ interface ProcessedData {
           name: string;
           type: string;
           description: string;
+          difficulty: string;
           contentType: string;
           contentUrl: string;
           order: number;
@@ -60,6 +85,26 @@ function convertToContentType(type: string): ContentType {
     case 'INTERACTIVE_WIDGET': return ContentType.INTERACTIVE_WIDGET;
     case 'EXTERNAL_LINK': return ContentType.EXTERNAL_LINK;
     default: return ContentType.IFRAME;
+  }
+}
+
+function convertToDifficultyLevel(difficulty: string): DifficultyLevel {
+  switch (difficulty.toUpperCase()) {
+    case 'BEGINNER': 
+    case 'EASY': 
+    case 'BASIC': 
+      return DifficultyLevel.BEGINNER;
+    case 'INTERMEDIATE': 
+    case 'MEDIUM': 
+    case 'MODERATE': 
+      return DifficultyLevel.INTERMEDIATE;
+    case 'ADVANCED': 
+    case 'HARD': 
+    case 'DIFFICULT': 
+    case 'EXPERT': 
+      return DifficultyLevel.ADVANCED;
+    default: 
+      return DifficultyLevel.BEGINNER; // Default to BEGINNER
   }
 }
 
@@ -100,6 +145,8 @@ const getSubjectPrice = (className: string, subjectName: string): number => {
   return 29900; // ₹299 for all other subjects
 };
 
+
+
 // Function to parse CSV and organize data
 async function parseCSV(): Promise<ProcessedData> {
   return new Promise((resolve, reject) => {
@@ -109,10 +156,12 @@ async function parseCSV(): Promise<ProcessedData> {
     };
 
     console.log('📁 Reading CSV file from:', csvPath);
+    console.log('💡 CSV should include difficulty column (BEGINNER/INTERMEDIATE/ADVANCED). Defaults to BEGINNER if not provided.');
+    console.log('⚠️  WARNING: This will delete ALL existing data and rebuild from CSV!');
 
     fs.createReadStream(csvPath)
       .pipe(csv({
-        headers: ['class_name', 'subject_name', 'subject_order', 'chapter_name', 'chapter_order', 'topic_name', 'topic_type', 'topic_description', 'content_type', 'content_url', 'duplicate_class_name', 'duplicate_subject_name', 'duplicate_subject_order', 'duplicate_chapter_name', 'duplicate_chapter_order', 'duplicate_topic_name', 'duplicate_topic_type', 'duplicate_topic_description', 'duplicate_content_type', 'duplicate_content_url']
+        headers: ['class_name', 'subject_name', 'subject_order', 'chapter_name', 'chapter_order', 'topic_name', 'topic_type', 'topic_description', 'topic_difficulty', 'content_type', 'content_url']
       }))
       .on('data', (row: CSVRow) => {
         // Use only the first set of data (ignore duplicates)
@@ -157,6 +206,7 @@ async function parseCSV(): Promise<ProcessedData> {
           name: row.topic_name.trim(),
           type: row.topic_type.trim(),
           description: row.topic_description.trim(),
+          difficulty: row.topic_difficulty?.trim() || 'BEGINNER',
           contentType: row.content_type.trim(),
           contentUrl: row.content_url.trim(),
           order: chapterData.topics.length + 1
@@ -175,13 +225,13 @@ async function parseCSV(): Promise<ProcessedData> {
 
 // Function to clear existing data
 async function clearExistingData() {
-  console.log('🗑️ Clearing existing data...');
+  console.log('� Validating data integrity...');
   
   try {
     // Delete in correct order to avoid foreign key constraints
     await prisma.topicContent.deleteMany();
     console.log('   ✅ Cleared topic content');
-    
+
     await prisma.topic.deleteMany();
     console.log('   ✅ Cleared topics');
     
@@ -191,7 +241,6 @@ async function clearExistingData() {
     await prisma.subject.deleteMany();
     console.log('   ✅ Cleared subjects');
     
-    // Keep classes but could clear them too if needed
     await prisma.class.deleteMany();
     console.log('   ✅ Cleared classes');
     
@@ -213,7 +262,7 @@ async function bulkUploadFromCSV() {
     // Step 2: Clear existing data
     await clearExistingData();
 
-    // Step 3: Create/update classes and insert new data
+    // Step 3: Create all data fresh from CSV
     console.log('\n📊 Creating database entries...\n');
 
     for (const [className, classData] of processedData.classes) {
@@ -247,6 +296,7 @@ async function bulkUploadFromCSV() {
 
       // Process subjects
       for (const [subjectName, subjectData] of classData.subjects) {
+        // Process subjects
         const subjectPrice = getSubjectPrice(className, subjectName);
         const subjectColor = getSubjectColor(subjectName);
         const subjectIcon = getSubjectIcon(subjectName);
@@ -287,6 +337,7 @@ async function bulkUploadFromCSV() {
                 chapterId: dbChapter.id,
                 orderIndex: topicData.order,
                 type: convertToTopicType(topicData.type),
+                difficulty: convertToDifficultyLevel(topicData.difficulty),
                 duration: "5 min" // Default duration
               }
             });
@@ -316,7 +367,7 @@ async function bulkUploadFromCSV() {
               data: contentData
             });
 
-            console.log(`         🎯 Created topic: ${topicData.name}`);
+            console.log(`         🎯 Created topic: ${topicData.name} (${topicData.difficulty})`);
           }
         }
       }
@@ -331,13 +382,27 @@ async function bulkUploadFromCSV() {
     const topicCount = await prisma.topic.count();
     const contentCount = await prisma.topicContent.count();
 
+    // Get difficulty distribution
+    const difficultyStats = await prisma.topic.groupBy({
+      by: ['difficulty'],
+      _count: {
+        difficulty: true
+      }
+    });
+
     console.log('\n📊 Final Summary:');
     console.log(`• Total Classes: ${classCount}`);
     console.log(`• Total Subjects: ${subjectCount}`);
     console.log(`• Total Chapters: ${chapterCount}`);
     console.log(`• Total Topics: ${topicCount}`);
     console.log(`• Total Content Items: ${contentCount}`);
-    console.log('\n🚀 Database is now populated with IFRAME-based educational content from CSV!');
+    
+    console.log('\n📈 Difficulty Distribution:');
+    difficultyStats.forEach(stat => {
+      console.log(`• ${stat.difficulty}: ${stat._count.difficulty} topics`);
+    });
+    
+    console.log('\n🚀 Database is now populated with IFRAME-based educational content from CSV with difficulty levels!');
 
   } catch (error) {
     console.error('❌ Error during bulk upload:', error);

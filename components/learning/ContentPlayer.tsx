@@ -213,20 +213,20 @@ export function ContentPlayer({
         {/* Hidden title for accessibility */}
         <DialogTitle className="sr-only">{topic.name}</DialogTitle>
         
-        {/* Minimal header with only essential controls */}
-        <div className="flex-shrink-0 px-2 sm:px-4 py-2 border-b border-gray-800 bg-gray-900 flex flex-row items-center justify-between">
-          <div className="flex items-center gap-1 sm:gap-2 text-white text-xs sm:text-sm min-w-0 flex-1">
+        {/* Header with better mobile visibility */}
+        <div className="flex-shrink-0 px-3 sm:px-4 py-3 sm:py-2 border-b border-gray-800 bg-gray-900 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2 text-white text-sm sm:text-sm min-w-0 flex-1">
             {getContentIcon()}
-            <span className="truncate">{topic.name}</span>
+            <span className="truncate font-medium">{topic.name}</span>
           </div>
           {/* Action Buttons */}
-          <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex gap-2 flex-shrink-0">
             {/* Complete/Incomplete Toggle Button */}
             {(hasCompleted || isCompleted) && onIncomplete ? (
               <Button 
                 onClick={handleIncomplete} 
                 size="sm" 
-                className="gap-1 text-white text-xs px-2 sm:px-3 py-1 bg-orange-600 hover:bg-orange-700"
+                className="gap-1 text-white text-xs sm:text-sm px-3 py-2 bg-orange-600 hover:bg-orange-700"
               >
                 <span className="hidden sm:inline">Mark Incomplete</span>
                 <span className="sm:hidden">↺</span>
@@ -236,7 +236,7 @@ export function ContentPlayer({
                 onClick={handleComplete} 
                 size="sm" 
                 disabled={hasCompleted || isCompleted}
-                className={`gap-1 text-white text-xs px-2 sm:px-3 py-1 ${
+                className={`gap-1 text-white text-xs sm:text-sm px-3 py-2 ${
                   hasCompleted || isCompleted 
                     ? 'bg-gray-600 cursor-not-allowed opacity-50' 
                     : 'bg-green-600 hover:bg-green-700'
@@ -251,7 +251,7 @@ export function ContentPlayer({
                 onClick={onNext} 
                 size="sm" 
                 disabled={false} // Always enabled for game-based learning
-                className={`gap-1 text-white text-xs px-2 sm:px-3 py-1 ${
+                className={`gap-1 text-white text-xs sm:text-sm px-3 py-2 ${
                   isDemo && isDemoLimitReached 
                     ? 'bg-orange-600 hover:bg-orange-700' 
                     : 'bg-blue-600 hover:bg-blue-700'
@@ -266,7 +266,7 @@ export function ContentPlayer({
                 </span>
               </Button>
             )}
-            <Button variant="outline" onClick={onClose} size="sm" className="border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white text-xs px-2 sm:px-3 py-1">
+            <Button variant="outline" onClick={onClose} size="sm" className="border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white text-xs sm:text-sm px-3 py-2">
               <span className="hidden sm:inline">Close</span>
               <span className="sm:hidden">×</span>
             </Button>
