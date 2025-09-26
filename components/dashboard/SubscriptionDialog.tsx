@@ -496,28 +496,30 @@ Would you like to refresh the page now?`;
       handleLoginRequired();
       return;
     }
-    
     if (selectedSubjects.size === 0) return;
     setIsProcessing(true);
-    
+
+    // Gather all selected subjects and sum their prices
+    const selectedSubjectIds = Array.from(selectedSubjects);
+    const selectedSubjectObjs = classData.subjects.filter(s => selectedSubjectIds.includes(s.id));
+    const totalAmount = selectedSubjectObjs.reduce((sum, s) => sum + (s.price || 7500), 0); // in paisa
+    const subjectNames = selectedSubjectObjs.map(s => s.name).join(', ');
+
     try {
-      // For now, handle one subject at a time
-      const subjectId = Array.from(selectedSubjects)[0];
-      const subject = classData.subjects.find(s => s.id === subjectId);
-      
+      // Call the payment API for multiple subjects (update backend if needed)
       const response = await fetch('/api/payment/subject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subjectId,
+          subjectIds: selectedSubjectIds,
           userId: user.id,
-          amount: subject?.price || 7500 // Use subject's own price in paisa
+          amount: totalAmount // total in paisa
         })
       });
-      
+
       const orderData = await response.json();
       if (!response.ok) throw new Error(orderData.error);
-      
+
       // Handle different payment gateways
       if (orderData.gateway === 'CASHFREE') {
         // Handle Cashfree payment using JS SDK
@@ -528,30 +530,22 @@ Would you like to refresh the page now?`;
             mode: orderData.environment === 'production' ? 'production' : 'sandbox'
           });
         }
-        
-        console.log('[info] Cashfree subject payment checkout with:', {
-          environment: orderData.environment,
-          hasPaymentSessionId: !!orderData.payment_session_id,
-          paymentSessionIdLength: orderData.payment_session_id?.length
-        });
-        
+
         const checkoutOptions = {
           paymentSessionId: orderData.payment_session_id,
           redirectTarget: "_modal",
         };
-        
+
         const result = await window.Cashfree.checkout(checkoutOptions);
-        
-        console.log('[info] Cashfree subject checkout result:', result);
-        
+
         if (result.error) {
           handlePaymentError(result.error, 'Cashfree subject subscription error or user cancelled');
           return; // Exit gracefully instead of throwing
         }
-        
+
         if (result.paymentDetails) {
           setIsProcessingPayment(true);
-          
+
           // Payment successful, verify on backend
           const verifyResponse = await fetch('/api/payment/verify', {
             method: 'POST',
@@ -563,36 +557,31 @@ Would you like to refresh the page now?`;
               paymentDetails: result.paymentDetails,
               metadata: {
                 type: 'subject_subscription',
-                subjectId: subjectId,
+                subjectIds: selectedSubjectIds,
                 userId: user.id
               }
             })
           });
-          
+
           if (verifyResponse.ok) {
-            // Clear processing state first
             setIsProcessingPayment(false);
-            
-            // Show success message instead of immediate redirect
             setPaymentSuccess({
               show: true,
               type: 'subject',
               details: {
                 classId: classData.id.toString(),
-                subjectId: subjectId,
-                amount: subject?.price || 7500,
-                subscriptionName: `${subject?.name} - Individual Subject Access`
+                subjectId: selectedSubjectIds.join(','),
+                amount: totalAmount,
+                subscriptionName: `${subjectNames} - Subject Access`
               }
             });
-            
             // Call onSubscribe immediately to update parent state
-            onSubscribe('subject', { classId: classData.id, subjectId, amount: subject?.price || 7500 });
-            
+            onSubscribe('subject', { classId: classData.id, subjectId: selectedSubjectIds.join(','), amount: totalAmount });
             // Handle redirect after success message is shown (if not disabled)
             if (!disableAutoRedirect) {
               setTimeout(() => {
-                router.push(`/dashboard/class/${classData.id}?subject=${subjectId}`);
-              }, 3500); // Wait for dialog to close first
+                router.push(`/dashboard/class/${classData.id}`);
+              }, 3500);
             }
           } else {
             setIsProcessingPayment(false);
@@ -600,89 +589,73 @@ Would you like to refresh the page now?`;
           }
         } else {
           // Handle unexpected Cashfree result (no paymentDetails or error)
-          console.warn('[warning] Unexpected Cashfree result:', result);
           handlePaymentError(new Error('Payment completed but no payment details received'), 'Cashfree unexpected result');
         }
-        
       } else {
         // Handle Razorpay payment (default)
         if (!window.Razorpay) {
           throw new Error('Payment system not available. Please refresh the page and try again.');
         }
-        
+
         // Initialize Razorpay payment
         const razorpay = new window.Razorpay({
-        key: orderData.keyId,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'Scio Labs',
-        description: `${subject?.name} - Individual Subject Access`,
-        order_id: orderData.orderId,
-        handler: async (paymentResponse: RazorpayResponse) => {
-          setIsProcessingPayment(true);
-          
-          // Verify payment
-          // Verify payment using unified verification
-          const verifyResponse = await fetch('/api/payment/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              paymentId: orderData.orderId,
-              razorpay_payment_id: paymentResponse.razorpay_payment_id,
-              razorpay_order_id: paymentResponse.razorpay_order_id,
-              razorpay_signature: paymentResponse.razorpay_signature,
-              metadata: {
-                type: 'subject_subscription',
-                subjectId: subjectId,
-                userId: user.id
-              }
-            })
-          });
-          
-          if (verifyResponse.ok) {
-            // Clear processing state first
-            setIsProcessingPayment(false);
-            
-            // Show success message instead of immediate redirect
-            setPaymentSuccess({
-              show: true,
-              type: 'subject',
-              details: {
-                classId: classData.id.toString(),
-                subjectId: subjectId,
-                amount: subject?.price || 7500,
-                subscriptionName: `${subject?.name} - Individual Subject Access`
-              }
+          key: orderData.keyId,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: 'Scio Labs',
+          description: `${subjectNames} - Subject Access`,
+          order_id: orderData.orderId,
+          handler: async (paymentResponse: RazorpayResponse) => {
+            setIsProcessingPayment(true);
+            // Verify payment using unified verification
+            const verifyResponse = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                paymentId: orderData.orderId,
+                razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                razorpay_order_id: paymentResponse.razorpay_order_id,
+                razorpay_signature: paymentResponse.razorpay_signature,
+                metadata: {
+                  type: 'subject_subscription',
+                  subjectIds: selectedSubjectIds,
+                  userId: user.id
+                }
+              })
             });
-            
-            // Call onSubscribe immediately to update parent state
-            onSubscribe('subject', { classId: classData.id, subjectId, amount: subject?.price || 7500 });
-            
-            // Handle redirect after success message is shown (if not disabled)
-            if (!disableAutoRedirect) {
-              setTimeout(() => {
-                router.push(`/dashboard/class/${classData.id}?subject=${subjectId}`);
-              }, 3500); // Wait for dialog to close first
+            if (verifyResponse.ok) {
+              setIsProcessingPayment(false);
+              setPaymentSuccess({
+                show: true,
+                type: 'subject',
+                details: {
+                  classId: classData.id.toString(),
+                  subjectId: selectedSubjectIds.join(','),
+                  amount: totalAmount,
+                  subscriptionName: `${subjectNames} - Subject Access`
+                }
+              });
+              onSubscribe('subject', { classId: classData.id, subjectId: selectedSubjectIds.join(','), amount: totalAmount });
+              if (!disableAutoRedirect) {
+                setTimeout(() => {
+                  router.push(`/dashboard/class/${classData.id}`);
+                }, 3500);
+              }
+            } else {
+              setIsProcessingPayment(false);
             }
-          } else {
-            setIsProcessingPayment(false);
-          }
-        },
-        prefill: {
-          name: user.name || user.email?.split('@')[0] || '',
-          email: user.email || ''
-        },
-        theme: { color: '#8B5CF6' }
-      });
-      
-      razorpay.open();
-      } // Close else block for Razorpay payment
+          },
+          prefill: {
+            name: user.name || user.email?.split('@')[0] || '',
+            email: user.email || ''
+          },
+          theme: { color: '#8B5CF6' }
+        });
+        razorpay.open();
+      }
     } catch (error) {
       console.error('Subject payment error:', error);
-      
-      // Provide more helpful error messages based on error type
       let context = 'subject subscription';
-      
       if (error instanceof Error) {
         if (error.message.includes('Network error') || error.message.includes('fetch failed')) {
           context = 'Network connection issue. Please check your internet connection and try again.';
@@ -696,7 +669,6 @@ Would you like to refresh the page now?`;
           context = 'Payment gateway configuration error. Please contact support.';
         }
       }
-      
       handlePaymentError(error, context);
     } finally {
       setIsProcessing(false);
