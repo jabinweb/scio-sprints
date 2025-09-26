@@ -16,6 +16,7 @@ import { Loader2 } from "lucide-react";
 interface FormData {
   name: string;
   email: string;
+  phone: string | number;
   school: string;
   role: string;
 }
@@ -24,6 +25,7 @@ export function SignupForm({ open, onOpenChange, initialRole }: { open: boolean;
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
+    phone: '',
     school: '',
     role: initialRole || ''
   });
@@ -51,7 +53,7 @@ export function SignupForm({ open, onOpenChange, initialRole }: { open: boolean;
       setTimeout(() => {
         onOpenChange(false);
         setSuccess(false);
-        setFormData({ name: '', email: '', school: '', role: '' });
+        setFormData({ name: '', email: '', phone: '', school: '', role: '' });
       }, 3000);
 
     } catch (err) {
@@ -71,10 +73,10 @@ export function SignupForm({ open, onOpenChange, initialRole }: { open: boolean;
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">
-            We Will Get Back
+            We will get to you!
           </DialogTitle>
           <DialogDescription>
-            Fill in your details to receive immediate demo access.
+            Fill in your details to receive and a callback for an extended demo.
           </DialogDescription>
         </DialogHeader>
 
@@ -99,6 +101,18 @@ export function SignupForm({ open, onOpenChange, initialRole }: { open: boolean;
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               placeholder="your@email.com"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Phone Number</Label>
+            <Input
+              id="phone"
+              type="phone"
+              required
+              value={formData.phone}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              placeholder="9999999999"
             />
           </div>
 
