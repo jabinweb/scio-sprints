@@ -209,12 +209,12 @@ export function ContentPlayer({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 flex flex-col bg-gray-900 text-white border-gray-800 [&>button]:hidden">
+      <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 flex flex-col bg-gray-900 text-white border-gray-800 [&>button]:hidden fixed inset-0 z-[100]">
         {/* Hidden title for accessibility */}
         <DialogTitle className="sr-only">{topic.name}</DialogTitle>
         
         {/* Header with better mobile visibility */}
-        <div className="flex-shrink-0 px-3 sm:px-4 py-3 sm:py-2 border-b border-gray-800 bg-gray-900 flex flex-row items-center justify-between">
+        <div className="flex-shrink-0 px-3 sm:px-4 py-3 sm:py-2 border-b border-gray-800 bg-gray-900 flex flex-row items-center justify-between z-20 min-h-[52px] relative">
           <div className="flex items-center gap-2 text-white text-sm sm:text-sm min-w-0 flex-1">
             {getContentIcon()}
             <span className="truncate font-medium">{topic.name}</span>
@@ -275,7 +275,7 @@ export function ContentPlayer({
         
         <div className="flex-1 min-h-0">
           {/* Content Display Area - Maximum space */}
-          <div className="h-full bg-gray-900 overflow-hidden flex items-center justify-center">
+          <div className="h-full bg-gray-900 overflow-hidden">
             {(() => {
               console.log('ContentPlayer: Current state:', {
                 isOpen,
@@ -301,7 +301,7 @@ export function ContentPlayer({
                 <p className="text-gray-200">{topicContent.textContent}</p>
               </div>
             ) : topicContent?.contentType?.toLowerCase() === 'video' && topicContent.videoUrl ? (
-              <div className="w-full h-full max-w-full bg-black overflow-hidden flex items-center justify-center">
+              <div className="w-full h-full max-w-full bg-black overflow-hidden">
                 {/* Handle different video URL formats */}
                 {topicContent.videoUrl.includes('youtube.com') || topicContent.videoUrl.includes('youtu.be') ? (
                   <iframe 
@@ -354,7 +354,7 @@ export function ContentPlayer({
                 )}
               </div>
             ) : (topicContent?.contentType?.toLowerCase() === 'iframe' || topicContent?.contentType === 'IFRAME') && topicContent.iframeHtml ? (
-              <div className="w-full h-full bg-gray-900 overflow-hidden">
+              <div className="w-full h-full bg-gray-900 overflow-hidden flex flex-col">
                 <div 
                   dangerouslySetInnerHTML={{ 
                     __html: topicContent.iframeHtml
@@ -370,7 +370,7 @@ export function ContentPlayer({
                 />
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center p-4 sm:p-8">
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 sm:p-8">
                 <div className="mb-4 p-3 sm:p-4 bg-gray-800 rounded-full">
                   {getContentIcon()}
                 </div>
