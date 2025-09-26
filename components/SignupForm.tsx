@@ -19,6 +19,7 @@ interface FormData {
   phone: string | number;
   school: string;
   role: string;
+  message: string;
 }
 
 export function SignupForm({ open, onOpenChange, initialRole }: { open: boolean; onOpenChange: (open: boolean) => void; initialRole?: string }) {
@@ -27,7 +28,8 @@ export function SignupForm({ open, onOpenChange, initialRole }: { open: boolean;
     email: '',
     phone: '',
     school: '',
-    role: initialRole || ''
+    role: initialRole || '',
+    message: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -53,7 +55,7 @@ export function SignupForm({ open, onOpenChange, initialRole }: { open: boolean;
       setTimeout(() => {
         onOpenChange(false);
         setSuccess(false);
-        setFormData({ name: '', email: '', phone: '', school: '', role: '' });
+        setFormData({ name: '', email: '', phone: '', school: '', role: '', message: '' });
       }, 3000);
 
     } catch (err) {
@@ -80,7 +82,18 @@ export function SignupForm({ open, onOpenChange, initialRole }: { open: boolean;
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+  <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="message">Message</Label>
+            <textarea
+              id="message"
+              required
+              value={formData.message}
+              onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+              placeholder="How can we help you?"
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
