@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { sendEmail } from '@/lib/mail';
+import { generateEmailContent } from '@/lib/email';
+import { notifyAdminNewSubscription } from '@/lib/admin-notifications';
 
 export async function POST(req: Request) {
   try {
@@ -63,6 +66,7 @@ export async function POST(req: Request) {
       }
 
       // Create class-specific subscription using Prisma
+      const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year access
       try {
         await prisma.subscription.create({
           data: {
@@ -74,9 +78,62 @@ export async function POST(req: Request) {
             amount: classData.price,
             currency: 'INR',
             startDate: new Date(),
-            endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year access
+            endDate: endDate
           }
         });
+
+        // Send welcome email after successful subscription creation
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { email: true, displayName: true }
+          });
+
+          if (user?.email) {
+            const welcomeEmailContent = generateEmailContent('new_subscription', {
+              userName: user.displayName || user.email.split('@')[0],
+              className: classData.name,
+              subscriptionType: 'Class Access',
+              endDate: endDate.toISOString(),
+              amount: classData.price || 0
+            });
+
+            await sendEmail({
+              to: user.email,
+              subject: welcomeEmailContent.subject,
+              html: welcomeEmailContent.html,
+              text: welcomeEmailContent.text
+            });
+
+            // Send payment receipt email
+            const receiptEmailContent = generateEmailContent('payment_receipt', {
+              userName: user.displayName || user.email.split('@')[0],
+              paymentId: razorpay_payment_id,
+              orderId: razorpay_order_id,
+              subscriptionName: `${classData.name} - Class Access`,
+              amount: classData.price || 0,
+              paymentDate: new Date().toISOString()
+            });
+
+            await sendEmail({
+              to: user.email,
+              subject: receiptEmailContent.subject,
+              html: receiptEmailContent.html,
+              text: receiptEmailContent.text
+            });
+
+            // Send admin notification for new subscription
+            await notifyAdminNewSubscription({
+              userName: user.displayName || user.email.split('@')[0],
+              userEmail: user.email,
+              subscriptionName: `${classData.name} - Class Access`,
+              amount: classData.price || 0
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending welcome/receipt emails:', emailError);
+          // Don't fail the payment verification if email fails
+        }
       } catch (subscriptionError) {
         console.error('Error creating class subscription:', subscriptionError);
         return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyRazorpayPayment, verifyCashfreePayment } from '@/lib/payment-service';
+import { sendEmail } from '@/lib/mail';
+import { generateEmailContent } from '@/lib/email';
+import { notifyAdminNewSubscription } from '@/lib/admin-notifications';
 
 export async function POST(req: Request) {
   try {
@@ -57,6 +60,7 @@ export async function POST(req: Request) {
           });
 
           if (!existingClassSubscription) {
+            const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
             await prisma.subscription.create({
               data: {
                 userId: metadata.userId,
@@ -67,9 +71,67 @@ export async function POST(req: Request) {
                 amount: payment.amount,
                 currency: payment.currency,
                 startDate: new Date(),
-                endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+                endDate: endDate
               }
             });
+
+            // Send welcome email after successful subscription creation
+            try {
+              const user = await prisma.user.findUnique({
+                where: { id: metadata.userId },
+                select: { email: true, displayName: true }
+              });
+
+              const classData = await prisma.class.findUnique({
+                where: { id: metadata.classId },
+                select: { name: true }
+              });
+
+              if (user?.email && classData) {
+                const welcomeEmailContent = generateEmailContent('new_subscription', {
+                  userName: user.displayName || user.email.split('@')[0],
+                  className: classData.name,
+                  subscriptionType: 'Class Access',
+                  endDate: endDate.toISOString(),
+                  amount: payment.amount || 0
+                });
+
+                await sendEmail({
+                  to: user.email,
+                  subject: welcomeEmailContent.subject,
+                  html: welcomeEmailContent.html,
+                  text: welcomeEmailContent.text
+                });
+
+                // Send payment receipt email
+                const receiptEmailContent = generateEmailContent('payment_receipt', {
+                  userName: user.displayName || user.email.split('@')[0],
+                  paymentId: body.razorpay_payment_id || body.orderId || '',
+                  orderId: body.razorpay_order_id || body.orderId || '',
+                  subscriptionName: `${classData.name} - Class Access`,
+                  amount: payment.amount || 0,
+                  paymentDate: new Date().toISOString()
+                });
+
+                await sendEmail({
+                  to: user.email,
+                  subject: receiptEmailContent.subject,
+                  html: receiptEmailContent.html,
+                  text: receiptEmailContent.text
+                });
+
+                // Send admin notification for new subscription
+                await notifyAdminNewSubscription({
+                  userName: user.displayName || user.email.split('@')[0],
+                  userEmail: user.email,
+                  subscriptionName: `${classData.name} - Class Access`,
+                  amount: payment.amount || 0
+                });
+              }
+            } catch (emailError) {
+              console.error('Error sending welcome/receipt emails:', emailError);
+              // Don't fail the payment verification if email fails
+            }
           }
         } else if (metadata.type === 'subject_subscription') {
           // Create subject subscription
@@ -83,6 +145,7 @@ export async function POST(req: Request) {
           });
 
           if (!existingSubjectSubscription) {
+            const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
             await prisma.subscription.create({
               data: {
                 userId: metadata.userId,
@@ -92,9 +155,68 @@ export async function POST(req: Request) {
                 amount: payment.amount,
                 currency: payment.currency,
                 startDate: new Date(),
-                endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+                endDate: endDate
               }
             });
+
+            // Send welcome email after successful subscription creation
+            try {
+              const user = await prisma.user.findUnique({
+                where: { id: metadata.userId },
+                select: { email: true, displayName: true }
+              });
+
+              const subject = await prisma.subject.findUnique({
+                where: { id: metadata.subjectId },
+                select: { name: true, class: { select: { name: true } } }
+              });
+
+              if (user?.email && subject) {
+                const welcomeEmailContent = generateEmailContent('new_subscription', {
+                  userName: user.displayName || user.email.split('@')[0],
+                  subjectName: subject.name,
+                  className: subject.class.name,
+                  subscriptionType: 'Subject Access',
+                  endDate: endDate.toISOString(),
+                  amount: payment.amount || 0
+                });
+
+                await sendEmail({
+                  to: user.email,
+                  subject: welcomeEmailContent.subject,
+                  html: welcomeEmailContent.html,
+                  text: welcomeEmailContent.text
+                });
+
+                // Send payment receipt email
+                const receiptEmailContent = generateEmailContent('payment_receipt', {
+                  userName: user.displayName || user.email.split('@')[0],
+                  paymentId: body.razorpay_payment_id || body.orderId || '',
+                  orderId: body.razorpay_order_id || body.orderId || '',
+                  subscriptionName: `${subject.name} - Subject Access`,
+                  amount: payment.amount || 0,
+                  paymentDate: new Date().toISOString()
+                });
+
+                await sendEmail({
+                  to: user.email,
+                  subject: receiptEmailContent.subject,
+                  html: receiptEmailContent.html,
+                  text: receiptEmailContent.text
+                });
+
+                // Send admin notification for new subscription
+                await notifyAdminNewSubscription({
+                  userName: user.displayName || user.email.split('@')[0],
+                  userEmail: user.email,
+                  subscriptionName: `${subject.name} - Subject Access`,
+                  amount: payment.amount || 0
+                });
+              }
+            } catch (emailError) {
+              console.error('Error sending welcome/receipt emails:', emailError);
+              // Don't fail the payment verification if email fails
+            }
           }
         }
       } catch (subscriptionError) {

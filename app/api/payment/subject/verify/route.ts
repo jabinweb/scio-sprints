@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyRazorpayPayment, verifyCashfreePayment } from '@/lib/payment-service';
+import { sendEmail } from '@/lib/mail';
+import { generateEmailContent } from '@/lib/email';
+import { notifyAdminNewSubscription } from '@/lib/admin-notifications';
 
 interface VerifyRequest {
   // Razorpay fields
@@ -117,7 +120,7 @@ export async function POST(request: Request) {
       endDate.setFullYear(endDate.getFullYear() + 1); // 1 year subscription
 
       try {
-        const subscription = await prisma.subscription.create({
+        await prisma.subscription.create({
           data: {
             userId,
             classId: subject.classId,
@@ -132,9 +135,66 @@ export async function POST(request: Request) {
           }
         });
 
+        // Send welcome email after successful subscription creation
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { email: true, displayName: true }
+          });
+
+          if (user?.email) {
+            // Prepare payment details
+            const paymentId = body.razorpay_payment_id || body.paymentId;
+            const orderId = body.razorpay_order_id || body.orderId;
+
+            const welcomeEmailContent = generateEmailContent('new_subscription', {
+              userName: user.displayName || user.email.split('@')[0],
+              subjectName: subject.name,
+              className: subject.class.name,
+              subscriptionType: 'Subject Access',
+              endDate: endDate.toISOString(),
+              amount: subjectPrice
+            });
+
+            await sendEmail({
+              to: user.email,
+              subject: welcomeEmailContent.subject,
+              html: welcomeEmailContent.html,
+              text: welcomeEmailContent.text
+            });
+
+            // Send payment receipt email
+            const receiptEmailContent = generateEmailContent('payment_receipt', {
+              userName: user.displayName || user.email.split('@')[0],
+              paymentId: paymentId || '',
+              orderId: orderId || '',
+              subscriptionName: `${subject.name} - Subject Access`,
+              amount: subjectPrice,
+              paymentDate: new Date().toISOString()
+            });
+
+            await sendEmail({
+              to: user.email,
+              subject: receiptEmailContent.subject,
+              html: receiptEmailContent.html,
+              text: receiptEmailContent.text
+            });
+
+            // Send admin notification for new subscription
+            await notifyAdminNewSubscription({
+              userName: user.displayName || user.email.split('@')[0],
+              userEmail: user.email,
+              subscriptionName: `${subject.name} - Subject Access`,
+              amount: subjectPrice
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending welcome/receipt emails:', emailError);
+          // Don't fail the payment verification if email fails
+        }
+
         return NextResponse.json({
           success: true,
-          subscription,
           payment: {
             id: payment.id,
             status: payment.status,

@@ -140,20 +140,64 @@ export async function sendDemoEmail(data: {
   school: string;
   role: string;
 }) {
-  // Mail sending is disabled - just log the data for now
-  console.log('Demo signup received:', {
-    name: data.name,
-    email: data.email,
-    school: data.school,
-    role: data.role,
-    timestamp: new Date().toISOString()
-  });
+  try {
+    console.log('Demo signup received:', {
+      name: data.name,
+      email: data.email,
+      school: data.school,
+      role: data.role,
+      timestamp: new Date().toISOString()
+    });
 
-  // Return a resolved promise to maintain the same interface
-  return Promise.resolve({
-    messageId: 'demo-disabled',
-    response: 'Email sending disabled'
-  });
+    // Import email template function
+    const { generateEmailContent } = await import('./email');
+    
+    // Generate demo request email content
+    const emailContent = generateEmailContent('demo_request', {
+      name: data.name,
+      email: data.email,
+      school: data.school,
+      role: data.role
+    });
+
+    // Send confirmation email to the user
+    const result = await sendEmail({
+      to: data.email,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text
+    });
+
+    // Also send notification to admin (optional)
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || 'info@sciolabs.in';
+      await sendEmail({
+        to: adminEmail,
+        subject: `New Demo Request from ${data.name} (${data.school})`,
+        html: `
+          <h2>New Demo Request</h2>
+          <p><strong>Name:</strong> ${data.name}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>School:</strong> ${data.school}</p>
+          <p><strong>Role:</strong> ${data.role}</p>
+          <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+        `,
+        text: `New Demo Request\n\nName: ${data.name}\nEmail: ${data.email}\nSchool: ${data.school}\nRole: ${data.role}\nTimestamp: ${new Date().toLocaleString()}`
+      });
+    } catch (adminEmailError) {
+      console.error('Failed to send admin notification for demo request:', adminEmailError);
+      // Don't fail the main request if admin email fails
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error sending demo email:', error);
+    // Fallback: just log if email fails but don't break the demo request
+    return Promise.resolve({
+      messageId: 'fallback-demo',
+      response: 'Demo logged, email failed'
+    });
+  }
 }
 
 export async function sendEmail(options: {

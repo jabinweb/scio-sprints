@@ -6,16 +6,20 @@ import { Users, Clock, Play, ChevronRight, Crown } from "lucide-react";
 
 // Helper to get a unique icon for each class
 function getClassIcon(className: string) {
-  switch (className) {
-    case 'Class 4':
+  // Support names like 'Class 4', 'CBSE : Class 4', etc.
+  // Extract the class number from the string
+  const match = className.match(/Class\s*(\d+)/);
+  const classNum = match ? match[1] : null;
+  switch (classNum) {
+    case '4':
       return '🦉';
-    case 'Class 5':
+    case '5':
       return '🦁';
-    case 'Class 6':
+    case '6':
       return '🐯';
-    case 'Class 7':
+    case '7':
       return '🐬';
-    case 'Class 8':
+    case '8':
       return '🦅';
     default:
       return '📚';

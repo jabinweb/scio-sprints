@@ -1,0 +1,410 @@
+================================================================================
+SCIO SPRINTS EMAIL TEMPLATES - PLAIN TEXT CONTENT
+================================================================================
+Generated on: September 25, 2025
+Source: lib/email.ts
+
+This file contains all email templates used in the Scio Sprints application.
+Each template shows the subject line and plain text content.
+
+================================================================================
+
+1. EXPIRY WARNING EMAIL
+================================================================================
+Function: generateExpiryWarningEmail(userName, className, daysLeft, endDate)
+Purpose: Warn users when their subscription is about to expire
+
+Subject: ⚠️ Subscription Expiry Warning - [className]
+
+Hi [userName],
+
+Your subscription to [className] will expire in [daysLeft] day(s).
+Expiry Date: [formatted endDate]
+
+Don't let your learning journey come to a halt! Renew your subscription to continue accessing:
+- Interactive learning content  
+- Practice exercises and quizzes
+- Progress tracking
+- Expert support
+
+[Renew Subscription Now Button]
+
+Need help? Contact our support team at support@sciolabs.in
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+2. GRACE PERIOD EMAIL
+================================================================================
+Function: generateGracePeriodEmail(userName, className, endDate)
+Purpose: Notify users they're in grace period after expiry
+
+Subject: 🕐 Grace Period Active - Renew [className] Now!
+
+Hi [userName],
+
+Your [className] subscription has expired but you're in a 7-day grace period.
+Original Expiry: [formatted endDate]
+
+You still have limited access, but to restore full functionality and continue your learning:
+
+[Renew Now - Don't Lose Access! Button]
+
+After the grace period, you'll lose access to all premium content.
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+3. EXPIRED EMAIL
+================================================================================
+Function: generateExpiredEmail(userName, className)
+Purpose: Notify users their subscription has fully expired
+
+Subject: 🚫 Subscription Expired - [className]
+
+Hi [userName],
+
+Your subscription to [className] has expired and the grace period has ended.
+
+You no longer have access to premium content. To restore your access and continue learning:
+
+[Reactivate Subscription Button]
+
+What you're missing:
+- Full course content
+- Interactive exercises  
+- Progress tracking
+- Certificate eligibility
+
+We'd love to have you back! Reactivate today and pick up where you left off.
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+4. RENEWAL REMINDER EMAIL  
+================================================================================
+Function: generateRenewalReminderEmail(userName, className)
+Purpose: Remind users to renew their subscription
+
+Subject: 🔄 Time to Renew Your [className] Subscription
+
+Hi [userName],
+
+It's time to renew your subscription to [className]!
+
+Your subscription needs renewal to continue your learning journey without interruption.
+
+[Renew Subscription Button]
+
+Why renew?
+- Keep your learning streak alive
+- Access new content updates
+- Maintain your progress
+- Continue towards your goals
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+5. SUBSCRIPTION RENEWED EMAIL
+================================================================================
+Function: generateSubscriptionRenewedEmail(userName, className, newEndDate, amount)
+Purpose: Confirm successful subscription renewal
+
+Subject: ✅ Subscription Renewed Successfully - [className]
+
+Hi [userName],
+
+Great news! Your subscription to [className] has been renewed successfully.
+
+Renewal Details:
+- Amount Paid: ₹[amount/100]
+- New Expiry Date: [formatted newEndDate]
+- Status: Active
+
+[Continue Learning Button]
+
+Thank you for continuing your learning journey with us!
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+6. AUTO-RENEWAL FAILED EMAIL
+================================================================================
+Function: generateAutoRenewalFailedEmail(userName, className)
+Purpose: Notify users when auto-renewal fails
+
+Subject: ❌ Auto-Renewal Failed - [className]
+
+Hi [userName],
+
+We were unable to automatically renew your [className] subscription.
+
+Your subscription will expire soon. To avoid interruption to your learning:
+
+[Update Payment & Renew Button]
+
+Common reasons for failed renewals:
+- Expired payment method
+- Insufficient funds
+- Bank declined transaction
+
+Update your payment method now to continue learning uninterrupted.
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+7. WELCOME EMAIL (NEW SUBSCRIPTION)
+================================================================================
+Function: generateWelcomeEmail(userName, subscriptionType, className, subjectName, endDate, amount)
+Purpose: Welcome new subscribers
+
+Subject: 🎉 Welcome to [className] - Your subscription is active!
+
+Hi [userName],
+
+Welcome to Scio Labs! Your subscription to [className] is now active.
+
+Subscription Details:
+- Type: [subscriptionType]
+- Subject: [subjectName] (if applicable)
+- Valid until: [formatted endDate]
+- Amount Paid: ₹[amount/100]
+
+What's Next?
+1. Explore your dashboard
+2. Start with recommended topics
+3. Track your progress
+4. Join our community
+
+[Start Learning Button]
+
+Welcome aboard! We're excited to be part of your learning journey.
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+8. PAYMENT RECEIPT EMAIL
+================================================================================
+Function: generatePaymentReceiptEmail(userName, paymentId, orderId, subscriptionName, amount, paymentDate)
+Purpose: Provide payment confirmation and receipt
+
+Subject: 💳 Payment Receipt - [subscriptionName]
+
+Hi [userName],
+
+Payment Receipt
+
+Payment Details:
+- Payment ID: [paymentId]
+- Order ID: [orderId]
+- Amount: ₹[amount/100]
+- Date: [formatted paymentDate]
+- Description: [subscriptionName]
+
+Your payment has been processed successfully. Your subscription is now active.
+
+Thank you for your payment!
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+9. DEMO REQUEST EMAIL
+================================================================================
+Function: generateDemoRequestEmail(name, email, school, role)
+Purpose: Confirm demo request submission
+
+Subject: 🎯 Demo request received - We'll be in touch soon!
+
+Hi [name],
+
+Thank you for your interest in Scio Labs!
+
+We've received your demo request and our team will contact you within 24 hours.
+
+Your Details:
+- Name: [name]
+- Email: [email]
+- School: [school]
+- Role: [role]
+
+What to expect:
+- Personalized demo session
+- Overview of our learning platform
+- Discussion of your specific needs
+- Custom pricing options
+
+We're excited to show you how Scio Labs can transform your learning experience!
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+10. MANUAL RENEWAL EMAIL
+================================================================================
+Function: generateManualRenewalEmail(userName, className, newEndDate, amount, paymentId)
+Purpose: Confirm manual subscription renewal by admin
+
+Subject: 🔄 Your [className] subscription renewed successfully
+
+Hi [userName],
+
+Great news! Your subscription to [className] has been renewed successfully by our admin team.
+
+Renewal Details:
+- Amount Paid: ₹[amount/100]
+- Payment ID: [paymentId]
+- New Expiry Date: [formatted newEndDate]
+
+💡 Pro Tip: Enable auto-renewal in your account settings to never miss out on your learning progress!
+
+[Continue Learning Button]
+
+Best regards,
+The Scio Labs Team
+
+================================================================================
+
+11. ADMIN NEW SUBSCRIPTION EMAIL
+================================================================================
+Function: generateAdminNewSubscriptionEmail(userName, userEmail, subscriptionName, amount)
+Purpose: Notify admin of new subscription (revenue alert)
+
+Subject: 🚀 New Subscription Alert - [subscriptionName]
+
+New Subscription Created
+
+Customer Information:
+- Name: [userName]
+- Email: [userEmail]
+- Time: [current timestamp]
+
+Subscription Details:
+- Subscription: [subscriptionName]
+- Amount: ₹[amount/100]
+- Status: Active
+
+[View in Admin Panel Button]
+
+Admin Notification System - Scio Labs
+
+================================================================================
+
+12. ADMIN PAYMENT FAILED EMAIL
+================================================================================
+Function: generateAdminPaymentFailedEmail(userName, userEmail, paymentId, failureReason, amount)
+Purpose: Alert admin of payment failures
+
+Subject: 🚨 Payment Failure Alert - [userName]
+
+Payment Failed - Requires Immediate Attention
+
+Customer Information:
+- Name: [userName]
+- Email: [userEmail]
+- Time: [current timestamp]
+
+Payment Details:
+- Payment ID: [paymentId]
+- Amount: ₹[amount/100]
+- Failure Reason: [failureReason]
+
+Action Required: Please review this payment failure and contact the customer if necessary.
+
+[View Payment Details Button]
+
+Admin Alert System - Scio Labs
+
+================================================================================
+
+13. ADMIN SYSTEM ERROR EMAIL
+================================================================================
+Function: generateAdminSystemErrorEmail(errorType, errorMessage, location)
+Purpose: Alert admin of critical system errors
+
+Subject: 🔥 System Error Alert - [errorType]
+
+System Error Detected - Critical System Alert
+
+System Error Information:
+- Error Type: [errorType]
+- Location: [location]
+- Time: [current timestamp]
+
+Error Message:
+[errorMessage]
+
+⚠️ URGENT: This error requires immediate investigation to prevent service disruption.
+
+[Access Admin Panel Button]
+
+System Monitoring Alert - Scio Labs
+
+================================================================================
+
+EMAIL TEMPLATE TYPES AND USAGE
+================================================================================
+
+User-Facing Emails:
+1. Expiry Warning - Subscription about to expire
+2. Grace Period - Subscription expired but in grace period
+3. Expired - Subscription fully expired
+4. Renewal Reminder - Time to renew
+5. Subscription Renewed - Renewal confirmation
+6. Auto-Renewal Failed - Auto-renewal failure notice
+7. Welcome - New subscription welcome
+8. Payment Receipt - Payment confirmation
+9. Demo Request - Demo request confirmation
+10. Manual Renewal - Admin-initiated renewal
+
+Admin Notification Emails:
+11. New Subscription - Revenue/subscription alert
+12. Payment Failed - Payment failure alert
+13. System Error - Critical system error alert
+
+================================================================================
+
+VARIABLE PLACEHOLDERS
+================================================================================
+
+Common Variables:
+- [userName] - User's display name
+- [userEmail] - User's email address
+- [className] - Name of the class/course
+- [subjectName] - Name of the subject
+- [subscriptionName] - Full subscription name
+- [amount] - Amount in paise (divide by 100 for rupees)
+- [paymentId] - Payment gateway payment ID
+- [orderId] - Payment gateway order ID
+- [endDate] - Subscription end date (ISO string)
+- [daysLeft] - Days until expiry
+- [failureReason] - Reason for payment failure
+- [errorType] - Type of system error
+- [errorMessage] - Error message details
+- [location] - Location where error occurred
+
+Formatting Notes:
+- Amounts are stored in paise and converted to rupees for display
+- Dates are formatted using toLocaleDateString() with locale options
+- All emails include proper HTML structure with inline CSS
+- Plain text versions are also generated for each email type
+
+================================================================================
+END OF EMAIL TEMPLATES
+================================================================================
