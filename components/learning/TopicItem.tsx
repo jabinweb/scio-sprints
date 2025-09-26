@@ -68,6 +68,7 @@ export function TopicItem({
   onLockedClick
 }: TopicItemProps) {
   const contentType = topic.content?.contentType;
+  // Ensure we use the difficulty from the DB (topic.difficulty)
   const difficultyConfig = getDifficultyConfig(topic.difficulty);
   
   const handleClick = () => {

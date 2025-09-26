@@ -44,6 +44,7 @@ export async function GET(
                     duration: true,
                     orderIndex: true,
                     description: true,
+                    difficulty: true,
                     // Exclude content - this protects the data
                   },
                   orderBy: { orderIndex: 'asc' },

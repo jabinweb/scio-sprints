@@ -21,7 +21,7 @@ Hi [userName],
 Your subscription to [className] will expire in [daysLeft] day(s).
 Expiry Date: [formatted endDate]
 
-Don't let your learning journey come to a halt! Renew your subscription to continue accessing:
+Don't let your learning journey come to a halt! Renew your subscription for the next class:
 - Interactive learning content  
 - Practice exercises and quizzes
 - Progress tracking
@@ -29,33 +29,10 @@ Don't let your learning journey come to a halt! Renew your subscription to conti
 
 [Renew Subscription Now Button]
 
-Need help? Contact our support team at support@sciolabs.in
+Need help? Contact our support team at info@sciolabs.in
 
 Best regards,
-The Scio Labs Team
-
-================================================================================
-
-2. GRACE PERIOD EMAIL
-================================================================================
-Function: generateGracePeriodEmail(userName, className, endDate)
-Purpose: Notify users they're in grace period after expiry
-
-Subject: 🕐 Grace Period Active - Renew [className] Now!
-
-Hi [userName],
-
-Your [className] subscription has expired but you're in a 7-day grace period.
-Original Expiry: [formatted endDate]
-
-You still have limited access, but to restore full functionality and continue your learning:
-
-[Renew Now - Don't Lose Access! Button]
-
-After the grace period, you'll lose access to all premium content.
-
-Best regards,
-The Scio Labs Team
+Team ScioSprints
 
 ================================================================================
 
@@ -68,100 +45,14 @@ Subject: 🚫 Subscription Expired - [className]
 
 Hi [userName],
 
-Your subscription to [className] has expired and the grace period has ended.
+Your subscription to [className] has expired. You no longer have access to premium content. 
 
-You no longer have access to premium content. To restore your access and continue learning:
-
-[Reactivate Subscription Button]
-
-What you're missing:
-- Full course content
-- Interactive exercises  
-- Progress tracking
-- Certificate eligibility
-
-We'd love to have you back! Reactivate today and pick up where you left off.
+You can subscribe to another class using the link below:
+https://sprints.sciolabs.in/
 
 Best regards,
-The Scio Labs Team
+Team ScioSprints
 
-================================================================================
-
-4. RENEWAL REMINDER EMAIL  
-================================================================================
-Function: generateRenewalReminderEmail(userName, className)
-Purpose: Remind users to renew their subscription
-
-Subject: 🔄 Time to Renew Your [className] Subscription
-
-Hi [userName],
-
-It's time to renew your subscription to [className]!
-
-Your subscription needs renewal to continue your learning journey without interruption.
-
-[Renew Subscription Button]
-
-Why renew?
-- Keep your learning streak alive
-- Access new content updates
-- Maintain your progress
-- Continue towards your goals
-
-Best regards,
-The Scio Labs Team
-
-================================================================================
-
-5. SUBSCRIPTION RENEWED EMAIL
-================================================================================
-Function: generateSubscriptionRenewedEmail(userName, className, newEndDate, amount)
-Purpose: Confirm successful subscription renewal
-
-Subject: ✅ Subscription Renewed Successfully - [className]
-
-Hi [userName],
-
-Great news! Your subscription to [className] has been renewed successfully.
-
-Renewal Details:
-- Amount Paid: ₹[amount/100]
-- New Expiry Date: [formatted newEndDate]
-- Status: Active
-
-[Continue Learning Button]
-
-Thank you for continuing your learning journey with us!
-
-Best regards,
-The Scio Labs Team
-
-================================================================================
-
-6. AUTO-RENEWAL FAILED EMAIL
-================================================================================
-Function: generateAutoRenewalFailedEmail(userName, className)
-Purpose: Notify users when auto-renewal fails
-
-Subject: ❌ Auto-Renewal Failed - [className]
-
-Hi [userName],
-
-We were unable to automatically renew your [className] subscription.
-
-Your subscription will expire soon. To avoid interruption to your learning:
-
-[Update Payment & Renew Button]
-
-Common reasons for failed renewals:
-- Expired payment method
-- Insufficient funds
-- Bank declined transaction
-
-Update your payment method now to continue learning uninterrupted.
-
-Best regards,
-The Scio Labs Team
 
 ================================================================================
 
@@ -174,7 +65,9 @@ Subject: 🎉 Welcome to [className] - Your subscription is active!
 
 Hi [userName],
 
-Welcome to Scio Labs! Your subscription to [className] is now active.
+Welcome to ScioSprints! 
+
+Your subscription to [className] is now active.
 
 Subscription Details:
 - Type: [subscriptionType]
@@ -183,18 +76,16 @@ Subscription Details:
 - Amount Paid: ₹[amount/100]
 
 What's Next?
-1. Explore your dashboard
-2. Start with recommended topics
-3. Track your progress
-4. Join our community
+1. Help your child get on the dashboard
+2. Start with any subject and chapter of your choice!
+3. Track your child's progress on our LMS
 
 [Start Learning Button]
 
 Welcome aboard! We're excited to be part of your learning journey.
 
 Best regards,
-The Scio Labs Team
-
+Team ScioSprints
 ================================================================================
 
 8. PAYMENT RECEIPT EMAIL
@@ -220,7 +111,7 @@ Your payment has been processed successfully. Your subscription is now active.
 Thank you for your payment!
 
 Best regards,
-The Scio Labs Team
+Team ScioSprints
 
 ================================================================================
 
@@ -233,7 +124,7 @@ Subject: 🎯 Demo request received - We'll be in touch soon!
 
 Hi [name],
 
-Thank you for your interest in Scio Labs!
+Thank you for your interest in ScioSprints!
 
 We've received your demo request and our team will contact you within 24 hours.
 
@@ -241,10 +132,11 @@ Your Details:
 - Name: [name]
 - Email: [email]
 - School: [school]
+- Phone: [phone]
 - Role: [role]
 
 What to expect:
-- Personalized demo session
+- Personalised demo session
 - Overview of our learning platform
 - Discussion of your specific needs
 - Custom pricing options
@@ -252,32 +144,7 @@ What to expect:
 We're excited to show you how Scio Labs can transform your learning experience!
 
 Best regards,
-The Scio Labs Team
-
-================================================================================
-
-10. MANUAL RENEWAL EMAIL
-================================================================================
-Function: generateManualRenewalEmail(userName, className, newEndDate, amount, paymentId)
-Purpose: Confirm manual subscription renewal by admin
-
-Subject: 🔄 Your [className] subscription renewed successfully
-
-Hi [userName],
-
-Great news! Your subscription to [className] has been renewed successfully by our admin team.
-
-Renewal Details:
-- Amount Paid: ₹[amount/100]
-- Payment ID: [paymentId]
-- New Expiry Date: [formatted newEndDate]
-
-💡 Pro Tip: Enable auto-renewal in your account settings to never miss out on your learning progress!
-
-[Continue Learning Button]
-
-Best regards,
-The Scio Labs Team
+Team ScioSprints
 
 ================================================================================
 
