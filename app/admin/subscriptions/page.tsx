@@ -43,6 +43,11 @@ interface RegisteredUser {
 }
 
 export default function SubscriptionsPage() {
+  // State for classes and subjects
+  const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
+  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [formClassId, setFormClassId] = useState('');
+  const [formSubjectId, setFormSubjectId] = useState('');
   const { data: session, status } = useSession();
   const user = session?.user;
   const userRole = user?.role; // Get actual role from session
@@ -52,10 +57,50 @@ export default function SubscriptionsPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [formUserId, setFormUserId] = useState('');
+  const [formAmount, setFormAmount] = useState('');
+  const [formStatus, setFormStatus] = useState('ACTIVE');
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [formPlanType, setFormPlanType] = useState('CLASS');
+  const [planTypes, setPlanTypes] = useState<string[]>(["CLASS", "SUBJECT", "CUSTOM"]);
 
   // Enhanced admin check - wait for userRole to be loaded
   const isAdmin = user && userRole === 'ADMIN';
   const isLoadingAuth = loading || (user && userRole === null);
+
+// Fetch classes for dropdown
+useEffect(() => {
+  if (showCreateModal) {
+    fetch('/api/admin/classes')
+      .then(res => res.json())
+      .then(data => setClasses(Array.isArray(data) ? data : []));
+  }
+}, [showCreateModal]);
+
+// Fetch subjects for selected class
+useEffect(() => {
+  if (showCreateModal && formClassId) {
+    fetch(`/api/admin/subjects?classId=${formClassId}`)
+      .then(res => res.json())
+      .then(data => setSubjects(Array.isArray(data) ? data : []));
+  } else if (showCreateModal) {
+    setSubjects([]);
+  }
+}, [showCreateModal, formClassId]);
+  // Fetch unique plan types from the backend
+  useEffect(() => {
+    if (showCreateModal) {
+      fetch('/api/admin/subscriptions?distinct=planType')
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setPlanTypes(Array.from(new Set(["CLASS", "SUBJECT", "CUSTOM", ...data.map((s: { planType: string }) => s.planType).filter(Boolean)])));
+          }
+        });
+    }
+  }, [showCreateModal]);
 
   useEffect(() => {
     // Only redirect if we're sure the user is not an admin and auth is fully loaded
@@ -224,19 +269,125 @@ export default function SubscriptionsPage() {
   const activeSubscriptions = Array.isArray(subscriptions) ? subscriptions.filter(s => s.status === 'ACTIVE') : [];
   const totalRevenue = Array.isArray(subscriptions) ? subscriptions.reduce((sum, s) => sum + (s.amount || 0), 0) : 0;
 
+
   return (
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6 pt-16 flex justify-between items-center">
+        <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
           <div>
             <h1 className="text-3xl font-bold mb-2">Subscription Management</h1>
             <p className="text-muted-foreground">Manage user subscriptions and payments</p>
           </div>
-          <Button onClick={refreshData} disabled={dataLoading}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowCreateModal(true)} variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+              + Create Subscription
+            </Button>
+            <Button onClick={refreshData} disabled={dataLoading} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
+
+        {/* Create Subscription Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+              <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() => setShowCreateModal(false)}>&times;</button>
+              <h2 className="text-xl font-bold mb-4">Create Subscription</h2>
+              {formError && <div className="text-red-600 text-sm mb-2">{formError}</div>}
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setFormLoading(true);
+                setFormError('');
+                try {
+                  const res = await fetch('/api/admin/subscriptions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: formUserId,
+                      planType: formPlanType,
+                      classId: Number(formClassId),
+                      subjectId: formSubjectId || undefined,
+                      amount: Number(formAmount),
+                      status: formStatus
+                    })
+                  });
+                  if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to create subscription');
+                  }
+                  setShowCreateModal(false);
+                  setFormUserId('');
+                  setFormClassId('');
+                  setFormSubjectId('');
+                  setFormAmount('');
+                  setFormStatus('ACTIVE');
+                  setFormPlanType('CLASS');
+                  refreshData();
+                } catch (err) {
+                  if (err instanceof Error) {
+                    setFormError(err.message || 'Failed to create subscription');
+                  } else {
+                    setFormError('Failed to create subscription');
+                  }
+                } finally {
+                  setFormLoading(false);
+                }
+              }}>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">User</label>
+                  <select value={formUserId} onChange={e => setFormUserId(e.target.value)} required className="w-full border rounded px-2 py-1">
+                    <option value="">Select user...</option>
+                    {registeredUsers.map(u => (
+                      <option key={u.uid} value={u.uid}>{u.displayName || u.email}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Class <span className="text-red-500">*</span></label>
+                  <select value={formClassId} onChange={e => { setFormClassId(e.target.value); setFormSubjectId(''); }} required className="w-full border rounded px-2 py-1">
+                    <option value="">Select class...</option>
+                    {classes.map(cls => (
+                      <option key={cls.id} value={cls.id}>{cls.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Subject (optional)</label>
+                  <select value={formSubjectId} onChange={e => setFormSubjectId(e.target.value)} className="w-full border rounded px-2 py-1" disabled={!formClassId || subjects.length === 0}>
+                    <option value="">None</option>
+                    {subjects.map(sub => (
+                      <option key={sub.id} value={sub.id}>{sub.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Amount (in paise)</label>
+                  <input type="number" value={formAmount} onChange={e => setFormAmount(e.target.value)} required min="1" className="w-full border rounded px-2 py-1" placeholder="Amount in paise (e.g. 10000 for ₹100)" />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Plan Type</label>
+                  <select value={formPlanType} onChange={e => setFormPlanType(e.target.value)} required className="w-full border rounded px-2 py-1">
+                    {planTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <select value={formStatus} onChange={e => setFormStatus(e.target.value)} required className="w-full border rounded px-2 py-1">
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                  </select>
+                </div>
+                <Button type="submit" className="w-full" disabled={formLoading}>
+                  {formLoading ? 'Creating...' : 'Create Subscription'}
+                </Button>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Search Bar */}
         <Card className="mb-6">
@@ -448,4 +599,4 @@ export default function SubscriptionsPage() {
     </div>
   );
 }
-     
+

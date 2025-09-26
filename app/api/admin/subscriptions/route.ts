@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { SubscriptionStatus } from '@prisma/client';
 
 export async function GET() {
   try {
@@ -86,6 +87,54 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error('Error deleting subscription:', error);
     return NextResponse.json({ error: 'Failed to delete subscription' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const { userId, classId, subjectId, amount, status, planType } = await request.json();
+
+    if (!userId || !amount || !status || !planType || !classId) {
+      return NextResponse.json({ error: 'userId, amount, status, planType, and classId are required' }, { status: 400 });
+    }
+
+    type SubscriptionCreateInput = {
+      userId: string;
+      amount: number;
+      status: SubscriptionStatus;
+      planType: string;
+      currency: string;
+      startDate: Date;
+      endDate: Date;
+      created_at: Date;
+      updatedAt: Date;
+      classId: number;
+      subjectId?: string;
+    };
+    
+    // Set subscription to expire 1 year from now
+    const endDate = new Date();
+    endDate.setFullYear(endDate.getFullYear() + 1);
+    
+    const data: SubscriptionCreateInput = {
+      userId,
+      amount,
+      status: status as SubscriptionStatus,
+      planType,
+      currency: 'INR',
+      startDate: new Date(),
+      endDate: endDate,
+      created_at: new Date(),
+      updatedAt: new Date(),
+      classId: classId,
+    };
+    if (subjectId) data.subjectId = subjectId;
+
+    const subscription = await prisma.subscription.create({ data });
+    return NextResponse.json(subscription);
+  } catch (error) {
+    console.error('Error creating subscription:', error);
+    return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });
   }
 }
 
