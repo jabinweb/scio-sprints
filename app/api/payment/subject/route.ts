@@ -3,40 +3,54 @@ import { prisma } from '@/lib/prisma';
 import { createPaymentOrder, getPaymentConfig } from '@/lib/payment-service';
 
 interface PaymentRequest {
-  subjectId: string;
+  subjectId?: string; // For backward compatibility
+  subjectIds?: string[]; // For multiple subjects
   userId: string;
   amount?: number;
 }
 
 export async function POST(request: Request) {
   try {
-    const { subjectId, userId, amount }: PaymentRequest = await request.json();
+    const { subjectId, subjectIds, userId, amount }: PaymentRequest = await request.json();
 
-    if (!subjectId || !userId) {
+    // Handle both single and multiple subject selection
+    const selectedSubjectIds = subjectIds || (subjectId ? [subjectId] : []);
+
+    if (selectedSubjectIds.length === 0 || !userId) {
       return NextResponse.json({ 
-        error: 'Subject ID and User ID are required' 
+        error: 'Subject ID(s) and User ID are required' 
       }, { status: 400 });
     }
 
-    // Get subject details
-    const subject = await prisma.subject.findUnique({
-      where: { id: subjectId },
+    // Get all subject details
+    const subjects = await prisma.subject.findMany({
+      where: { 
+        id: { 
+          in: selectedSubjectIds 
+        } 
+      },
       include: {
         class: true
       }
     });
 
-    if (!subject) {
+    if (subjects.length === 0) {
       return NextResponse.json({ 
-        error: 'Subject not found' 
+        error: 'No subjects found' 
       }, { status: 404 });
     }
 
-    // Check if user already has access to this subject
-    const existingSubscription = await prisma.subscription.findFirst({
+    if (subjects.length !== selectedSubjectIds.length) {
+      return NextResponse.json({ 
+        error: 'Some subjects not found' 
+      }, { status: 404 });
+    }
+
+    // Check if user already has access to any of these subjects
+    const existingSubscriptions = await prisma.subscription.findMany({
       where: {
         userId: userId,
-        subjectId: subjectId,
+        subjectId: { in: selectedSubjectIds },
         status: 'ACTIVE',
         endDate: {
           gte: new Date()
@@ -44,17 +58,24 @@ export async function POST(request: Request) {
       }
     });
 
-    if (existingSubscription) {
+    if (existingSubscriptions.length > 0) {
+      const subscribedSubjectIds = existingSubscriptions.map(s => s.subjectId);
+      const subscribedSubjectNames = subjects
+        .filter(s => subscribedSubjectIds.includes(s.id))
+        .map(s => s.name)
+        .join(', ');
+      
       return NextResponse.json({ 
-        error: 'You already have an active subscription for this subject' 
+        error: `You already have active subscriptions for: ${subscribedSubjectNames}` 
       }, { status: 409 });
     }
 
-    // Check if user has full class access
-    const classSubscription = await prisma.subscription.findFirst({
+    // Check if user has full class access for any of these subjects
+    const classIds = [...new Set(subjects.map(s => s.classId))];
+    const classSubscriptions = await prisma.subscription.findMany({
       where: {
         userId: userId,
-        classId: subject.classId,
+        classId: { in: classIds },
         subjectId: null,
         status: 'ACTIVE',
         endDate: {
@@ -63,21 +84,30 @@ export async function POST(request: Request) {
       }
     });
 
-    if (classSubscription) {
-      return NextResponse.json({ 
-        error: 'You already have full class access which includes this subject' 
-      }, { status: 409 });
+    if (classSubscriptions.length > 0) {
+      const classIdsWithAccess = classSubscriptions.map(s => s.classId);
+      const subjectsWithClassAccess = subjects.filter(s => classIdsWithAccess.includes(s.classId));
+      
+      if (subjectsWithClassAccess.length > 0) {
+        const subjectNames = subjectsWithClassAccess.map(s => s.name).join(', ');
+        return NextResponse.json({ 
+          error: `You already have full class access which includes: ${subjectNames}` 
+        }, { status: 409 });
+      }
     }
 
-    // Get subject price (use subject's own price field)
-    const subjectPrice = amount || subject.price || 7500; // Default to ₹75 if not set
+    // Calculate total price from all subjects or use provided amount
+    const totalPrice = amount || subjects.reduce((sum, subject) => sum + (subject.price || 7500), 0);
+    const subjectNames = subjects.map(s => s.name).join(', ');
 
     // Create payment order using unified service
     const orderResult = await createPaymentOrder({
       userId: userId,
-      amount: subjectPrice,
+      amount: totalPrice,
       currency: 'INR',
-      description: `${subject.name} - Subject Subscription`
+      description: selectedSubjectIds.length === 1 
+        ? `${subjects[0].name} - Subject Subscription`
+        : `${subjectNames} - Multiple Subject Subscription`
     });
 
     if (!orderResult) {
@@ -93,8 +123,8 @@ export async function POST(request: Request) {
         amount: orderResult.orderData.amount,
         currency: orderResult.orderData.currency,
         keyId: orderResult.orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        subjectId: subjectId,
-        subjectName: subject.name,
+        subjectIds: selectedSubjectIds,
+        subjectNames: subjectNames,
         gateway: orderResult.gateway
       });
     } else if (orderResult.gateway === 'CASHFREE') {
@@ -103,8 +133,8 @@ export async function POST(request: Request) {
         orderId: string;
         amount: number;
         currency: string;
-        subjectId: string;
-        subjectName: string;
+        subjectIds: string[];
+        subjectNames: string;
         gateway: string;
         environment?: string;
         payment_session_id?: string;
@@ -114,8 +144,8 @@ export async function POST(request: Request) {
         orderId: orderResult.orderData.order_id,
         amount: orderResult.orderData.order_amount * 100, // Convert back to paise for frontend
         currency: orderResult.orderData.order_currency,
-        subjectId: subjectId,
-        subjectName: subject.name,
+        subjectIds: selectedSubjectIds,
+        subjectNames: subjectNames,
         gateway: orderResult.gateway
       };
       
@@ -138,7 +168,11 @@ export async function POST(request: Request) {
         cashfreeResponse.payment_link = orderResult.orderData.payment_link;
       }
       
-      console.log('[info] Cashfree payment response:', cashfreeResponse);
+      console.log('[info] Cashfree payment response for subjects:', {
+        subjectIds: selectedSubjectIds,
+        totalAmount: totalPrice,
+        response: cashfreeResponse
+      });
       
       return NextResponse.json(cashfreeResponse);
     }

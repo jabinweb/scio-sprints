@@ -134,29 +134,44 @@ export async function POST(req: Request) {
             }
           }
         } else if (metadata.type === 'subject_subscription') {
-          // Create subject subscription
-          const existingSubjectSubscription = await prisma.subscription.findFirst({
+          // Handle both single and multiple subject subscriptions
+          const subjectIds: string[] = metadata.subjectIds || (metadata.subjectId ? [metadata.subjectId] : []);
+          
+          if (subjectIds.length === 0) {
+            throw new Error('No subject IDs provided for subject subscription');
+          }
+
+          // Check for existing subscriptions for all subjects
+          const existingSubscriptions = await prisma.subscription.findMany({
             where: {
               userId: metadata.userId,
-              subjectId: metadata.subjectId,
+              subjectId: { in: subjectIds },
               status: 'ACTIVE',
               endDate: { gte: new Date() }
             }
           });
 
-          if (!existingSubjectSubscription) {
+          // Only create subscriptions for subjects that don't already have active subscriptions
+          const existingSubjectIds = existingSubscriptions.map(s => s.subjectId).filter((id): id is string => id !== null);
+          const newSubjectIds = subjectIds.filter((id: string) => !existingSubjectIds.includes(id));
+
+          if (newSubjectIds.length > 0) {
             const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
-            await prisma.subscription.create({
-              data: {
-                userId: metadata.userId,
-                subjectId: metadata.subjectId,
-                status: 'ACTIVE',
-                planType: 'subject_subscription',
-                amount: payment.amount,
-                currency: payment.currency,
-                startDate: new Date(),
-                endDate: endDate
-              }
+            
+            // Create subscriptions for all new subjects
+            const subscriptionData = newSubjectIds.map((subjectId: string) => ({
+              userId: metadata.userId,
+              subjectId: subjectId,
+              status: 'ACTIVE' as const,
+              planType: 'subject_subscription' as const,
+              amount: Math.floor((payment.amount || 0) / subjectIds.length), // Distribute amount evenly
+              currency: payment.currency,
+              startDate: new Date(),
+              endDate: endDate
+            }));
+
+            await prisma.subscription.createMany({
+              data: subscriptionData
             });
 
             // Send welcome email after successful subscription creation
@@ -166,17 +181,20 @@ export async function POST(req: Request) {
                 select: { email: true, displayName: true }
               });
 
-              const subject = await prisma.subject.findUnique({
-                where: { id: metadata.subjectId },
+              const subjects = await prisma.subject.findMany({
+                where: { id: { in: newSubjectIds } },
                 select: { name: true, class: { select: { name: true } } }
               });
 
-              if (user?.email && subject) {
+              if (user?.email && subjects.length > 0) {
+                const subjectNames = subjects.map(s => s.name).join(', ');
+                const className = subjects[0].class.name; // Assuming all subjects are from the same class
+                
                 const welcomeEmailContent = generateEmailContent('new_subscription', {
                   userName: user.displayName || user.email.split('@')[0],
-                  subjectName: subject.name,
-                  className: subject.class.name,
-                  subscriptionType: 'Subject Access',
+                  subjectName: subjectNames,
+                  className: className,
+                  subscriptionType: newSubjectIds.length === 1 ? 'Subject Access' : 'Multiple Subject Access',
                   endDate: endDate.toISOString(),
                   amount: payment.amount || 0
                 });
@@ -193,7 +211,9 @@ export async function POST(req: Request) {
                   userName: user.displayName || user.email.split('@')[0],
                   paymentId: body.razorpay_payment_id || body.orderId || '',
                   orderId: body.razorpay_order_id || body.orderId || '',
-                  subscriptionName: `${subject.name} - Subject Access`,
+                  subscriptionName: newSubjectIds.length === 1 
+                    ? `${subjects[0].name} - Subject Access`
+                    : `${subjectNames} - Multiple Subject Access`,
                   amount: payment.amount || 0,
                   paymentDate: new Date().toISOString()
                 });
@@ -209,7 +229,9 @@ export async function POST(req: Request) {
                 await notifyAdminNewSubscription({
                   userName: user.displayName || user.email.split('@')[0],
                   userEmail: user.email,
-                  subscriptionName: `${subject.name} - Subject Access`,
+                  subscriptionName: newSubjectIds.length === 1 
+                    ? `${subjects[0].name} - Subject Access`
+                    : `${subjectNames} - Multiple Subject Access`,
                   amount: payment.amount || 0
                 });
               }

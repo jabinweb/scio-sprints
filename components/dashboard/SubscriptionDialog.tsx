@@ -505,6 +505,13 @@ Would you like to refresh the page now?`;
     const totalAmount = selectedSubjectObjs.reduce((sum, s) => sum + (s.price || 7500), 0); // in paisa
     const subjectNames = selectedSubjectObjs.map(s => s.name).join(', ');
 
+    console.log('[Debug] Subject subscription details:', {
+      selectedSubjectIds,
+      selectedSubjectObjs: selectedSubjectObjs.map(s => ({ id: s.id, name: s.name, price: s.price })),
+      totalAmount,
+      subjectNames
+    });
+
     try {
       // Call the payment API for multiple subjects (update backend if needed)
       const response = await fetch('/api/payment/subject', {
