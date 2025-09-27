@@ -127,7 +127,7 @@ export default function SubscriptionAnalyticsPage() {
     <div className="p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 pt-16 flex justify-between items-center">
+        <div className="mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold mb-2">Subscription Analytics</h1>
             <p className="text-muted-foreground">Monitor subscription metrics and revenue insights</p>

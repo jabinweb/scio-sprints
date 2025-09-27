@@ -85,7 +85,7 @@ export default function ChaptersPage() {
   return (
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6 pt-16 flex justify-between items-center">
+        <div className="mb-6 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => router.push(`/admin/classes/${classId}`)}>
               <ArrowLeft className="h-4 w-4" />
