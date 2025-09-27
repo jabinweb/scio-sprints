@@ -185,7 +185,7 @@ export default function ClassesPage() {
   return (
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6 pt-16 flex justify-between items-center">
+        <div className="mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold mb-2">Class Management</h1>
             <p className="text-muted-foreground">Manage classes and their content structure</p>
