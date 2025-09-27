@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/mail';
 import { generateEmailContent } from '@/lib/email';
 import { notifyAdminNewSubscription } from '@/lib/admin-notifications';
+import { logPaymentCompleted, logPaymentFailed, logSubscriptionCreated } from '@/lib/activity-logger';
 
 export async function POST(req: Request) {
   try {
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
       // Create class-specific subscription using Prisma
       const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year access
       try {
-        await prisma.subscription.create({
+        const subscription = await prisma.subscription.create({
           data: {
             userId,
             classId: parseInt(classId),
@@ -81,6 +82,14 @@ export async function POST(req: Request) {
             endDate: endDate
           }
         });
+
+        // Log subscription creation activity
+        await logSubscriptionCreated(
+          userId,
+          subscription.id,
+          `${classData.name} Access`,
+          classData.price || 0
+        );
 
         // Send welcome email after successful subscription creation
         try {
@@ -152,8 +161,18 @@ export async function POST(req: Request) {
             description: `Class subscription: ${classData.name}`,
           }
         });
+
+        // Log successful payment activity
+        await logPaymentCompleted(userId, razorpay_payment_id, classData.price || 0, 'razorpay')
+          .catch(err => console.error('Failed to log payment activity:', err));
+
       } catch (paymentError) {
         console.error('Error creating payment record:', paymentError);
+        
+        // Log failed payment activity
+        await logPaymentFailed(userId, razorpay_payment_id, classData.price || 0, 'razorpay', 'Payment record creation failed')
+          .catch(err => console.error('Failed to log payment failure:', err));
+        
         // Don't fail the request as subscription is already created
       }
 

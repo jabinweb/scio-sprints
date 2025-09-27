@@ -19,6 +19,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
+import PaymentTroubleshoot from '@/components/payment/PaymentTroubleshoot';
 
 interface Payment {
   id: string;
@@ -53,6 +54,7 @@ export default function PaymentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [troubleshootPaymentId, setTroubleshootPaymentId] = useState<string | null>(null);
 
   const fetchPayments = useCallback(async (page: number = 1, status: string = 'all') => {
     if (!user?.id) return;
@@ -348,14 +350,41 @@ export default function PaymentsPage() {
                           </div>
                         </div>
 
-                        {/* Failure Reason */}
-                        {payment.status === 'FAILED' && payment.failureReason && (
+                        {/* Failure Reason with Troubleshoot Option */}
+                        {payment.status === 'FAILED' && (
                           <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                            <div className="flex items-center gap-2 text-red-700">
-                              <AlertCircle className="h-4 w-4" />
-                              <span className="text-sm font-medium">Failure Reason:</span>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2 text-red-700">
+                                <AlertCircle className="h-4 w-4" />
+                                <span className="text-sm font-medium">Payment Failed</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setTroubleshootPaymentId(
+                                    troubleshootPaymentId === payment.id ? null : payment.id
+                                  )}
+                                  className="text-xs"
+                                >
+                                  {troubleshootPaymentId === payment.id ? 'Hide' : 'Quick Fix'}
+                                </Button>
+                                {/* <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => window.open(`/dashboard/payment-troubleshoot/${payment.id}`, '_blank')}
+                                  className="text-xs"
+                                >
+                                  Deep Analysis
+                                </Button> */}
+                              </div>
                             </div>
-                            <p className="text-sm text-red-600 mt-1">{payment.failureReason}</p>
+                            {payment.failureReason && (
+                              <p className="text-sm text-red-600">{payment.failureReason}</p>
+                            )}
+                            {!payment.failureReason && (
+                              <p className="text-sm text-red-600">Payment was not completed successfully. Click &apos;Troubleshoot&apos; for more details.</p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -364,6 +393,31 @@ export default function PaymentsPage() {
                 </Card>
               ))}
             </div>
+
+            {/* Payment Troubleshooting Section */}
+            {troubleshootPaymentId && (() => {
+              const payment = payments.find(p => p.id === troubleshootPaymentId);
+              return payment && payment.status === 'FAILED' ? (
+                <Card className="mt-6">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">Payment Troubleshooting</h3>
+                        <p className="text-sm text-gray-600">Investigating payment ID: {troubleshootPaymentId}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTroubleshootPaymentId(null)}
+                      >
+                        Close
+                      </Button>
+                    </div>
+                    <PaymentTroubleshoot paymentId={troubleshootPaymentId} />
+                  </CardContent>
+                </Card>
+              ) : null;
+            })()}
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (

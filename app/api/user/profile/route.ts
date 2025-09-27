@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { logProfileUpdated } from '@/lib/activity-logger';
 
 export async function GET() {
   try {
@@ -49,13 +50,13 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
+    const body = await request.json();
     const session = await auth();
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const updates = await request.json();
     const {
       name,
       displayName,
@@ -65,7 +66,7 @@ export async function PUT(request: Request) {
       phone,
       parentName,
       parentEmail
-    } = updates;
+    } = body;
 
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
@@ -100,6 +101,10 @@ export async function PUT(request: Request) {
         }
       }
     });
+
+    // Log profile update activity
+    const updatedFields = Object.keys(body).filter(key => body[key] !== undefined);
+    await logProfileUpdated(session.user.id, updatedFields);
 
     return NextResponse.json({
       ...updatedUser,

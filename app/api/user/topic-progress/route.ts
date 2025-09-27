@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { PrismaClient } from '@prisma/client';
+import { logTopicCompleted } from '@/lib/activity-logger';
 
 const prisma = new PrismaClient();
 
@@ -114,6 +115,19 @@ export async function POST(request: NextRequest) {
           updatedAt: new Date()
         }
       });
+    }
+
+    // Log topic completion activity if completed
+    if (completed && result.completed) {
+      // Get topic name for logging
+      const topic = await prisma.topic.findUnique({
+        where: { id: topicIdString },
+        select: { name: true }
+      });
+      
+      if (topic) {
+        await logTopicCompleted(userId, topicIdString, topic.name);
+      }
     }
 
     return NextResponse.json({

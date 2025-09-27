@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { checkUserAccess } from '@/lib/subscription-utils';
+import { logDashboardAccess } from '@/lib/activity-logger';
 
 interface UserProfileWithSchool {
   id: string;
@@ -122,6 +123,9 @@ export async function GET() {
         };
       })
     );
+
+    // Log dashboard access
+    await logDashboardAccess(userId);
 
     return NextResponse.json({
       classes: classesWithAccess,

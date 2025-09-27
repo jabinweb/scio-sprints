@@ -13,9 +13,43 @@ export default {
           access_type: "offline",
           response_type: "code"
         }
-      }
+      },
+      checks: ["pkce", "state"], // Explicitly enable PKCE checks
     }),
   ],
+  trustHost: true, // Trust the host in production environments
+  useSecureCookies: process.env.NODE_ENV === "production", // Use secure cookies in production
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === "production" ? "__Secure-" : ""}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60 // 30 days
+      }
+    },
+    callbackUrl: {
+      name: `${process.env.NODE_ENV === "production" ? "__Secure-" : ""}next-auth.callback-url`,
+      options: {
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 15 * 60 // 15 minutes
+      }
+    },
+    csrfToken: {
+      name: `${process.env.NODE_ENV === "production" ? "__Host-" : ""}next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 15 * 60 // 15 minutes
+      }
+    }
+  },
   pages: {
     signIn: '/auth/login',
     error: '/auth/error',

@@ -45,6 +45,7 @@ interface AppSettings {
   razorpayKeySecret: string;
   razorpayTestKeyId: string;
   razorpayTestKeySecret: string;
+  razorpayWebhookSecret: string;
   paymentMode: 'test' | 'live';
   
   // Cashfree Settings
@@ -89,6 +90,7 @@ export default function SettingsPage() {
     razorpayKeySecret: '',
     razorpayTestKeyId: '',
     razorpayTestKeySecret: '',
+    razorpayWebhookSecret: '',
     paymentMode: 'test',
     
     // Cashfree Settings
@@ -114,6 +116,7 @@ export default function SettingsPage() {
   const [showPasswords, setShowPasswords] = useState({
     razorpayKeySecret: false,
     razorpayTestKeySecret: false,
+    razorpayWebhookSecret: false,
     payment_cashfree_secret_key: false,
     payment_cashfree_test_secret_key: false,
     smtpPass: false,
@@ -155,6 +158,7 @@ export default function SettingsPage() {
             razorpayKeySecret: data.razorpayKeySecret || '',
             razorpayTestKeyId: data.razorpayTestKeyId || '',
             razorpayTestKeySecret: data.razorpayTestKeySecret || '',
+            razorpayWebhookSecret: data.razorpayWebhookSecret || '',
             paymentMode: (data.paymentMode === 'live' ? 'live' : 'test') as 'test' | 'live',
             
             // Cashfree Settings
@@ -654,16 +658,55 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
+                  {/* Webhook Configuration */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-gray-900 border-l-4 border-purple-500 pl-4">
+                      Webhook Configuration
+                    </h3>
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="razorpayWebhookSecret" className="text-gray-700 font-medium">Webhook Secret</Label>
+                        <div className="relative">
+                          <Input
+                            id="razorpayWebhookSecret"
+                            type={showPasswords.razorpayWebhookSecret ? "text" : "password"}
+                            value={settings.razorpayWebhookSecret}
+                            onChange={(e) => handleInputChange('razorpayWebhookSecret', e.target.value)}
+                            className="border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-white shadow-sm pr-10"
+                            placeholder="Enter webhook secret key"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                            onClick={() => togglePasswordVisibility('razorpayWebhookSecret')}
+                          >
+                            {showPasswords.razorpayWebhookSecret ? 
+                              <EyeOff className="h-4 w-4 text-gray-500" /> : 
+                              <Eye className="h-4 w-4 text-gray-500" />
+                            }
+                          </Button>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Used to verify webhook signatures from Razorpay. Get this from your Razorpay Dashboard → Settings → Webhooks.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Payment Configuration Tips */}
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex items-start gap-3">
                       <Shield className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-medium text-blue-800 mb-2">Security Tips</h4>
+                        <h4 className="font-medium text-blue-800 mb-2">Configuration Guide</h4>
                         <ul className="text-sm text-blue-700 space-y-1">
                           <li>• Always use test mode during development</li>
                           <li>• Keep your API keys secure and never share them</li>
                           <li>• Switch to live mode only when ready for production</li>
+                          <li>• Configure webhook URL: <code className="bg-blue-100 px-1 rounded text-xs">{window?.location?.origin || 'https://your-domain.com'}/api/payment/webhook/razorpay</code></li>
+                          <li>• Enable webhook events: <strong>payment.captured</strong> and <strong>payment.failed</strong></li>
                         </ul>
                       </div>
                     </div>

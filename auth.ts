@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import authConfig from "./authConfig"
 import { UserRole } from "@prisma/client"
+import { logLogin } from "@/lib/activity-logger"
 
 // Helper function to get SMTP settings synchronously for NextAuth
 function getSmtpConfig() {
@@ -136,7 +137,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Update user information when they sign in
       if (user.email) {
         try {
-          await prisma.user.upsert({
+          const updatedUser = await prisma.user.upsert({
             where: { email: user.email },
             update: {
               name: user.name || profile?.name || user.email.split('@')[0],
@@ -152,6 +153,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               lastLoginAt: new Date(),
             },
           })
+          
+          // Log login activity
+          if (updatedUser.id) {
+            await logLogin(updatedUser.id).catch(err => 
+              console.error('Failed to log login activity:', err)
+            );
+          }
         } catch (error) {
           console.error('Error updating user:', error)
         }

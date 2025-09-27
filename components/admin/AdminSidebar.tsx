@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,7 +14,13 @@ import {
   BookOpen,
   GraduationCap,
   ChevronLeft,
-  School
+  School,
+  DollarSign,
+  AlertTriangle,
+  Bell,
+  Megaphone,
+  Activity,
+  LogOut
 } from 'lucide-react';
 
 const navigation = [
@@ -22,6 +29,11 @@ const navigation = [
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Classes', href: '/admin/classes', icon: GraduationCap },
   { name: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+  { name: 'Payments', href: '/admin/payments', icon: DollarSign },
+  { name: 'Activities', href: '/admin/activities', icon: Activity },
+  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
+  { name: 'Announcements', href: '/admin/announcements', icon: Megaphone },
+  { name: 'Error Logs', href: '/admin/error-logs', icon: AlertTriangle },
   { name: 'Responses', href: '/admin/responses', icon: MessageSquare },
   { name: 'Analytics', href: '/admin/analytics', icon: BookOpen },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
@@ -79,6 +91,19 @@ export function AdminSidebar() {
               );
             })}
           </nav>
+          
+          {/* Logout Button */}
+          <div className="px-2 pb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 w-full justify-start text-gray-600 hover:bg-red-50 hover:text-red-600"
+              onClick={() => signOut({ callbackUrl: '/' })}
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
       </div>
     </div>

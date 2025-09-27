@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 
 interface ClassFormData {
   id?: string;
+  classId?: string; // New field for editable class ID
   name: string;
   description: string;
   isActive: boolean;
@@ -26,6 +27,7 @@ interface ClassFormProps {
 
 export function ClassForm({ isOpen, onClose, onSubmit, initialData, mode }: ClassFormProps) {
   const [formData, setFormData] = useState<ClassFormData>({
+    classId: '',
     name: '',
     description: '',
     isActive: true,
@@ -38,6 +40,7 @@ export function ClassForm({ isOpen, onClose, onSubmit, initialData, mode }: Clas
       if (initialData && mode === 'edit') {
         setFormData({
           id: initialData.id,
+          classId: initialData.classId || '',
           name: initialData.name || '',
           description: initialData.description || '',
           isActive: initialData.isActive !== undefined ? initialData.isActive : true,
@@ -45,6 +48,7 @@ export function ClassForm({ isOpen, onClose, onSubmit, initialData, mode }: Clas
         });
       } else {
         setFormData({
+          classId: '',
           name: '',
           description: '',
           isActive: true,
@@ -80,12 +84,24 @@ export function ClassForm({ isOpen, onClose, onSubmit, initialData, mode }: Clas
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <Label htmlFor="classId">Class ID</Label>
+            <Input
+              id="classId"
+              type="number"
+              value={formData.classId}
+              onChange={(e) => updateFormData('classId', e.target.value)}
+              placeholder="e.g., 4 for Class 4, 5 for Class 5"
+              required
+            />
+          </div>
+
+          <div>
             <Label htmlFor="name">Class Name</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => updateFormData('name', e.target.value)}
-              placeholder="e.g., Class 5"
+              placeholder="e.g., CBSE : Class 5"
               required
             />
           </div>

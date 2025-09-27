@@ -4,6 +4,7 @@ import { verifyRazorpayPayment, verifyCashfreePayment } from '@/lib/payment-serv
 import { sendEmail } from '@/lib/mail';
 import { generateEmailContent } from '@/lib/email';
 import { notifyAdminNewSubscription } from '@/lib/admin-notifications';
+import { logSubscriptionCreated } from '@/lib/activity-logger';
 
 interface VerifyRequest {
   // Razorpay fields
@@ -120,7 +121,7 @@ export async function POST(request: Request) {
       endDate.setFullYear(endDate.getFullYear() + 1); // 1 year subscription
 
       try {
-        await prisma.subscription.create({
+        const subscription = await prisma.subscription.create({
           data: {
             userId,
             classId: subject.classId,
@@ -134,6 +135,14 @@ export async function POST(request: Request) {
             endDate: endDate
           }
         });
+
+        // Log subscription creation activity
+        await logSubscriptionCreated(
+          userId,
+          subscription.id,
+          `${subject.name} - Individual Subject Access`,
+          subjectPrice
+        );
 
         // Send welcome email after successful subscription creation
         try {

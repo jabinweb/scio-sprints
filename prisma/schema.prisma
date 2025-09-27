@@ -534,3 +534,19 @@ model TopicDifficultyRating {
   @@unique([userId, topicId])
   @@map("topic_difficulty_ratings")
 }
+
+model ErrorLog {
+  id        String   @id @default(cuid())
+  level     String   // INFO, WARN, ERROR, CRITICAL
+  source    String   // Component/API that generated the error
+  message   String
+  details   String?  // JSON string with additional details
+  userId    String?
+  paymentId String?
+  timestamp DateTime @default(now())
+  stack     String?  // Stack trace for errors
+
+  @@index([source, timestamp])
+  @@index([level, timestamp])
+  @@map("error_logs")
+}

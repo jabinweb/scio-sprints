@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { logTopicStarted } from '@/lib/activity-logger';
 
 // Server-side function to verify topic access
 async function verifyTopicAccess(userId: string, topicId: string) {
@@ -90,6 +91,9 @@ export async function GET(
     if (!topicWithContent?.content) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 });
     }
+
+    // Log topic access activity
+    await logTopicStarted(session.user.id, topicId, topic.name);
 
     // Return only the content data that the ContentPlayer needs
     return NextResponse.json({

@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 
 interface Class {
   id: string;
+  classId?: string;
   name: string;
   description: string;
   isActive: boolean;
@@ -25,6 +26,7 @@ interface Class {
 
 interface ClassFormData {
   id?: string;
+  classId?: string;
   name: string;
   description: string;
   isActive: boolean;
@@ -74,7 +76,13 @@ export default function ClassesPage() {
     const response = await fetch('/api/admin/classes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({
+        classId: formData.classId,
+        name: formData.name,
+        description: formData.description,
+        isActive: formData.isActive,
+        price: formData.price
+      }),
     });
 
     if (response.ok) {
@@ -94,6 +102,7 @@ export default function ClassesPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id: parseInt(formData.id, 10),
+        classId: formData.classId,
         name: formData.name,
         description: formData.description,
         isActive: formData.isActive,
@@ -130,6 +139,7 @@ export default function ClassesPage() {
   const openEditForm = (classItem: Class) => {
     setEditingClass({
       id: String(classItem.id),
+      classId: String(classItem.id), // Map id to classId for the form
       name: classItem.name,
       description: classItem.description,
       isActive: classItem.isActive,
