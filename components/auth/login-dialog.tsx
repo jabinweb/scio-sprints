@@ -19,10 +19,11 @@ import Image from "next/image";
 interface LoginDialogProps {
   defaultOpen?: boolean;
   onClose?: () => void;
+  callbackUrl?: string;
 }
 
 // Custom SignIn content component for dialog use
-function SignInContent() {
+function SignInContent({ callbackUrl = '/dashboard' }: { callbackUrl?: string }) {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -31,7 +32,7 @@ function SignInContent() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      await signIn('google', { callbackUrl: '/dashboard' });
+  await signIn('google', { callbackUrl });
     } catch (error: unknown) {
       console.error('Google Sign-in Error:', error);
       setError('Failed to sign in with Google');
@@ -48,7 +49,7 @@ function SignInContent() {
       
       const result = await signIn('nodemailer', { 
         email,
-        callbackUrl: '/dashboard',
+        callbackUrl,
         redirect: false
       });
       
@@ -143,12 +144,7 @@ function SignInContent() {
   );
 }
 
-interface LoginDialogProps {
-  defaultOpen?: boolean;
-  onClose?: () => void;
-}
-
-export function LoginDialog({ defaultOpen = false, onClose }: LoginDialogProps) {
+export function LoginDialog({ defaultOpen = false, onClose, callbackUrl = '/dashboard' }: LoginDialogProps) {
   const [open, setOpen] = useState(defaultOpen);
   const { data: session } = useSession();
   const router = useRouter();
@@ -157,9 +153,9 @@ export function LoginDialog({ defaultOpen = false, onClose }: LoginDialogProps) 
   useEffect(() => {
     if (session?.user && defaultOpen) {
       setOpen(false);
-      router.push('/dashboard');
+      router.push(callbackUrl);
     }
-  }, [session, defaultOpen, router]);
+  }, [session, defaultOpen, router, callbackUrl]);
 
   useEffect(() => {
     setOpen(defaultOpen);
@@ -175,7 +171,7 @@ export function LoginDialog({ defaultOpen = false, onClose }: LoginDialogProps) 
   const handleButtonClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent dialog from opening
     if (session?.user) {
-      router.push('/dashboard');
+      router.push(callbackUrl);
     } else {
       setOpen(true);
     }
@@ -204,7 +200,7 @@ export function LoginDialog({ defaultOpen = false, onClose }: LoginDialogProps) 
         
         <div className="space-y-4">
           {/* Custom SignIn implementation without Card wrapper */}
-          <SignInContent />
+          <SignInContent callbackUrl={callbackUrl} />
         </div>
       </DialogContent>
     </Dialog>

@@ -18,13 +18,13 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: 'ScioLabs - Interactive Learning Platform',
+  title: 'ScioSprints - Interactive Learning Platform',
   description: 'Revolutionizing student revision with interactive gamified learning',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'ScioLabs',
+    title: 'ScioSprints',
   },
   formatDetection: {
     telephone: false,

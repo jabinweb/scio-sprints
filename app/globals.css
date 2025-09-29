@@ -179,3 +179,10 @@
     background-size: 20px 20px;
   }
 }
+
+/* `html` is added to beat the specificity of just `body[data-scroll-locked]` */
+html body[data-scroll-locked] {
+  overflow: unset !important;
+  margin-right: unset !important;
+  --removed-body-scroll-bar-size: 0 !important; /* is this needed? */
+}

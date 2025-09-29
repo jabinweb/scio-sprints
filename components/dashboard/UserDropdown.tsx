@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LoginDialog } from '@/components/auth/login-dialog';
 import { 
   User, 
   CreditCard, 
   Settings, 
   LogOut, 
-  ChevronDown,
   School,
   Bell,
   Receipt
@@ -30,7 +30,14 @@ export const UserDropdown = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!user) return null;
+  if (!user) {
+    // Show a simple Login button that opens the login dialog
+    return (
+      <div>
+        <LoginDialog  callbackUrl='/' />
+      </div>
+    );
+  }
 
   const handleSignOut = async () => {
     setIsLoading(true);
@@ -65,11 +72,6 @@ export const UserDropdown = () => {
               {initials}
             </AvatarFallback>
           </Avatar>
-          <div className="hidden sm:flex flex-col items-start">
-            <span className="text-sm font-medium text-gray-900">{displayName}</span>
-            {/* <span className="text-xs text-gray-500 max-w-[120px] truncate">{userEmail}</span> */}
-          </div>
-          <ChevronDown className="h-4 w-4 text-gray-500" />
         </Button>
       </DropdownMenuTrigger>
       

@@ -1,11 +1,15 @@
 'use client';
 
 import { ArrowRight, Play } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from "@/components/ui/card";
 import Link from 'next/link';
+import GetStartedDialog from './GetStarted';
 
 export function Hero() {
+  const [getStartedOpen, setGetStartedOpen] = useState(false);
+
   return (
     <section id="hero" className="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
       {/* Video Background */}
@@ -58,14 +62,12 @@ export function Hero() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 mb-12 sm:mb-16 animate-fade-in">
-                        <Button
-              asChild
+            <Button
               size="lg"
               className="bg-brand-blue hover:bg-brand-blue-dark text-white text-lg h-12 px-8 rounded-full"
+              onClick={() => setGetStartedOpen(true)}
             >
-              <Link href="#promise">
               Get Started <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
             </Button>
             <Button
               asChild
@@ -78,6 +80,7 @@ export function Hero() {
               </Link>
             </Button>
           </div>
+          <GetStartedDialog open={getStartedOpen} onClose={() => setGetStartedOpen(false)} />
           
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl mx-auto px-4 animate-fade-in">

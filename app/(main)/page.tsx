@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Hero } from '@/components/sections/Hero';
+import ClassesTiles from '@/components/sections/ClassesTiles';
 import { CallToAction } from '@/components/sections/CallToAction';
 import { FAQ } from '@/components/sections/FAQ';
 // import { DemoVideo } from '@/components/DemoVideo';
@@ -49,12 +50,14 @@ export default function Home() {
   return (
     <>
       <div className="bg-background">
-        {/* Hero Section */}
-        <Hero />
-        {/* Problem Section */}
+      {/* Hero Section */}
+      <Hero />
+         {/* Problem Section */}
         <RevisionProblems />
         {/* Promise Section */}
         <ScioSprintsPromise />
+         {/* Classes tiles section */}
+        <ClassesTiles />
         {/* Games Section */}
         <TryGamesSection />       
         {/* CTA Section */} 

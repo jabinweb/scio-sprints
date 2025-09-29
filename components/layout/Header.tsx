@@ -8,6 +8,7 @@ import { Logo } from '../Logo';
 import { useRouter, usePathname } from 'next/navigation';
 import { LoginDialog } from '../auth/login-dialog';
 import { useSession, signOut } from 'next-auth/react';
+import UserDropdown from '../dashboard/UserDropdown';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -102,40 +103,9 @@ const Header = () => {
                 {link.label}
               </Button>
             ))}
-            
-            {user ? (
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push('/dashboard')}
-                  className={cn(
-                    "transition-colors font-medium",
-                    shouldShowSolidBackground 
-                      ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50" 
-                      : "text-white/90 hover:text-white hover:bg-white/10"
-                  )}
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Dashboard
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={handleLogout}
-                  className={cn(
-                    "transition-colors font-medium",
-                    shouldShowSolidBackground 
-                      ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50" 
-                      : "text-white/90 hover:text-white hover:bg-white/10"
-                  )}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
-              </div>
-            ) : (
-              <LoginDialog />
-            )}
-            
+
+            <UserDropdown />            
+           
             <Button 
               className={cn(
                 "rounded-full font-semibold px-6",
@@ -158,8 +128,9 @@ const Header = () => {
               shouldShowSolidBackground ? "text-gray-800" : "text-white"
             )}
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? 'Close menu' : 'Open menu'}
           >
-            {isOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
+            {isOpen ? <X className="!w-8 !h-8" /> : <Menu className="!w-8 !h-8" />}
           </Button>
         </div>
 
