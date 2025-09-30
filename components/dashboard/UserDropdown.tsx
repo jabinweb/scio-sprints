@@ -21,7 +21,8 @@ import {
   LogOut, 
   School,
   Bell,
-  Receipt
+  Receipt,
+  Home
 } from "lucide-react";
 
 export const UserDropdown = () => {
@@ -84,7 +85,15 @@ export const UserDropdown = () => {
         </DropdownMenuLabel>
         
         <DropdownMenuSeparator />
-        
+
+        <DropdownMenuItem
+          onClick={() => handleNavigation('/dashboard')}
+          className="cursor-pointer"
+        >
+          <Home className="mr-2 h-4 w-4" />
+          <span>Dashboard</span>
+        </DropdownMenuItem>
+
         <DropdownMenuItem 
           onClick={() => handleNavigation('/dashboard/profile')}
           className="cursor-pointer"

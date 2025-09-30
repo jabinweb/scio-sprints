@@ -5,6 +5,13 @@ import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,7 +22,6 @@ import {
   Phone,
   User,
   School,
-  Users,
   Hash,
   GraduationCap
 } from 'lucide-react';
@@ -36,6 +42,7 @@ interface UserProfile {
     id: string;
     name: string;
   } | null;
+  city?: string; // Add optional city to user profile shape
 }
 
 export default function ProfilePage() {
@@ -48,20 +55,32 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    displayName: '',
-    grade: '',
-    section: '',
-    rollNumber: '',
+    email: '',
+    classId: '',
     phone: '',
-    parentName: '',
-    parentEmail: ''
+    schoolName: '',
+    city: ''
   });
+
+  const [classOptions, setClassOptions] = useState<Array<{ id: string | number; name: string }>>([]);
 
   // Fetch user profile data
   useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const res = await fetch('/api/admin/classes');
+        if (!res.ok) return;
+        const data = await res.json();
+        type ClassData = { id: string | number; name: string };
+        setClassOptions(Array.isArray(data) ? data.map((d: ClassData) => ({ id: d.id, name: d.name })) : []);
+      } catch (err) {
+        console.error('Error fetching classes:', err);
+      }
+    };
+
     const fetchUserProfile = async () => {
       if (!user?.id) return;
-      
+
       try {
         const response = await fetch('/api/user/profile');
         if (response.ok) {
@@ -69,13 +88,11 @@ export default function ProfilePage() {
           setUserProfile(profile);
           setFormData({
             name: profile.name || '',
-            displayName: profile.displayName || '',
-            grade: profile.grade || '',
-            section: profile.section || '',
-            rollNumber: profile.rollNumber || '',
+            email: profile.email || '',
+            classId: profile.grade || '',
             phone: profile.phone || '',
-            parentName: profile.parentName || '',
-            parentEmail: profile.parentEmail || ''
+            schoolName: profile.school?.name || '',
+            city: profile.city || ''
           });
         }
       } catch (error) {
@@ -83,6 +100,7 @@ export default function ProfilePage() {
       }
     };
 
+    fetchClasses();
     fetchUserProfile();
   }, [user]);
 
@@ -128,13 +146,11 @@ export default function ProfilePage() {
     if (userProfile) {
       setFormData({
         name: userProfile.name || '',
-        displayName: userProfile.displayName || '',
-        grade: userProfile.grade || '',
-        section: userProfile.section || '',
-        rollNumber: userProfile.rollNumber || '',
+        email: userProfile.email || '',
+        classId: userProfile.grade || '',
         phone: userProfile.phone || '',
-        parentName: userProfile.parentName || '',
-        parentEmail: userProfile.parentEmail || ''
+        schoolName: userProfile.school?.name || '',
+        city: userProfile.city || ''
       });
     }
     setIsEditing(false);
@@ -154,23 +170,23 @@ export default function ProfilePage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900">{displayName}</h2>
-                  <p className="text-gray-600">{user.email}</p>
+                  <h2 className="text-2xl font-bold text-gray-200">{displayName}</h2>
+                  <p className="text-gray-300">{user.email}</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-500">Joined {joinDate}</span>
+                    <Calendar className="h-4 w-4 text-gray-300" />
+                    <span className="text-sm text-gray-300">Joined {joinDate}</span>
                   </div>
                 </div>
 
-                <div className="text-right">
+                <div className="text-right space-x-2">
                   {/* Display user role from NextAuth session */}
                   {user?.role && (
-                    <Badge variant="outline" className="mb-2">
+                    <Badge variant="secondary" className="mb-2">
                       {user.role}
                     </Badge>
                   )}
                   <Button 
-                    variant={isEditing ? "outline" : "default"}
+                    variant={isEditing ? "secondary" : "default"}
                     onClick={() => setIsEditing(!isEditing)}
                     disabled={isLoading}
                   >
@@ -192,45 +208,35 @@ export default function ProfilePage() {
                         className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="displayName" className="text-gray-700 font-medium">Display Name</Label>
+                      <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
                       <Input
-                        id="displayName"
-                        value={formData.displayName}
-                        onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="grade" className="text-gray-700 font-medium">Grade</Label>
-                      <Input
-                        id="grade"
-                        value={formData.grade}
-                        onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                        className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="e.g., 10th Grade"
-                      />
+
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="classId" className="text-gray-700 font-medium">Class</Label>
+                      <Select
+                        value={formData.classId}
+                        onValueChange={(val) => setFormData({ ...formData, classId: val })}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select class" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {classOptions.map((opt) => (
+                            <SelectItem key={opt.id} value={String(opt.id)}>{opt.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="section" className="text-gray-700 font-medium">Section</Label>
-                      <Input
-                        id="section"
-                        value={formData.section}
-                        onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                        className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="e.g., A, B, C"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="rollNumber" className="text-gray-700 font-medium">Roll Number</Label>
-                      <Input
-                        id="rollNumber"
-                        value={formData.rollNumber}
-                        onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
-                        className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="Student roll number"
-                      />
-                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="phone" className="text-gray-700 font-medium">Phone Number</Label>
                       <Input
@@ -238,32 +244,30 @@ export default function ProfilePage() {
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="Contact number"
                       />
                     </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="parentName" className="text-gray-700 font-medium">Parent/Guardian Name</Label>
+                      <Label htmlFor="schoolName" className="text-gray-700 font-medium">School Name</Label>
                       <Input
-                        id="parentName"
-                        value={formData.parentName}
-                        onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
+                        id="schoolName"
+                        value={formData.schoolName}
+                        onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
                         className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="Parent or guardian name"
                       />
                     </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="parentEmail" className="text-gray-700 font-medium">Parent/Guardian Email</Label>
+                      <Label htmlFor="city" className="text-gray-700 font-medium">City</Label>
                       <Input
-                        id="parentEmail"
-                        type="email"
-                        value={formData.parentEmail}
-                        onChange={(e) => setFormData({ ...formData, parentEmail: e.target.value })}
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                         className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="Parent or guardian email"
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-3 pt-4">
                     <Button onClick={handleSave} disabled={isLoading}>
                       {isLoading ? 'Saving...' : 'Save Changes'}
@@ -283,11 +287,11 @@ export default function ProfilePage() {
                         <p className="font-medium">{userProfile?.name || 'Not set'}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                       <Mail className="h-5 w-5 text-gray-500" />
                       <div>
-                        <p className="text-sm text-gray-500">Email Address</p>
+                        <p className="text-sm text-gray-500">Email</p>
                         <p className="font-medium">{userProfile?.email || 'Not set'}</p>
                       </div>
                     </div>
@@ -295,24 +299,8 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                       <GraduationCap className="h-5 w-5 text-gray-500" />
                       <div>
-                        <p className="text-sm text-gray-500">Grade</p>
+                        <p className="text-sm text-gray-500">Class</p>
                         <p className="font-medium">{userProfile?.grade || 'Not set'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                      <Users className="h-5 w-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm text-gray-500">Section</p>
-                        <p className="font-medium">{userProfile?.section || 'Not set'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                      <Hash className="h-5 w-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm text-gray-500">Roll Number</p>
-                        <p className="font-medium">{userProfile?.rollNumber || 'Not set'}</p>
                       </div>
                     </div>
 
@@ -325,30 +313,20 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                      <User className="h-5 w-5 text-gray-500" />
+                      <School className="h-5 w-5 text-gray-500" />
                       <div>
-                        <p className="text-sm text-gray-500">Parent/Guardian</p>
-                        <p className="font-medium">{userProfile?.parentName || 'Not set'}</p>
+                        <p className="text-sm text-gray-500">School</p>
+                        <p className="font-medium">{userProfile?.school?.name || userProfile?.school?.name || 'Not set'}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                      <Mail className="h-5 w-5 text-gray-500" />
+                      <Hash className="h-5 w-5 text-gray-500" />
                       <div>
-                        <p className="text-sm text-gray-500">Parent/Guardian Email</p>
-                        <p className="font-medium">{userProfile?.parentEmail || 'Not set'}</p>
+                        <p className="text-sm text-gray-500">City</p>
+                        <p className="font-medium">{userProfile?.city || 'Not set'}</p>
                       </div>
                     </div>
-
-                    {userProfile?.school && (
-                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                        <School className="h-5 w-5 text-gray-500" />
-                        <div>
-                          <p className="text-sm text-gray-500">School</p>
-                          <p className="font-medium">{userProfile.school.name}</p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}

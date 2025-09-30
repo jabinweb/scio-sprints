@@ -293,7 +293,27 @@ export const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       });
       
       const orderData = await response.json();
-      if (!response.ok) throw new Error(orderData.error);
+      if (!response.ok) {
+        // Handle already-subscribed case gracefully (avoid throwing and console error)
+        if (orderData && typeof orderData.error === 'string' && orderData.error.toLowerCase().includes('already subscribed')) {
+          const message = `You already have an active subscription to this class! 
+          
+If you're still seeing limited access, please:
+1. Refresh the page to update your access status
+2. Log out and log back in
+3. Contact support if the issue persists
+
+Would you like to refresh the page now?`;
+
+          if (confirm(message)) {
+            window.location.reload();
+          }
+          onClose();
+          return; // Return early instead of throwing
+        }
+
+        throw new Error(orderData.error);
+      }
       
       // Handle different payment gateways
       if (orderData.gateway === 'CASHFREE') {

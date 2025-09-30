@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, BookOpen, Star, GraduationCap, Users } from 'lucide-react';
@@ -58,6 +59,8 @@ export default function DemoPage() {
   const [error, setError] = useState<string | null>(null);
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
   const [selectedClassForSubscription, setSelectedClassForSubscription] = useState<DemoClass | null>(null);
+  const { data: session } = useSession();
+  const [accessibleClassIds, setAccessibleClassIds] = useState<Set<number>>(new Set());
 
   // Fetch demo classes from API
   useEffect(() => {
@@ -78,6 +81,23 @@ export default function DemoPage() {
         } else {
           throw new Error('Invalid response format');
         }
+        // After loading demo classes, also fetch user's accessible classes if signed in
+        try {
+          if (session?.user?.id) {
+            const accessRes = await fetch(`/api/classes/accessible?userId=${session.user.id}`);
+            const accessJson: { accessibleClasses?: Array<{ id: number; schoolAccess?: boolean; subscriptionAccess?: boolean }> } = await accessRes.json();
+            if (accessRes.ok && accessJson && Array.isArray(accessJson.accessibleClasses)) {
+              const ids = new Set<number>();
+              accessJson.accessibleClasses.forEach((c) => {
+                if (c.schoolAccess || c.subscriptionAccess) ids.add(c.id);
+              });
+              setAccessibleClassIds(ids);
+            }
+          }
+        } catch (e) {
+          // ignore access fetch errors - they only affect demo button state
+          console.warn('Failed to fetch user accessible classes', e);
+        }
       } catch (err) {
         console.error('Error fetching demo classes:', err);
         setError(err instanceof Error ? err.message : 'Failed to load demo classes');
@@ -85,9 +105,8 @@ export default function DemoPage() {
         setIsLoading(false);
       }
     };
-
     fetchDemoClasses();
-  }, []);
+  }, [session]);
 
   const handleClassClick = (classId: number) => {
     router.push(`/demo/class/${classId}`);
@@ -257,15 +276,18 @@ export default function DemoPage() {
                   <ClassCard
                     key={classInfo.id}
                     variant="demo"
-                    classData={{
-                      id: classInfo.id,
-                      name: classInfo.name,
-                      description: classInfo.description,
-                      price: classInfo.price,
-                      subjectCount: classInfo.subjectCount,
-                      chapterCount: classInfo.chapterCount,
-                      subjects: classInfo.subjects
-                    }}
+                      classData={{
+                        id: classInfo.id,
+                        name: classInfo.name,
+                        description: classInfo.description,
+                        price: classInfo.price,
+                        subjectCount: classInfo.subjectCount,
+                        chapterCount: classInfo.chapterCount,
+                        subjects: classInfo.subjects,
+                        // mark access if this class is in the user's accessible ids
+                        schoolAccess: accessibleClassIds.has(classInfo.id),
+                        subscriptionAccess: accessibleClassIds.has(classInfo.id)
+                      }}
                     progress={progress}
                     onClick={() => handleClassClick(classInfo.id)}
                     onUpgrade={(e) => {

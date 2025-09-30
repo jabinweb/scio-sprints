@@ -3,6 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Clock, Play, ChevronRight, Crown } from "lucide-react";
+import { useRouter } from 'next/navigation';
 
 // Helper to get a unique icon for each class
 function getClassIcon(className: string) {
@@ -172,41 +173,90 @@ const DashboardActionButton: React.FC<{ classData: DashboardClassData }> = ({ cl
 const DemoActionButtons: React.FC<{ 
   onDemo: () => void; 
   onUpgrade: (e: React.MouseEvent) => void;
-}> = ({ onDemo, onUpgrade }) => (
-  <div className="pt-2 space-y-2">
-    {/* Try Demo Button */}
-    <div 
-      className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-gray-50 to-blue-50 border-gray-100 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:border-blue-200 transition-all cursor-pointer"
-      onClick={onDemo}
-    >
-      <div className="flex items-center gap-2">
-        <div className="p-1.5 bg-blue-100 group-hover:bg-blue-200 rounded-lg transition-colors">
-          <Play className="h-3.5 w-3.5 text-blue-600" />
+  classData: DashboardClassData | DemoClassData;
+}> = ({ onDemo, onUpgrade, classData }) => {
+  const router = useRouter();
+
+  const hasAccess = (('schoolAccess' in classData && classData.schoolAccess) || ('subscriptionAccess' in classData && classData.subscriptionAccess));
+
+  // If the demo class is already accessible via school/subscription, show Full Access action
+  if (hasAccess) {
+    const id = (classData as BaseClassData).id;
+    return (
+      <div className="pt-2 space-y-2">
+        <div
+          className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 transition-all cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (id !== undefined) router.push(`/dashboard/class/${id}`);
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-green-100 hover:bg-green-200 rounded-lg transition-colors">
+              <Play className="h-3.5 w-3.5 text-green-600" />
+            </div>
+            <span className="text-sm font-semibold text-green-700 hover:text-green-800 transition-colors">
+              Full Access
+            </span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-green-400 hover:text-green-600 transition-all hover:translate-x-1" />
         </div>
-        <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-700 transition-colors">
-          Try Demo
-        </span>
-      </div>
-      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-all group-hover:translate-x-1" />
-    </div>
-    
-    {/* Upgrade Button */}
-    <div 
-      className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-100 hover:from-orange-100 hover:to-yellow-100 hover:border-orange-200 transition-all cursor-pointer"
-      onClick={onUpgrade}
-    >
-      <div className="flex items-center gap-2">
-        <div className="p-1.5 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors">
-          <Crown className="h-3.5 w-3.5 text-orange-600" />
+
+        {/* Secondary Try Demo action for consistent UI */}
+        <div 
+          className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-gray-50 to-blue-50 border-gray-100 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:border-blue-200 transition-all cursor-pointer"
+          onClick={(e) => { e.stopPropagation(); onDemo(); }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-blue-100 group-hover:bg-blue-200 rounded-lg transition-colors">
+              <Play className="h-3.5 w-3.5 text-blue-600" />
+            </div>
+            <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-700 transition-colors">
+              Try Demo
+            </span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-all group-hover:translate-x-1" />
         </div>
-        <span className="text-sm font-semibold text-gray-700 hover:text-orange-700 transition-colors">
-          Upgrade
-        </span>
       </div>
-      <ChevronRight className="h-4 w-4 text-gray-400 hover:text-orange-600 transition-all hover:translate-x-1" />
+    );
+  }
+
+  return (
+    <div className="pt-2 space-y-2">
+      {/* Try Demo Button */}
+      <div 
+        className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-gray-50 to-blue-50 border-gray-100 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:border-blue-200 transition-all cursor-pointer"
+        onClick={onDemo}
+      >
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-blue-100 group-hover:bg-blue-200 rounded-lg transition-colors">
+            <Play className="h-3.5 w-3.5 text-blue-600" />
+          </div>
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-700 transition-colors">
+            Try Demo
+          </span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-all group-hover:translate-x-1" />
+      </div>
+      
+      {/* Upgrade Button */}
+      <div 
+        className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-100 hover:from-orange-100 hover:to-yellow-100 hover:border-orange-200 transition-all cursor-pointer"
+        onClick={onUpgrade}
+      >
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors">
+            <Crown className="h-3.5 w-3.5 text-orange-600" />
+          </div>
+          <span className="text-sm font-semibold text-gray-700 hover:text-orange-700 transition-colors">
+            Upgrade
+          </span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-gray-400 hover:text-orange-600 transition-all hover:translate-x-1" />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const ClassCard: React.FC<ClassCardProps> = ({
   variant,
@@ -376,6 +426,7 @@ export const ClassCard: React.FC<ClassCardProps> = ({
           <DemoActionButtons 
             onDemo={onClick}
             onUpgrade={onUpgrade}
+            classData={classData as DashboardClassData}
           />
         )}
       </CardContent>
