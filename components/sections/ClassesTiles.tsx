@@ -74,6 +74,9 @@ export default function ClassesTiles() {
             Start your journey
           </span>
         </h2>
+        <p className="text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
+            Choose your classroom and dive straight into an exciting journey of lessons, activities, and challenges designed just for you.
+        </p>
         <div className="flex justify-center px-4">
           <div className="flex flex-wrap gap-4 justify-center max-w-5xl">
             {classes.map((c) => (

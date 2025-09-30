@@ -1,15 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Users, GraduationCap, BookOpen } from "lucide-react";
+import { GraduationCap, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
-import { useRouter } from 'next/navigation';
 import { SignupForm } from '../SignupForm';
 
 export function CallToAction() {
   const [isSignupOpen, setIsSignupOpen] = useState(false);
   const [signupRole, setSignupRole] = useState<string | undefined>(undefined);
-  const router = useRouter();
 
   const handleEducatorClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -30,28 +28,13 @@ export function CallToAction() {
         <Card className="bg-white/50 backdrop-blur-sm border border-white/20">
           <CardContent className="text-center py-12 px-6">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-4 tracking-tight text-gray-900">
-              <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">Choose Your Journey</span> 🚀
+              <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">Need a Custom Portal?</span> ✨
             </h2>
             <p className="text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
-              Are you a parent seeking engaging learning at home or a school looking to enhance classroom outcomes? We’ve got you covered!
+              We build school-branded learning portals tailored to any curriculum or textbook. Get a platform that fits your classrooms perfectly.
             </p>
             <TooltipProvider>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={() => router.push('/demo')}
-                      className="bg-brand-blue hover:bg-brand-blue-dark text-white rounded-full px-8 py-6 text-lg"
-                    >
-                      <Users className="mr-2 h-5 w-5" />
-                      I am a Parent
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-gray-900 !text-white border-gray-800 shadow-xl px-4 py-2 rounded-lg">
-                    Fun, self-paced learning tools your child will love.
-                  </TooltipContent>
-                </Tooltip>
-                
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">               
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="relative">
@@ -60,7 +43,7 @@ export function CallToAction() {
                         className="bg-orange-400 hover:bg-orange-500 text-white rounded-full px-8 py-6 text-lg shadow-lg transform-gpu hover:scale-[1.02] focus:outline-none"
                       >
                         <BookOpen className="mr-2 h-5 w-5" />
-                        I am a Teacher
+                        Get in touch to create yours today!
                       </Button>
                     </div>
                   </TooltipTrigger>
