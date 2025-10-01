@@ -45,7 +45,7 @@ const promiseItems: PromiseItem[] = [
   {
     id: 'concepts',
     title: 'Concept Clarity',
-    description: 'Covers key terms, concepts, and higher Order Thinking Skills questions.',
+    description: 'Covers key terms, concepts, and Higher Order Thinking Skills questions.',
     icon: <Target className="w-6 h-6" />,
     color: 'from-purple-500 to-pink-600',
   },
