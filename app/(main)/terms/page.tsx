@@ -29,14 +29,14 @@ export default function TermsOfService() {
           <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 space-y-8">
             
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">1. Who These Terms Apply To</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Who These Terms Apply To</h2>
               <div className="space-y-4 text-gray-700">
                 <p>These Terms apply to all users: students, teachers, and parents.</p>
               </div>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">2. What We Provide</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">What We Provide</h2>
               <div className="space-y-4 text-gray-700">
                 <p>ScioSprints is an interactive educational platform offering:</p>
                 <ul className="list-disc pl-6 space-y-2">
@@ -49,7 +49,7 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">3. Accounts</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Accounts</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>You must provide accurate information when creating an account.</li>
@@ -61,7 +61,7 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">4. Acceptable Use</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Acceptable Use</h2>
               <div className="space-y-4 text-gray-700">
                 <p>You may use the platform only for educational purposes. Do not:</p>
                 <ul className="list-disc pl-6 space-y-2">
@@ -74,7 +74,7 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">5. Subscription & Payment</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Subscription & Payment</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>All subscriptions run until March 31st of the current financial year (end of academic year).</li>
@@ -86,7 +86,7 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">6. Intellectual Property</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Intellectual Property</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>All games, content, and materials belong to ScioLabs.</li>
@@ -96,7 +96,7 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">7. Privacy & Data</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Privacy & Data</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>We collect only the minimum information needed for educational purposes.</li>
@@ -108,7 +108,7 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">8. Limitation of Liability</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Limitation of Liability</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>The platform is provided “as is.”</li>
@@ -120,7 +120,7 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">9. Termination</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Termination</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>You may cancel anytime; access will continue until March 31.</li>
@@ -131,7 +131,7 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">10. Contact Us</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Contact Us</h2>
               <div className="space-y-4 text-gray-700">
                 <p>For questions:</p>
                 <div className="bg-gray-50 p-4 rounded-lg">

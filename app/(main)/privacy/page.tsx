@@ -29,7 +29,7 @@ export default function PrivacyPolicy() {
           <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 space-y-8">
             
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">1. Information We Collect</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Information We Collect</h2>
               <div className="space-y-4 text-gray-700">
                 <h3 className="text-lg font-medium">Personal Information</h3>
                 <ul className="list-disc pl-6 space-y-2">
@@ -50,7 +50,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">2. How We Use Your Information</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">How We Use Your Information</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Deliver and improve our educational services</li>
@@ -64,7 +64,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">3. Information Sharing</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Information Sharing</h2>
               <div className="space-y-4 text-gray-700">
                 <p>We do not sell your data. We may share information only when necessary:</p>
                 <ul className="list-disc pl-6 space-y-2">
@@ -76,7 +76,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">4. Data Security</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Data Security</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Encryption during transfer and storage</li>
@@ -88,7 +88,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">5. Children’s Privacy</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Children’s Privacy</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>We do not collect personal data from children under 13 without parental consent.</li>
@@ -99,7 +99,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">6. Your Rights</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Your Rights</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Access, review, or update your information</li>
@@ -111,7 +111,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">7. Cookies & Tracking</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Cookies & Tracking</h2>
               <div className="space-y-4 text-gray-700">
                 <p>We use cookies to:</p>
                 <ul className="list-disc pl-6 space-y-2">
@@ -125,7 +125,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">8. Changes to This Policy</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Changes to This Policy</h2>
               <div className="space-y-4 text-gray-700">
                 <p>We may update this policy from time to time. If changes are significant, we will:</p>
                 <ul className="list-disc pl-6 space-y-2">
@@ -138,7 +138,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">9. Contact Us</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Contact Us</h2>
               <div className="space-y-4 text-gray-700">
                 <p>For privacy questions or requests:</p>
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -150,7 +150,7 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-brand-blue mb-4">9. Changes to This Policy</h2>
+              <h2 className="text-2xl font-semibold text-brand-blue mb-4">Changes to This Policy</h2>
               <div className="space-y-4 text-gray-700">
                 <p>We may update this Privacy Policy from time to time. We will notify you of any significant changes by:</p>
                 <ul className="list-disc pl-6 space-y-2">
