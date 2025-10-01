@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { PaymentStatus } from '@prisma/client';
+import { getAcademicYearEndDate } from '@/lib/subscription-date-utils';
 
 // Manual payment verification endpoint for failed automatic verifications
 export async function POST(req: Request) {
@@ -115,7 +116,7 @@ export async function POST(req: Request) {
           });
 
           if (!existingSubscription || forceReprocess) {
-            const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+            const endDate = getAcademicYearEndDate(); // Academic year ends March 31st
             
             if (existingSubscription && forceReprocess) {
               // Update existing subscription
@@ -163,7 +164,7 @@ export async function POST(req: Request) {
             const newSubjectIds = subjectIds.filter((id: string) => !existingSubjectIds.includes(id));
 
             if (newSubjectIds.length > 0 || forceReprocess) {
-              const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+              const endDate = getAcademicYearEndDate(); // Academic year ends March 31st
               const subscriptionData = (forceReprocess ? subjectIds : newSubjectIds).map((subjectId: string) => ({
                 userId: metadata.userId,
                 subjectId: subjectId,

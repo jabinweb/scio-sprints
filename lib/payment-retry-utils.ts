@@ -1,5 +1,6 @@
 // Enhanced payment verification utilities with retry logic and fallback mechanisms
 import { prisma } from '@/lib/prisma';
+import { getAcademicYearEndDate } from '@/lib/subscription-date-utils';
 
 
 interface RetryOptions {
@@ -187,7 +188,7 @@ export async function createSubscriptionWithRetry(
         }
 
         // Create new subscription
-        const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+        const endDate = getAcademicYearEndDate(); // Academic year ends March 31st
         const subscription = await prisma.subscription.create({
           data: {
             userId: metadata.userId,
@@ -229,7 +230,7 @@ export async function createSubscriptionWithRetry(
         }
 
         // Create subscriptions for new subjects
-        const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+        const endDate = getAcademicYearEndDate(); // Academic year ends March 31st
         const subscriptionData = newSubjectIds.map((subjectId: string) => ({
           userId: metadata.userId,
           subjectId: subjectId,

@@ -6,6 +6,7 @@ import {
   sendNotificationEmailsWithRetry,
   paymentCircuitBreaker 
 } from '@/lib/payment-retry-utils';
+import { getAcademicYearEndDate } from '@/lib/subscription-date-utils';
 
 export async function POST(req: Request) {
   const startTime = Date.now();
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
               className: classData?.name || 'Unknown Class',
               subscriptionType: 'Class Access',
               subscriptionName: `${classData?.name} - Class Access`,
-              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+              endDate: getAcademicYearEndDate().toISOString()
             };
           } else if (metadata.type === 'subject_subscription') {
             const subjectIds: string[] = metadata.subjectIds || (metadata.subjectId ? [metadata.subjectId] : []);
@@ -108,7 +109,7 @@ export async function POST(req: Request) {
               subscriptionName: subjectIds.length === 1 
                 ? `${subjects[0]?.name} - Subject Access`
                 : `${subjectNames} - Multiple Subject Access`,
-              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+              endDate: getAcademicYearEndDate().toISOString()
             };
           }
 

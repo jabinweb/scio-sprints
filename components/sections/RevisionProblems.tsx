@@ -92,7 +92,7 @@ export function RevisionProblems() {
           
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 tracking-tight text-gray-900 px-4">
             <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-              Why Revision Feels Hard?
+              Why does revision feel hard?
             </span>
           </h2>
         </motion.div>

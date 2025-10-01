@@ -77,7 +77,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold text-brand-blue mb-4">Subscription & Payment</h2>
               <div className="space-y-4 text-gray-700">
                 <ul className="list-disc pl-6 space-y-2">
-                  <li>All subscriptions run until March 31st of the current financial year (end of academic year).</li>
+                  <li>All subscriptions are valid until March 31st of the current financial year, which also marks the end of the academic year.</li>
                   <li>We only offer Academic Year Plans — no monthly plans.</li>
                   <li>Subscriptions are not auto-renewed; they simply end on March 31.</li>
                   <li>Payments are made in advance and are non-refundable, except under our 7-day Money Back Guarantee.</li>

@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/mail';
 import { generateEmailContent } from '@/lib/email';
 import { notifyAdminNewSubscription } from '@/lib/admin-notifications';
 import { logPaymentCompleted, logPaymentFailed, logSubscriptionCreated } from '@/lib/activity-logger';
+import { getAcademicYearEndDate } from '@/lib/subscription-date-utils';
 
 export async function POST(req: Request) {
   try {
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
       }
 
       // Create class-specific subscription using Prisma
-      const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year access
+      const endDate = getAcademicYearEndDate(); // Academic year ends March 31st
       try {
         const subscription = await prisma.subscription.create({
           data: {

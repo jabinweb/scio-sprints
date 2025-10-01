@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { PaymentStatus } from '@prisma/client';
+import { getAcademicYearEndDate } from '@/lib/subscription-date-utils';
 
 // Webhook endpoint for Razorpay payment notifications
 export async function POST(req: Request) {
@@ -174,7 +175,7 @@ async function processSubscriptionCreation(metadata: Record<string, unknown>, pa
     });
 
     if (!existingSubscription) {
-      const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+      const endDate = getAcademicYearEndDate(); // Academic year ends March 31st
       await prisma.subscription.create({
         data: {
           userId: metadata.userId as string,
@@ -207,7 +208,7 @@ async function processSubscriptionCreation(metadata: Record<string, unknown>, pa
       const newSubjectIds = subjectIds.filter((id: string) => !existingSubjectIds.includes(id));
 
       if (newSubjectIds.length > 0) {
-        const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+        const endDate = getAcademicYearEndDate(); // Academic year ends March 31st
         const subscriptionData = newSubjectIds.map((subjectId: string) => ({
           userId: metadata.userId as string,
           subjectId: subjectId,
