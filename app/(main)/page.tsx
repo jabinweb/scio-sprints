@@ -59,14 +59,8 @@ export default function Home() {
         <RevisionProblems />
         {/* Promise Section */}
         <ScioSprintsPromise />
-         {/* Classes tiles section */}
-        <ClassesTiles />
         {/* Games Section */}
-        <TryGamesSection />       
-        {/* CTA Section */} 
-        <section id="cta">
-          <CallToAction />
-        </section>
+        <TryGamesSection />   
         {/* Platforms Section */}
         <section id="platforms" className="py-20 relative overflow-hidden">
           {/* Animated Background */}
@@ -120,6 +114,12 @@ export default function Home() {
         {/* FAQ Section */}
         <section id="faq">
           <FAQ />
+        </section>
+         {/* Classes tiles section */}
+        <ClassesTiles />
+        {/* CTA Section */} 
+        <section id="cta">
+        <CallToAction />
         </section>
       </div>
     </>

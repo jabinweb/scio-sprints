@@ -21,48 +21,6 @@ export default function Support() {
           </p>
         </div>
 
-        {/* Quick Help Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
-          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 text-center hover:shadow-lg transition-shadow">
-            <div className="w-16 h-16 bg-brand-blue/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-brand-blue mb-2">FAQ</h3>
-            <p className="text-gray-600 mb-4">Find quick answers to the most common questions about our platform.</p>
-            <button className="text-brand-blue hover:text-brand-orange transition-colors font-medium">
-              Browse FAQ →
-            </button>
-          </div>
-
-          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 text-center hover:shadow-lg transition-shadow">
-            <div className="w-16 h-16 bg-brand-orange/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-brand-blue mb-2">User Guides</h3>
-            <p className="text-gray-600 mb-4">Step-by-step tutorials for students, teachers, and parents.</p>
-            <button className="text-brand-blue hover:text-brand-orange transition-colors font-medium">
-              View Guides →
-            </button>
-          </div>
-
-          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 text-center hover:shadow-lg transition-shadow">
-            <div className="w-16 h-16 bg-brand-blue/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-brand-blue mb-2">Contact Us</h3>
-            <p className="text-gray-600 mb-4">Get personalized help from our dedicated support team.</p>
-            <button className="text-brand-blue hover:text-brand-orange transition-colors font-medium">
-              Send Message →
-            </button>
-          </div>
-        </div>
-
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-8">
           {/* FAQ Section */}
@@ -73,49 +31,25 @@ export default function Support() {
               <div className="space-y-6">
                 <details className="group">
                   <summary className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <span className="font-medium">How do I create a student account?</span>
+                    <span className="font-medium">How do I sign in?</span>
                     <svg className="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </summary>
                   <div className="mt-4 p-4 text-gray-600">
-                    To create a student account, click the &quot;Sign Up&quot; button on our homepage, select &quot;Student&quot; as your account type, and fill in the required information including your name, email, and grade level. You&apos;ll receive a confirmation email to activate your account.
+                    You can log in using Google Sign-In. Or, type your email and we’ll send you a sign-in link — no password to remember.
                   </div>
                 </details>
 
                 <details className="group">
                   <summary className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <span className="font-medium">What subjects and grade levels do you support?</span>
+                    <span className="font-medium">I forgot my password — what should I do?</span>
                     <svg className="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </summary>
                   <div className="mt-4 p-4 text-gray-600">
-                    Scio Labs supports multiple subjects including Math, Science, English, Social Studies, and more for grades K-12. Our content is aligned with major curriculum standards including Common Core, NGSS, and international curricula.
-                  </div>
-                </details>
-
-                <details className="group">
-                  <summary className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <span className="font-medium">How can teachers track student progress?</span>
-                    <svg className="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </summary>
-                  <div className="mt-4 p-4 text-gray-600">
-                    Teachers have access to comprehensive dashboards showing student progress, time spent on activities, performance analytics, and detailed reports. You can view individual student data or class-wide statistics to inform your instruction.
-                  </div>
-                </details>
-
-                <details className="group">
-                  <summary className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <span className="font-medium">Is there a mobile app available?</span>
-                    <svg className="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </summary>
-                  <div className="mt-4 p-4 text-gray-600">
-                    Yes! Scio Labs is available as a mobile app for both iOS and Android devices. You can download it from the App Store or Google Play Store. The mobile app offers full functionality including games, progress tracking, and offline play for select activities.
+                    No need to reset anything. Just use Google Sign-In or request a new email sign-in link.
                   </div>
                 </details>
 
@@ -127,10 +61,35 @@ export default function Support() {
                     </svg>
                   </summary>
                   <div className="mt-4 p-4 text-gray-600">
-                    We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and bank transfers for institutional accounts. All payments are processed securely through encrypted payment gateways.
+                    You can pay securely through our payment gateway using cards, UPI, or net banking.
                   </div>
                 </details>
 
+                <details className="group">
+                  <summary className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <span className="font-medium">I was charged wrongly. How do I get a refund?</span>
+                    <svg className="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="mt-4 p-4 text-gray-600">
+                    Email us at <a href="mailto:info@sciolabs.in" className="text-brand-blue">info@sciolabs.in</a> or contact us on WhatsApp. If it’s within 7 days of purchase, we’ll refund you — no questions asked.
+                  </div>
+                </details>
+
+                <details className="group">
+                  <summary className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <span className="font-medium">How do I cancel my subscription?</span>
+                    <svg className="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="mt-4 p-4 text-gray-600">
+                    Send us an email or a WhatsApp message to cancel. If you cancel within 7 days you’ll get a refund but access stops immediately. After 7 days you’ll keep access until March 31, when it ends automatically.
+                  </div>
+                </details>
+
+                {/* Keep the Having payment issues block as-is (special highlighted) */}
                 <details className="group">
                   <summary className="flex justify-between items-center cursor-pointer p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors border border-orange-200">
                     <span className="font-medium text-orange-800">Having payment issues?</span>
@@ -179,13 +138,40 @@ export default function Support() {
 
                 <details className="group">
                   <summary className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <span className="font-medium">How do I cancel my subscription?</span>
+                    <span className="font-medium">The platform is not working properly. What should I do?</span>
                     <svg className="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </summary>
                   <div className="mt-4 p-4 text-gray-600">
-                    You can cancel your subscription anytime by logging into your account, going to Settings &gt; Subscription, and clicking &quot;Cancel Subscription.&quot; Your access will continue until the end of your current billing period.
+                    Check your internet and refresh the page. If it still doesn’t work, take a screenshot and send it to us by email or WhatsApp. We’ll fix it as soon as possible.
+                  </div>
+                </details>
+
+                <details className="group">
+                  <summary className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <span className="font-medium">I found a mistake in the content. How can I report it?</span>
+                    <svg className="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="mt-4 p-4 text-gray-600">
+                    Take a screenshot and share it with us on WhatsApp or email. Our team will correct it quickly.
+                  </div>
+                </details>
+
+                <details className="group">
+                  <summary className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <span className="font-medium">How can I contact support?</span>
+                    <svg className="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="mt-4 p-4 text-gray-600">
+                    <p className="mb-1">WhatsApp: <a href="https://wa.me/919876543210" className="text-brand-blue">+91 98765 43210</a> (Mon–Fri, 9 AM–6 PM IST)</p>
+                    <p className="mb-1">Email: <a href="mailto:info@sciolabs.in" className="text-brand-blue">info@sciolabs.in</a> (we reply within 24 hours)</p>
+                    <p className="mb-1">Phone: +91 98765 43210</p>
+                    <p className="mb-0">Live Chat: Available on our website during support hours</p>
                   </div>
                 </details>
               </div>
@@ -240,16 +226,6 @@ export default function Support() {
                   Accessibility Features
                 </a>
               </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-brand-blue to-brand-orange rounded-2xl p-6 text-white">
-              <h3 className="text-xl font-semibold mb-2">Need Immediate Help?</h3>
-              <p className="text-white/90 text-sm mb-4">
-                Our support team is standing by to help you get the most out of Scio Labs.
-              </p>
-              <button className="bg-white text-brand-blue px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors">
-                Start Live Chat
-              </button>
             </div>
           </div>
         </div>

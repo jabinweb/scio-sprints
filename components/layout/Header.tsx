@@ -113,7 +113,7 @@ const Header = () => {
                   ? "bg-brand-blue text-white hover:bg-brand-blue-dark"
                   : "bg-brand-blue text-white hover:bg-brand-blue-dark"
               )}
-              onClick={() => scrollToSection('cta')}
+              onClick={() => router.push('/demo')}
             >
               Try Demo
             </Button>
@@ -177,7 +177,7 @@ const Header = () => {
                 
                 <Button 
                   className="w-full rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm h-12 mt-2"
-                  onClick={() => scrollToSection('cta')}
+                  onClick={() => { setIsOpen(false); router.push('/demo'); }}
                 >
                   Try Demo
                 </Button>

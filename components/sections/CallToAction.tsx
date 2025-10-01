@@ -32,7 +32,7 @@ export function CallToAction() {
               <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">Need a Custom Portal?</span> ✨
             </h2>
             <p className="text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
-              We build school-branded learning portals tailored to any curriculum or textbook. Get a platform that fits your classrooms perfectly.
+              We build school-branded learning portals tailored to any curriculum or board. Get a platform that fits your classrooms perfectly!
             </p>
             <TooltipProvider>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">               
@@ -44,7 +44,7 @@ export function CallToAction() {
                         className="bg-orange-400 hover:bg-orange-500 text-white rounded-full px-8 py-6 text-lg shadow-lg transform-gpu hover:scale-[1.02] focus:outline-none"
                       >
                         <BookOpen className="mr-2 h-5 w-5" />
-                        Get in touch to create yours today!
+                        I am an Educator
                       </Button>
                     </div>
                   </TooltipTrigger>

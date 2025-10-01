@@ -66,7 +66,7 @@ export default function GetStartedDialog({ open, onClose }: GetStartedProps) {
             className="w-full rounded-full"
             aria-label={session?.user ? 'Go to dashboard' : 'Get full access - Login'}
           >
-            {session?.user ? 'Go to dashboard' : 'Get full access - Now'}
+            {session?.user ? 'Go to dashboard' : 'Get full access'}
           </Button>
 
           <div className="pt-3 text-center">

@@ -8,9 +8,8 @@ import {
   BookCheck, 
   Target, 
   Trophy, 
-  Brain, Play
+  Brain
 } from "lucide-react";
-import Link from 'next/link';
 
 
 interface PromiseItem {
@@ -46,7 +45,7 @@ const promiseItems: PromiseItem[] = [
   {
     id: 'concepts',
     title: 'Concept Clarity',
-    description: 'Covers key terms, concepts, and higher-order questions thoroughly.',
+    description: 'Covers key terms, concepts, and higher Order Thinking Skills questions.',
     icon: <Target className="w-6 h-6" />,
     color: 'from-purple-500 to-pink-600',
   },
@@ -95,7 +94,7 @@ export function ScioSprintsPromise() {
               className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm hover:-translate-y-1 shadow-md"
             >
               <CardContent className="p-6">
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
                   {/* Icon */}
                   <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-r ${item.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                     {item.icon}
@@ -106,7 +105,7 @@ export function ScioSprintsPromise() {
                     <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 group-hover:text-brand-blue transition-colors">
                       {item.title}
                     </h3>
-                    <p className="text-gray-600 leading-relaxed font-medium text-sm md:text-base lg:text-lg">
+                    <p className="text-gray-500 leading-relaxed font-medium text-sm md:text-base lg:text-lg">
                       {item.description}
                     </p>
                   </div>
@@ -114,19 +113,6 @@ export function ScioSprintsPromise() {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="text-center mt-16">
-          <p className="text-gray-600 mb-6">
-            Want access to more games and personalized learning paths?
-          </p>
-            <Link href="/#cta">
-              <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-brand-blue to-brand-orange text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer group">
-              <span className="font-semibold">Explore Demo</span>
-                <Play className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
         </div>
 
         {/* Bottom accent */}
