@@ -1,3 +1,4 @@
+'use client';
 import { Button } from "@/components/ui/button";
 import { GraduationCap, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";

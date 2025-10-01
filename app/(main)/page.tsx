@@ -1,6 +1,9 @@
-'use client';
-
 import React from 'react';
+import type { Metadata } from 'next';
+export const metadata: Metadata = {
+  title: 'ScioSprints – CBSE Class 4–8 Gamified Revision (Play & Learn)',
+  description: 'Make CBSE revision fun for Classes 4–8 with curriculum aligned games, leaderboards, and progress tracking. Try free demos learn faster, score better.'
+};
 import { Hero } from '@/components/sections/Hero';
 import ClassesTiles from '@/components/sections/ClassesTiles';
 import { CallToAction } from '@/components/sections/CallToAction';
