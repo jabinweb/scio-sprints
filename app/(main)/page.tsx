@@ -61,6 +61,8 @@ export default function Home() {
         <ScioSprintsPromise />
         {/* Games Section */}
         <TryGamesSection />   
+        {/* Classes tiles section */}
+        <ClassesTiles />
         {/* Platforms Section */}
         <section id="platforms" className="py-20 relative overflow-hidden">
           {/* Animated Background */}
@@ -115,8 +117,6 @@ export default function Home() {
         <section id="faq">
           <FAQ />
         </section>
-         {/* Classes tiles section */}
-        <ClassesTiles />
         {/* CTA Section */} 
         <section id="cta">
         <CallToAction />
