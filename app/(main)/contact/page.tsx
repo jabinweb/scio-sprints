@@ -284,7 +284,7 @@ export default function ContactPage() {
                           type="tel"
                           value={formData.phone}
                           onChange={handleInputChange}
-                          placeholder="+91 98765 43210"
+                          placeholder="+919495212484"
                           className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         />
                       </div>

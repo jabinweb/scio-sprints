@@ -168,9 +168,9 @@ export default function Support() {
                     </svg>
                   </summary>
                   <div className="mt-4 p-4 text-gray-600">
-                    <p className="mb-1">WhatsApp: <a href="https://wa.me/919876543210" className="text-brand-blue">+91 98765 43210</a> (Mon–Fri, 9 AM–6 PM IST)</p>
+                    <p className="mb-1">WhatsApp: <a href="https://wa.me/919495212484" className="text-brand-blue">+91 94952 12484</a> (Mon–Fri, 9 AM–6 PM IST)</p>
                     <p className="mb-1">Email: <a href="mailto:info@sciolabs.in" className="text-brand-blue">info@sciolabs.in</a> (we reply within 24 hours)</p>
-                    <p className="mb-1">Phone: +91 98765 43210</p>
+                    <p className="mb-1">Phone: +91 94952 12484</p>
                     <p className="mb-0">Live Chat: Available on our website during support hours</p>
                   </div>
                 </details>
@@ -190,7 +190,7 @@ export default function Support() {
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Phone Support</h4>
-                  <p className="text-gray-600 text-sm mb-1">+91 98765 43210</p>
+                  <p className="text-gray-600 text-sm mb-1">+91 94952 12484</p>
                   <p className="text-gray-500 text-xs">Mon-Fri, 9AM-6PM IST</p>
                 </div>
                 <div>
