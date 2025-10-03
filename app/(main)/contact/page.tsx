@@ -79,7 +79,7 @@ export default function ContactPage() {
       <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white">
         <div className="container mx-auto px-4 py-20">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
               Get in <span className="text-blue-300">Touch</span>
             </h1>
             <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
