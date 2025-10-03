@@ -1,6 +1,6 @@
 export const themeColors = {
-  blue: '#3B82C4',      // Scio Labs Blue
-  orange: '#F59E0B',    // Scio Labs Orange
+  blue: '#3B82C4',      // ScioSprints Blue
+  orange: '#F59E0B',    // ScioSprints Orange
   // Derived colors
   blueLight: '#60A5FA',
   blueDark: '#1E40AF',

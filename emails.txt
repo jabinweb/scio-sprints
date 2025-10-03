@@ -141,7 +141,7 @@ What to expect:
 - Discussion of your specific needs
 - Custom pricing options
 
-We're excited to show you how Scio Labs can transform your learning experience!
+We're excited to show you how ScioSprints can transform your learning experience!
 
 Best regards,
 Team ScioSprints
@@ -169,7 +169,7 @@ Subscription Details:
 
 [View in Admin Panel Button]
 
-Admin Notification System - Scio Labs
+Admin Notification System - ScioSprints
 
 ================================================================================
 
@@ -196,7 +196,7 @@ Action Required: Please review this payment failure and contact the customer if 
 
 [View Payment Details Button]
 
-Admin Alert System - Scio Labs
+Admin Alert System - ScioSprints
 
 ================================================================================
 
@@ -221,7 +221,7 @@ Error Message:
 
 [Access Admin Panel Button]
 
-System Monitoring Alert - Scio Labs
+System Monitoring Alert - ScioSprints
 
 ================================================================================
 

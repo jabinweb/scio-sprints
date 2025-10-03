@@ -12,7 +12,7 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Custom brand colors - Scio Labs
+  // Custom brand colors - ScioSprints
         'brand-blue': '#3B82C4',
         'brand-orange': '#F59E0B',
         'brand-blue-light': '#60A5FA',

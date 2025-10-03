@@ -91,7 +91,7 @@ export const UserDropdown = () => {
           className="cursor-pointer"
         >
           <Home className="mr-2 h-4 w-4" />
-          <span>Dashboard</span>
+          <span>My Dashboard</span>
         </DropdownMenuItem>
 
         <DropdownMenuItem 

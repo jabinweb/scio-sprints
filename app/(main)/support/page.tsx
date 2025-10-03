@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Support | Scio Labs',
-  description: 'Get help and support for using Scio Labs educational platform.',
+  title: 'Support | ScioSprints',
+  description: 'Get help and support for using ScioSprints educational platform.',
 };
 
 export default function Support() {
@@ -73,7 +73,11 @@ export default function Support() {
                     </svg>
                   </summary>
                   <div className="mt-4 p-4 text-gray-600">
-                    Email us at <a href="mailto:info@sciolabs.in" className="text-brand-blue">info@sciolabs.in</a> or contact us on WhatsApp. If it’s within 7 days of purchase, we’ll refund you — no questions asked.
+                    Email us at <a href="mailto:info@sciolabs.in" className="text-brand-blue">info@sciolabs.in</a> or contact us on WhatsApp. 
+                    <span className="inline-flex items-center gap-2 ml-1">
+                      <span className="px-2 py-0.5 bg-green-50 text-green-800 rounded-full text-xs font-semibold">7-Day Refund</span>
+                      <span className="text-gray-700">If it’s within <strong>7 days</strong> of purchase, we’ll refund you — <strong>no questions asked</strong>.</span>
+                    </span>
                   </div>
                 </details>
 

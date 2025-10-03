@@ -328,11 +328,11 @@ export function generateWelcomeEmail(userName: string, subscriptionType: string,
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to Scio Labs</title>
+    <title>Welcome to ScioSprints</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 30px; border-radius: 10px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px;">🎉 Welcome to Scio Labs!</h1>
+            <h1 style="margin: 0; font-size: 24px;">🎉 Welcome to ScioSprints!</h1>
         </div>
         
         <div style="padding: 30px; background: #f9f9f9; border-radius: 10px; margin: 20px 0;">
@@ -344,7 +344,7 @@ export function generateWelcomeEmail(userName: string, subscriptionType: string,
                 </p>
             </div>
             
-            <p>Thank you for choosing Scio Labs for your learning journey. You now have access to premium educational content!</p>
+            <p>Thank you for choosing ScioSprints for your learning journey. You now have access to premium educational content!</p>
             
             <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border: 1px solid #dee2e6;">
                 <h3 style="margin-top: 0; color: #333;">Subscription Details:</h3>
@@ -379,7 +379,7 @@ export function generateWelcomeEmail(userName: string, subscriptionType: string,
         </div>
         
         <div style="text-align: center; color: #666; font-size: 12px; padding: 20px;">
-            <p>© 2025 Scio Labs. All rights reserved.</p>
+            <p>© 2025 ScioSprints. All rights reserved.</p>
             <p>You received this email because you just subscribed to our service.</p>
         </div>
     </body>
@@ -786,7 +786,7 @@ export function generateEmailContent(type: string, data: Record<string, unknown>
       return {
         subject: `⚠️ Your ${className} subscription expires in ${daysLeft} days`,
         html: generateExpiryWarningEmail(userName, className, daysLeft, endDate),
-        text: `Hi ${userName},\n\nYour subscription to ${className} will expire in ${daysLeft} days on ${new Date(endDate).toLocaleDateString()}.\n\nTo continue your learning journey, please renew your subscription at ${SITE_URL}/dashboard/subscriptions\n\nBest regards,\nScio Labs Team`
+    text: `Hi ${userName},\n\nYour subscription to ${className} will expire in ${daysLeft} days on ${new Date(endDate).toLocaleDateString()}.\n\nTo continue your learning journey, please renew your subscription at ${SITE_URL}/dashboard/subscriptions\n\nBest regards,\nScioSprints Team`
       };
 
     // DISABLED: Not present in emails.txt
@@ -795,7 +795,7 @@ export function generateEmailContent(type: string, data: Record<string, unknown>
     //   return {
     //     subject: `🔔 ${className} subscription in grace period`,
     //     html: generateGracePeriodEmail(userName, className, gracePeriodEndDate),
-    //     text: `Hi ${userName},\n\nYour subscription to ${className} has expired but you're in a 7-day grace period.\n\nRenew now to continue your access: ${SITE_URL}/dashboard/subscriptions\n\nBest regards,\nScio Labs Team`
+    //     text: `Hi ${userName},\n\nYour subscription to ${className} has expired but you're in a 7-day grace period.\n\nRenew now to continue your access: ${SITE_URL}/dashboard/subscriptions\n\nBest regards,\nScioSprints Team`
     //   };
 
     // DISABLED: Not present in emails.txt
@@ -803,7 +803,7 @@ export function generateEmailContent(type: string, data: Record<string, unknown>
     //   return {
     //     subject: `🔄 Time to renew your ${className} subscription`,
     //     html: generateRenewalReminderEmail(userName, className),
-    //     text: `Hi ${userName},\n\nIt's time to renew your subscription to ${className}.\n\nRenew now: ${SITE_URL}/dashboard/subscriptions\n\nBest regards,\nScio Labs Team`
+    //     text: `Hi ${userName},\n\nIt's time to renew your subscription to ${className}.\n\nRenew now: ${SITE_URL}/dashboard/subscriptions\n\nBest regards,\nScioSprints Team`
     //   };
 
     // DISABLED: Not present in emails.txt
@@ -813,7 +813,7 @@ export function generateEmailContent(type: string, data: Record<string, unknown>
     //   return {
     //     subject: `✅ ${className} subscription renewed successfully`,
     //     html: generateSubscriptionRenewedEmail(userName, className, newEndDate, amount),
-    //     text: `Hi ${userName},\n\nGreat news! Your subscription to ${className} has been renewed successfully.\n\nNew expiry date: ${new Date(newEndDate).toLocaleDateString()}\n\nAmount charged: ₹${amount/100}\n\nBest regards,\nScio Labs Team`
+    //     text: `Hi ${userName},\n\nGreat news! Your subscription to ${className} has been renewed successfully.\n\nNew expiry date: ${new Date(newEndDate).toLocaleDateString()}\n\nAmount charged: ₹${amount/100}\n\nBest regards,\nScioSprints Team`
     //   };
 
     // DISABLED: Not present in emails.txt
@@ -821,7 +821,7 @@ export function generateEmailContent(type: string, data: Record<string, unknown>
     //   return {
     //     subject: `❌ Auto-renewal failed for ${className}`,
     //     html: generateAutoRenewalFailedEmail(userName, className),
-    //     text: `Hi ${userName},\n\nWe were unable to automatically renew your subscription to ${className}.\n\nPlease update your payment method and renew manually: ${SITE_URL}/dashboard/subscriptions\n\nBest regards,\nScio Labs Team`
+    //     text: `Hi ${userName},\n\nWe were unable to automatically renew your subscription to ${className}.\n\nPlease update your payment method and renew manually: ${SITE_URL}/dashboard/subscriptions\n\nBest regards,\nScioSprints Team`
     //   };
 
     case 'new_subscription':
@@ -832,7 +832,7 @@ export function generateEmailContent(type: string, data: Record<string, unknown>
       return {
         subject: `🎉 Welcome to ${className} - Your subscription is active!`,
         html: generateWelcomeEmail(userName, subscriptionType, className, subjectName, subscriptionEndDate, welcomeSubscriptionAmount),
-        text: `Hi ${userName},\n\nWelcome to ScioSprints! Your subscription to ${className} is now active.\n\nValid until: ${new Date(subscriptionEndDate).toLocaleDateString()}\n\nStart learning: ${SITE_URL}/dashboard\n\nBest regards,\nScio Labs Team`
+    text: `Hi ${userName},\n\nWelcome to ScioSprints! Your subscription to ${className} is now active.\n\nValid until: ${new Date(subscriptionEndDate).toLocaleDateString()}\n\nStart learning: ${SITE_URL}/dashboard\n\nBest regards,\nScioSprints Team`
       };
 
     case 'payment_receipt':
@@ -844,7 +844,7 @@ export function generateEmailContent(type: string, data: Record<string, unknown>
       return {
         subject: `💳 Payment Receipt - ${subscriptionName}`,
         html: generatePaymentReceiptEmail(userName, paymentId, orderId, subscriptionName, paymentAmount, paymentDate),
-        text: `Hi ${userName},\n\nPayment Receipt\n\nPayment ID: ${paymentId}\nOrder ID: ${orderId}\nAmount: ₹${(paymentAmount/100).toFixed(2)}\nDescription: ${subscriptionName}\n\nThank you for your payment!\n\nBest regards,\nScio Labs Team`
+    text: `Hi ${userName},\n\nPayment Receipt\n\nPayment ID: ${paymentId}\nOrder ID: ${orderId}\nAmount: ₹${(paymentAmount/100).toFixed(2)}\nDescription: ${subscriptionName}\n\nThank you for your payment!\n\nBest regards,\nScioSprints Team`
       };
 
     // DISABLED: Not present in emails.txt
@@ -856,7 +856,7 @@ export function generateEmailContent(type: string, data: Record<string, unknown>
     //   return {
     //     subject: `🔄 Your ${renewalSubscriptionName} subscription renewed successfully`,
     //     html: generateManualRenewalEmail(userName, renewalSubscriptionName, renewalEndDate, renewalAmount, renewalPaymentId),
-    //     text: `Hi ${userName},\n\nYour subscription to ${renewalSubscriptionName} has been renewed successfully!\n\nNew expiry date: ${new Date(renewalEndDate).toLocaleDateString()}\nAmount paid: ₹${(renewalAmount/100).toFixed(2)}\n\nContinue learning: ${SITE_URL}/dashboard\n\nBest regards,\nScio Labs Team`
+    //     text: `Hi ${userName},\n\nYour subscription to ${renewalSubscriptionName} has been renewed successfully!\n\nNew expiry date: ${new Date(renewalEndDate).toLocaleDateString()}\nAmount paid: ₹${(renewalAmount/100).toFixed(2)}\n\nContinue learning: ${SITE_URL}/dashboard\n\nBest regards,\nScioSprints Team`
     //   };
 
     // DISABLED: Not present in emails.txt
@@ -868,7 +868,7 @@ export function generateEmailContent(type: string, data: Record<string, unknown>
     //   return {
     //     subject: `🎯 Demo request received - We'll be in touch soon!`,
     //     html: generateDemoRequestEmail(requestorName, email, school, role),
-    //     text: `Hi ${requestorName},\n\nThank you for your interest in ScioSprints!\n\nWe've received your demo request and our team will contact you within 24 hours.\n\nDetails:\nName: ${requestorName}\nEmail: ${email}\nSchool: ${school}\nRole: ${role}\n\nBest regards,\nScio Labs Team`
+    //     text: `Hi ${requestorName},\n\nThank you for your interest in ScioSprints!\n\nWe've received your demo request and our team will contact you within 24 hours.\n\nDetails:\nName: ${requestorName}\nEmail: ${email}\nSchool: ${school}\nRole: ${role}\n\nBest regards,\nScioSprints Team`
     //   };
 
     // Admin notification email types

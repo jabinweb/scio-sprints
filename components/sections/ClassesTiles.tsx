@@ -8,13 +8,11 @@ interface ClassItem {
   id: number | string;
   name: string;
   description?: string;
-  price?: number | string; // in paisa or formatted
+  price?: number | string; // in paise or formatted
 }
 
 // Helper to get a unique icon for each class
 function getClassIcon(className: string) {
-  // Support names like 'Class 4', 'CBSE : Class 4', etc.
-  // Extract the class number from the string
   const match = className.match(/Class\s*(\d+)/);
   const classNum = match ? match[1] : null;
   switch (classNum) {
@@ -82,20 +80,55 @@ export default function ClassesTiles() {
             {classes.map((c) => (
               <Card
                 key={c.id}
-                className="cursor-pointer text-center py-6 px-8 flex items-center justify-center hover:shadow-lg transition-shadow"
+                className="relative cursor-pointer text-center py-6 px-8 flex items-center justify-center hover:shadow-lg transition-shadow"
                 onClick={() => router.push(`/dashboard/class/${c.id}`)}
                 role="button"
                 aria-label={`Open class ${c.name}`}
               >
+                {/* Price badge (top-right) */}
+                {c.price !== undefined && c.price !== null && (
+                  <div className="absolute top-1 right-1">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-white/95 text-sm font-semibold text-gray-800 shadow">
+                      {formatINR(c.price)}
+                    </span>
+                  </div>
+                )}
+
                 <CardContent className="p-0 space-y-2">
                   <span className='text-5xl'>{getClassIcon(c.name)}</span>
                   <div className="text-lg font-medium">{c.name}</div>
+                  {/* {c.price !== undefined && c.price !== null && (
+                    <div className="text-sm text-gray-600 mt-1">
+                      {formatINR(c.price)}
+                    </div>
+                  )} */}
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
+
+        {/* Refund highlight under tiles */}
+        <div className="text-center mt-6">
+          <div className="inline-flex flex-col items-center gap-2 px-4 py-3 bg-green-50 rounded-xl border border-green-100 max-w-xl mx-auto">
+            <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-bold mb-1">7-Day No-Questions-Asked Refund</span>
+            <span className="text-base text-gray-700 font-medium text-center">Try ScioSprints risk-free. If it’s not the right fit for your child, get a full refund within 7 days — no questions asked!</span>
+          </div>
+        </div>
       </div>
     </section>
   );
+}
+
+function formatINR(value: number | string) {
+  // If value is a string already formatted, return as-is
+  if (typeof value === 'string') return value;
+  // If value looks like paise (e.g., 29900), divide by 100
+  const amount = value > 1000 ? value / 100 : value;
+  // Format to INR currency
+  try {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount);
+  } catch {
+    return `₹${(amount).toFixed(2)}`;
+  }
 }
