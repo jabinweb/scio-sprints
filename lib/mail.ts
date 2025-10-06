@@ -132,7 +132,20 @@ async function testEmailConnection() {
 }
 
 // Initialize connection test (but don't block startup)
-testEmailConnection().catch(console.error);
+// NOTE: Calling testEmailConnection() at module load can trigger database
+// access and outgoing SMTP connections during the build step (this breaks
+// deployments that build inside a container without DB/network access).
+//
+// To avoid that, only run the connection test when the environment explicitly
+// opts in by setting RUN_SMTP_TEST=true. This keeps the module side-effect-free
+// during builds while allowing runtime validation when desired.
+if (process.env.RUN_SMTP_TEST === 'true') {
+  testEmailConnection().catch(console.error);
+} else {
+  // Skip automatic SMTP verification during build/startup unless explicitly enabled.
+  // You can manually run `testEmailConnection()` from a server-side startup hook
+  // or set RUN_SMTP_TEST=true in your runtime environment to enable this check.
+}
 
 export async function sendDemoEmail(data: {
   name: string;
