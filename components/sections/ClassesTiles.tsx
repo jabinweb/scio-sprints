@@ -80,7 +80,7 @@ export default function ClassesTiles() {
             {classes.map((c) => (
               <Card
                 key={c.id}
-                className="relative cursor-pointer text-center py-6 px-8 flex items-center justify-center hover:shadow-lg transition-shadow"
+                className="relative cursor-pointer text-center pb-4 pt-10 px-8 flex items-center justify-center hover:shadow-lg transition-shadow"
                 onClick={() => router.push(`/dashboard/class/${c.id}`)}
                 role="button"
                 aria-label={`Open class ${c.name}`}
@@ -89,7 +89,7 @@ export default function ClassesTiles() {
                 {c.price !== undefined && c.price !== null && (
                   <div className="absolute top-1 right-1">
                     <span className="inline-flex items-center px-3 py-1 rounded-full bg-white/95 text-sm font-semibold text-gray-800 shadow">
-                      {formatINR(c.price)}
+                      {formatINR(c.price)}/year
                     </span>
                   </div>
                 )}
@@ -115,6 +115,10 @@ export default function ClassesTiles() {
             <span className="text-base text-gray-700 font-medium text-center">Try ScioSprints risk-free. If it’s not the right fit for your child, get a full refund within 7 days — no questions asked!</span>
           </div>
         </div>
+        {/* Promotional note under the refund highlight */}
+        <div className="text-center mt-3">
+          <p className="text-sm text-gray-600 font-semibold">Try out one subject at just Rs.299/year!</p>
+        </div>
       </div>
     </section>
   );
@@ -129,6 +133,6 @@ function formatINR(value: number | string) {
   try {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount);
   } catch {
-    return `₹${(amount).toFixed(2)}`;
+    return `₹${(amount).toFixed(0)}`;
   }
 }
