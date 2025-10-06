@@ -111,13 +111,10 @@ export default function ClassesTiles() {
         {/* Refund highlight under tiles */}
         <div className="text-center mt-6">
           <div className="inline-flex flex-col items-center gap-2 px-4 py-3 bg-green-50 rounded-xl border border-green-100 max-w-xl mx-auto">
+             <p className="text-base md:text-lg lg:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">Try out one subject at just Rs.299/year!</p>
             <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-bold mb-1">7-Day No-Questions-Asked Refund</span>
             <span className="text-base text-gray-700 font-medium text-center">Try ScioSprints risk-free. If it’s not the right fit for your child, get a full refund within 7 days — no questions asked!</span>
           </div>
-        </div>
-        {/* Promotional note under the refund highlight */}
-        <div className="text-center mt-3">
-          <p className="text-sm text-gray-600 font-semibold">Try out one subject at just Rs.299/year!</p>
         </div>
       </div>
     </section>
