@@ -93,7 +93,6 @@ export default function ClassesTiles() {
                     </span>
                   </div>
                 )}
-                
 
                 <CardContent className="p-0 space-y-2">
                   <span className='text-5xl'>{getClassIcon(c.name)}</span>
