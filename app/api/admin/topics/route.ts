@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
 
 // Helper function to convert content type to database enum
 const convertContentType = (type: string): 'EXTERNAL_LINK' | 'VIDEO' | 'PDF' | 'TEXT' | 'INTERACTIVE_WIDGET' | 'IFRAME' => {
@@ -83,8 +84,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { name, type, duration, difficulty, orderIndex, chapterId, content } = await request.json();
-    
+    const { name, type, duration, difficulty, orderIndex, chapterId, content, description } = await request.json();
+
     if (!name || !type || !chapterId) {
       return NextResponse.json({ error: 'Missing required fields: name, type, and chapterId are required' }, { status: 400 });
     }
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
         difficulty: convertDifficultyLevel(difficulty || 'BEGINNER'), // Convert to proper enum with default
         orderIndex: orderIndex || 0,
         chapterId,
+        description: description && description.trim() !== '' ? description : null,
         created_at: new Date(),
         updatedAt: new Date(),
       }
@@ -137,23 +139,26 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const { id, name, type, duration, difficulty, orderIndex, content } = await request.json();
+    const { id, name, type, duration, difficulty, orderIndex, content, description } = await request.json();
     
     if (!id) {
       return NextResponse.json({ error: 'Topic ID is required' }, { status: 400 });
     }
 
+    // Build update data only for provided fields to avoid overwriting unspecified fields
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+
+    if (typeof name === 'string') updateData.name = name;
+    if (typeof type === 'string') updateData.type = convertTopicType(type);
+    if (typeof duration === 'string') updateData.duration = duration && duration.trim() !== '' ? duration : null;
+    if (typeof difficulty === 'string') updateData.difficulty = convertDifficultyLevel(difficulty);
+    if (typeof orderIndex !== 'undefined') updateData.orderIndex = orderIndex;
+    if (typeof description === 'string') updateData.description = description && description.trim() !== '' ? description : null;
+
     // Update topic
     await prisma.topic.update({
       where: { id },
-      data: {
-        name,
-        type: convertTopicType(type), // Convert to proper enum
-        duration: duration && duration.trim() !== '' ? duration : null, // Handle empty duration
-        difficulty: convertDifficultyLevel(difficulty || 'BEGINNER'), // Convert to proper enum with default
-        orderIndex,
-        updatedAt: new Date(),
-      }
+      data: updateData
     });
 
     // Handle content update with proper enum conversion
