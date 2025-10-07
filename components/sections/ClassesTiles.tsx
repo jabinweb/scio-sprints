@@ -108,12 +108,42 @@ export default function ClassesTiles() {
           </div>
         </div>
 
-        {/* Refund highlight under tiles */}
-        <div className="text-center mt-6">
-          <div className="inline-flex flex-col items-center gap-2 px-4 py-3 bg-green-50 rounded-xl border border-green-100 max-w-xl mx-auto">
-             <p className="text-base md:text-lg lg:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">Try out one subject at just Rs.299/year!</p>
-            <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-bold mb-1">7-Day No-Questions-Asked Refund</span>
-            <span className="text-base text-gray-700 font-medium text-center">Try ScioSprints risk-free. If it’s not the right fit for your child, get a full refund within 7 days — no questions asked!</span>
+        {/* Two info boxes side-by-side: pricing and refund */}
+        <div className="mt-8 px-4">
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+            {/* Pricing box */}
+            <div className="flex items-center gap-4 p-4 bg-white/90 border border-gray-100 rounded-xl shadow-sm">
+              <div className="flex-shrink-0">
+                {/* Price tag SVG icon */}
+                <div className="w-12 h-12 rounded-md bg-brand-blue/10 text-brand-blue flex items-center justify-center">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                    <path d="M12 .587l2.668 5.412L20.5 6.9l-4.25 3.89L17.34 17 12 14.2 6.66 17l1.09-6.21L3.5 6.9l5.832-0.901L12 .587z" fill="currentColor" />
+                  </svg>
+                  <span className="sr-only">Try ScioSprints trial</span>
+                </div>
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold">Try It Your Way!</h3>
+                <p className="mt-1 text-sm text-gray-700">You can start with a single subject for <span className="font-medium">₹299/year</span> — the perfect way to test how ScioSprints makes revision fun and effective for your child.</p>
+              </div>
+            </div>
+
+            {/* Refund box */}
+            <div className="flex items-center gap-4 p-4 bg-green-50 border border-green-100 rounded-xl shadow-sm">
+              <div className="flex-shrink-0">
+                {/* Shield-check SVG icon */}
+                <div className="w-12 h-12 rounded-md bg-green-100 text-green-700 flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                    <path d="M12 2L3 6v5c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V6l-9-4z" stroke="#16a34a" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+                    <path d="M9 12l2 2 4-4" stroke="#16a34a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold">7-Day No-Questions-Asked Refund</h3>
+                <p className="mt-1 text-sm text-gray-700">Try ScioSprints risk-free. If it’s not the right fit for your child, get a full refund within 7 days — no questions asked!</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
